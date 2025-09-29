@@ -1,4 +1,5 @@
-﻿using inzynierka.API.Product.Model.Tag.AllergenTag;
+﻿
+using inzynierka.Products.Model.Tag.AllergenTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

@@ -1,4 +1,4 @@
-﻿using inzynierka.API.Product.Model.Tag.CountryTag;
+﻿using inzynierka.Products.Model.Tag.CountryTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

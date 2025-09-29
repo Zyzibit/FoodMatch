@@ -3,12 +3,13 @@ using System.Text.Json;
 using inzynierka.AI.OpenAI;
 using inzynierka.AI.OpenAI.Model;
 using inzynierka.API.User.Model;
-using inzynierka.API.User.Services;
+using inzynierka.Auth.Services;
 using inzynierka.Data;
 using inzynierka.OpenFoodFacts.Import;
 using inzynierka.OpenFoodFacts.JsonlReader.Services;
 using inzynierka.OpenFoodFacts.Mappings;
 using inzynierka.OpenFoodFacts.Models;
+using inzynierka.Products.Model;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
@@ -98,7 +99,6 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
-//ProductImporter endpoint test
 app.MapGet("/test", async (IProductImporter importer) =>
 {
     try {

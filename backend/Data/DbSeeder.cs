@@ -1,5 +1,5 @@
-﻿using inzynierka.API.User.Model;
-using inzynierka.Constants;
+﻿using inzynierka.Auth.Model;
+using inzynierka.Products.Model;
 using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Data;

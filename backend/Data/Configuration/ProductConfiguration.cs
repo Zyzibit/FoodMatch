@@ -1,4 +1,4 @@
-﻿using inzynierka.API.Product.Model;
+﻿using inzynierka.Products.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

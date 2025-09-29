@@ -31,10 +31,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="API\Product\Controller\" />
-      <Folder Include="API\Product\Service\" />
-      <Folder Include="API\Receipt\Service\" />
-      <Folder Include="OpenFoodFacts\OpenFoodFactsDeserializer\" />
+      <Folder Include="Products\Controller\" />
+      <Folder Include="Products\Service\" />
     </ItemGroup>
 
 </Project>

@@ -398,7 +398,7 @@ namespace inzynierka.Migrations
                     b.ToTable("UserProduct");
                 });
 
-            modelBuilder.Entity("inzynierka.API.User.Model.TokenInfo", b =>
+            modelBuilder.Entity("inzynierka.API.Products.Model.TokenInfo", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -428,7 +428,7 @@ namespace inzynierka.Migrations
                     b.ToTable("TokenInfos");
                 });
 
-            modelBuilder.Entity("inzynierka.API.User.Model.User", b =>
+            modelBuilder.Entity("inzynierka.API.Products.Model.Products", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -507,7 +507,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("inzynierka.API.User.Model.User", null)
+                    b.HasOne("inzynierka.API.Products.Model.Products", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -516,7 +516,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("inzynierka.API.User.Model.User", null)
+                    b.HasOne("inzynierka.API.Products.Model.Products", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -531,7 +531,7 @@ namespace inzynierka.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.API.User.Model.User", null)
+                    b.HasOne("inzynierka.API.Products.Model.Products", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -540,7 +540,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("inzynierka.API.User.Model.User", null)
+                    b.HasOne("inzynierka.API.Products.Model.Products", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -626,20 +626,20 @@ namespace inzynierka.Migrations
             modelBuilder.Entity("inzynierka.API.Shared.Model.UserProduct", b =>
                 {
                     b.HasOne("inzynierka.API.Product.Model.Product", "Product")
-                        .WithMany("UserProducts")
+                        .WithMany("Products")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.API.User.Model.User", "User")
-                        .WithMany("UserProducts")
+                    b.HasOne("inzynierka.API.Products.Model.Products", "Products")
+                        .WithMany("Products")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Product");
 
-                    b.Navigation("User");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("inzynierka.API.Product.Model.Product", b =>
@@ -652,7 +652,7 @@ namespace inzynierka.Migrations
 
                     b.Navigation("ProductIngredientTags");
 
-                    b.Navigation("UserProducts");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("inzynierka.API.Product.Model.Tag.AllergenTag.AllergenTag", b =>
@@ -675,9 +675,9 @@ namespace inzynierka.Migrations
                     b.Navigation("ProductIngredientTags");
                 });
 
-            modelBuilder.Entity("inzynierka.API.User.Model.User", b =>
+            modelBuilder.Entity("inzynierka.API.Products.Model.Products", b =>
                 {
-                    b.Navigation("UserProducts");
+                    b.Navigation("Products");
                 });
 #pragma warning restore 612, 618
         }
