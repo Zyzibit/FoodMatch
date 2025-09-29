@@ -248,7 +248,7 @@ namespace inzynierka.Auth.Controller;
                 var userTokenInfo = await _context.TokenInfos.SingleOrDefaultAsync(u => u.Username == username);
 
                 if (userTokenInfo == null)
-                    return BadRequest("Products not found in the database.");
+                    return BadRequest("User not found in the database.");
 
                 if (userTokenInfo.RefreshToken != refreshTokenFromCookie)
                     return BadRequest("Refresh token mismatch between cookie and database.");
