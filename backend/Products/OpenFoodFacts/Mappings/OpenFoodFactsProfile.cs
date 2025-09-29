@@ -1,14 +1,12 @@
 ﻿using AutoMapper;
-
-using inzynierka.OpenFoodFacts.JsonlReader.Models;
-using inzynierka.OpenFoodFacts.Models;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
+using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 
-namespace inzynierka.OpenFoodFacts.Mappings;
+namespace inzynierka.Products.OpenFoodFacts.Mappings;
 
 /// <summary>
 /// AutoMapper profile for mapping OpenFoodFacts data to Product models.

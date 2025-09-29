@@ -1,7 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using inzynierka.API.User.Model;
-using inzynierka.API.User.Model.DTO;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Model.DTO;
 using inzynierka.Auth.Services;

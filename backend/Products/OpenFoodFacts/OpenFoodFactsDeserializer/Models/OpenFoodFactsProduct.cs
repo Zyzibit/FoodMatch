@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using inzynierka.OpenFoodFacts.Models;
 
-namespace inzynierka.OpenFoodFacts.JsonlReader.Models;
+namespace inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 
 public class OpenFoodFactsProduct {
     [JsonPropertyName("code")]

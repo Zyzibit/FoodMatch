@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace inzynierka.API.User.Model.DTO;
+namespace inzynierka.Auth.Model.DTO;
 
 public class TokenModel
 {

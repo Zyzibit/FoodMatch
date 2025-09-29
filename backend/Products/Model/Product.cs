@@ -3,7 +3,6 @@
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
 
 namespace inzynierka.Products.Model;
 

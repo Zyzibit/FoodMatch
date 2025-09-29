@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace inzynierka.OpenFoodFacts.Models;
+namespace inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 
 public class OpenFoodFactsNutriments
 {

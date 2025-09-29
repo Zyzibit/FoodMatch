@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
-using inzynierka.OpenFoodFacts.JsonlReader.Models;
-using inzynierka.OpenFoodFacts.Models;
+using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 
-namespace inzynierka.OpenFoodFacts.JsonlReader.Services;
+namespace inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 
 
 

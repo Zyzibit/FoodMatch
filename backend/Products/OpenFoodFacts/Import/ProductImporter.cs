@@ -1,14 +1,14 @@
 ﻿using AutoMapper;
 using inzynierka.Data;
-using inzynierka.OpenFoodFacts.JsonlReader.Services;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag;
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
+using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.OpenFoodFacts.Import;
+namespace inzynierka.Products.OpenFoodFacts.Import;
 
 public class ProductImporter : IProductImporter
 {

@@ -1,7 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Identity;
 
-namespace inzynierka.Products.Model;
+namespace inzynierka.Auth.Model;
 
 public class User : IdentityUser {
 
