@@ -37,7 +37,7 @@ namespace inzynierka.Auth.Controller;
         public async Task<IActionResult> Signup(SignupModel model) {
             try {
                 var existingUser = await _userManager.FindByNameAsync(model.Email);
-                if (existingUser != null) return BadRequest("Products already exists");
+                if (existingUser != null) return BadRequest("User already exists");
 
                 // Create Products role if it doesn't exist
                 if (await _roleManager.RoleExistsAsync(Roles.User) == false) {
