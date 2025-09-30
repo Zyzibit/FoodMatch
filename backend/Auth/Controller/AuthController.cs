@@ -39,7 +39,7 @@ namespace inzynierka.Auth.Controller;
                 var existingUser = await _userManager.FindByNameAsync(model.Email);
                 if (existingUser != null) return BadRequest("User already exists");
 
-                // Create Products role if it doesn't exist
+                // Create User role if it doesn't exist
                 if (await _roleManager.RoleExistsAsync(Roles.User) == false) {
                     var roleResult = await _roleManager
                         .CreateAsync(new IdentityRole(Roles.User));
