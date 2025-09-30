@@ -1,5 +1,4 @@
-﻿using inzynierka.API.Product.Model.Tag.IngredientTag;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace inzynierka.Data.Configuration;

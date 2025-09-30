@@ -1,4 +1,4 @@
-﻿using inzynierka.API.Product.Model.Tag.CategoryTag;
+﻿using inzynierka.Products.Model.Tag.CategoryTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
