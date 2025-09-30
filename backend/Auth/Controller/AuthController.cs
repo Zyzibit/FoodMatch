@@ -178,7 +178,7 @@ namespace inzynierka.Auth.Controller;
             var user = await _userManager.FindByNameAsync(username);
             if (user == null)
             {
-                return Unauthorized("Products not found.");
+                return Unauthorized("User not found.");
             }
 
             var roles = await _userManager.GetRolesAsync(user);
