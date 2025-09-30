@@ -91,7 +91,7 @@ namespace inzynierka.Auth.Controller;
         public async Task<IActionResult> Login(LoginModel model) {
             try {
                 var user = await _userManager.FindByNameAsync(model.Username);
-                if (user == null) return BadRequest("Products with this username is not registered with us.");
+                if (user == null) return BadRequest("User with this username is not registered with us.");
                 var isValidPassword = await _userManager.CheckPasswordAsync(user, model.Password);
                 if (isValidPassword == false) return Unauthorized();
 
