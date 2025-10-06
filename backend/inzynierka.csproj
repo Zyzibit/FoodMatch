@@ -8,8 +8,20 @@
   </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Products\Controller\**" />
+      <Compile Remove="Products\Service\**" />
+      <Content Remove="Products\Controller\**" />
+      <Content Remove="Products\Service\**" />
+      <EmbeddedResource Remove="Products\Controller\**" />
+      <EmbeddedResource Remove="Products\Service\**" />
+      <None Remove="Products\Controller\**" />
+      <None Remove="Products\Service\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="AutoMapper" Version="14.0.0" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.14" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.14" />
@@ -31,8 +43,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Products\Controller\" />
-      <Folder Include="Products\Service\" />
+      <Folder Include="Controllers\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <!-- New module-specific proto files -->
+      <Protobuf Include="Auth\Protos\auth.proto" GrpcServices="Both" />
+      <Protobuf Include="Products\Protos\products.proto" GrpcServices="Both" />
+      <Protobuf Include="AI\Protos\ai.proto" GrpcServices="Both" />
     </ItemGroup>
 
 </Project>

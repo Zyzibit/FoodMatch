@@ -34,6 +34,7 @@ public class Product
     public string? ServingSize { get; set; }
     public string? IsVegetarian { get; set; }
     public string? IsVegan { get; set; }
+    public string? ImageUrl { get; set; }
     public double? Energy100g { get; set; }
     public double? EnergyKcal100g { get; set; }
     public double? Fat100g { get; set; }

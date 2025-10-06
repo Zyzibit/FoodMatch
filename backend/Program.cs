@@ -15,13 +15,46 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-var builder = WebApplication.CreateBuilder(args);
+// New modular imports
+using inzynierka.Auth.Contracts;
+using inzynierka.Products.Contracts;
+using inzynierka.AI.Contracts;
+using inzynierka.Auth.Modules;
+using inzynierka.Products.Modules;
+using inzynierka.AI.Modules;
+using inzynierka.EventBus;
 
+// gRPC Services - new modular structure
+using inzynierka.Auth.Grpc.Services;
+using inzynierka.Products.Grpc.Services;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Event Bus (szyna danych)
+builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
 
+// Kontrakty modu³ów (g³ówne interfejsy komunikacji)
+builder.Services.AddScoped<IAuthContract, AuthModule>();
+builder.Services.AddScoped<IProductsContract, ProductsModule>();
+builder.Services.AddScoped<IAIContract, AIModule>();
+
+// gRPC Services (komunikacja wewnêtrzna)
+builder.Services.AddGrpc();
+
+// gRPC Clients (dla komunikacji miêdzy serwisami)
+builder.Services.AddGrpcClient<inzynierka.Auth.Grpc.AuthService.AuthServiceClient>(options =>
+{
+    options.Address = new Uri("https://localhost:5001");
+});
+builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductServiceClient>(options =>
+{
+    options.Address = new Uri("https://localhost:5001");
+});
+
+// Istniej¹ce serwisy
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<IOpenFoodFactsDeserializer, OpenFoodFactsDeserializer>();
 builder.Services.AddSingleton<OpenAIClient>();
@@ -76,6 +109,11 @@ builder.Services.AddAuthentication(options =>
     ;
 
 var app = builder.Build();
+
+// Configure gRPC services (nowe modu³owe serwisy)
+app.MapGrpcService<inzynierka.Auth.Grpc.Services.AuthGrpcService>();
+app.MapGrpcService<inzynierka.Products.Grpc.Services.ProductsGrpcService>();
+
 app.UseCors(policy =>
     policy.AllowAnyOrigin()
         .AllowAnyMethod()
@@ -83,12 +121,15 @@ app.UseCors(policy =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Mapowanie kontrolerów REST API (interfejs zewnêtrzny)
 app.MapControllers();
 
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -98,6 +139,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
+// Zachowanie istniej¹cego endpointu testowego
 app.MapGet("/test", async (IProductImporter importer) =>
 {
     try {
@@ -109,14 +151,14 @@ app.MapGet("/test", async (IProductImporter importer) =>
     return Results.Ok("Test");
 }).RequireAuthorization();
 
-//AI endpoint
+// Zachowanie istniej¹cego AI endpointu dla kompatybilnoœci
 app.MapPost("/generate-json", async (OpenAIClient client, List<OpenAIMessage> messages) =>
 {
     var result = await client.SendPromptForJsonasync(messages);
     return result is not null ? Results.Ok(result) : Results.BadRequest("Could not parse AI response as JSON.");
 });
-await DbSeeder.SeedData(app);  
 
+await DbSeeder.SeedData(app);  
 
 app.Run();
 
