@@ -8,19 +8,44 @@
   </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Auth\Middleware\**" />
+      <Compile Remove="Auth\Model\DTO\**" />
       <Compile Remove="Products\Controller\**" />
       <Compile Remove="Products\Service\**" />
+      <Content Remove="Auth\Middleware\**" />
+      <Content Remove="Auth\Model\DTO\**" />
       <Content Remove="Products\Controller\**" />
       <Content Remove="Products\Service\**" />
+      <EmbeddedResource Remove="Auth\Middleware\**" />
+      <EmbeddedResource Remove="Auth\Model\DTO\**" />
       <EmbeddedResource Remove="Products\Controller\**" />
       <EmbeddedResource Remove="Products\Service\**" />
+      <None Remove="Auth\Middleware\**" />
+      <None Remove="Auth\Model\DTO\**" />
       <None Remove="Products\Controller\**" />
       <None Remove="Products\Service\**" />
     </ItemGroup>
 
     <ItemGroup>
+      <Compile Remove="Auth\Contracts\Models\AuthModels.cs" />
+      <Compile Remove="Auth\EventBus\Events\AuthEvents.cs" />
+      <Compile Remove="Auth\Model\TokenInfo.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="appsettings.Development.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Auth\README_DeviceTracking.md" />
+      <None Remove="Products\OpenFoodFacts\Repositories\README.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
         <PackageReference Include="AutoMapper" Version="14.0.0" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <PackageReference Include="EFCore.BulkExtensions" Version="8.*" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.14" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
@@ -35,15 +60,13 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.10" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.9.25" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Controllers\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -51,6 +74,10 @@
       <Protobuf Include="Auth\Protos\auth.proto" GrpcServices="Both" />
       <Protobuf Include="Products\Protos\products.proto" GrpcServices="Both" />
       <Protobuf Include="AI\Protos\ai.proto" GrpcServices="Both" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Products\Services\" />
     </ItemGroup>
 
 </Project>

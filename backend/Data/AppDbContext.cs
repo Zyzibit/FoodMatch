@@ -19,7 +19,7 @@ public class AppDbContext : IdentityDbContext<User> {
     public DbSet<AllergenTag> AllergenTags { get; set; }
     public DbSet<IngredientTag> IngredientTags  { get; set; }
     public DbSet<CountryTag> CountryTags { get; set; }
-    public DbSet<TokenInfo> TokenInfos { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -28,7 +28,6 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCategoryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
+        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
-    
-
 }

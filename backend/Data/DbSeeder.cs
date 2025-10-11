@@ -19,6 +19,42 @@ public class DbSeeder {
         var userManager = scope.ServiceProvider.GetService<UserManager<User>>();
         var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
 
+        // Create Admin role if it doesn't exist
+        if ((await roleManager.RoleExistsAsync(Roles.Admin)) == false)
+        {
+            logger.LogInformation("Admin role is creating");
+            var roleResult = await roleManager
+              .CreateAsync(new IdentityRole(Roles.Admin));
+
+            if (roleResult.Succeeded == false)
+            {
+                var roleErrors = roleResult.Errors.Select(e => e.Description);
+                logger.LogError($"Failed to create admin role. Errors : {string.Join(",", roleErrors)}");
+            }
+            else
+            {
+                logger.LogInformation("Admin role is created");
+            }
+        }
+
+        // Create User role if it doesn't exist
+        if ((await roleManager.RoleExistsAsync(Roles.User)) == false)
+        {
+            logger.LogInformation("User role is creating");
+            var roleResult = await roleManager
+              .CreateAsync(new IdentityRole(Roles.User));
+
+            if (roleResult.Succeeded == false)
+            {
+                var roleErrors = roleResult.Errors.Select(e => e.Description);
+                logger.LogError($"Failed to create user role. Errors : {string.Join(",", roleErrors)}");
+            }
+            else
+            {
+                logger.LogInformation("User role is created");
+            }
+        }
+
         // Check if any users exist to prevent duplicate seeding
         if (userManager.Users.Any() == false)
         {
@@ -30,23 +66,6 @@ public class DbSeeder {
                 EmailConfirmed = true,
                 SecurityStamp = Guid.NewGuid().ToString()
             };
-
-            // Create Admin role if it doesn't exist
-            if ((await roleManager.RoleExistsAsync(Roles.Admin)) == false)
-            {
-                logger.LogInformation("Admin role is creating");
-                var roleResult = await roleManager
-                  .CreateAsync(new IdentityRole(Roles.Admin));
-
-                if (roleResult.Succeeded == false)
-                {
-                    var roleErros = roleResult.Errors.Select(e => e.Description);
-                    logger.LogError($"Failed to create admin role. Errors : {string.Join(",", roleErros)}");
-
-                    return;
-                }
-                logger.LogInformation("Admin role is created");
-            }
 
             // Attempt to create admin user
             var createUserResult = await userManager
@@ -71,7 +90,10 @@ public class DbSeeder {
                 var errors = addUserToRoleResult.Errors.Select(e => e.Description);
                 logger.LogError($"Failed to add admin role to user. Errors : {string.Join(",", errors)}");
             }
-            logger.LogInformation("Admin user is created");
+            else
+            {
+                logger.LogInformation("Admin user is created");
+            }
         }
     }
 

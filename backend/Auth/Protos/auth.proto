@@ -8,6 +8,9 @@ service AuthService {
   rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
   rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoResponse);
   rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RevokeToken (RevokeTokenRequest) returns (RevokeTokenResponse);
+  rpc ChangePassword (ChangePasswordGrpcRequest) returns (ChangePasswordResponse);
+  rpc UpdateProfile (UpdateProfileGrpcRequest) returns (UpdateProfileResponse);
 }
 
 message ValidateTokenRequest {
@@ -37,7 +40,40 @@ message RefreshTokenRequest {
 }
 
 message RefreshTokenResponse {
-  string access_token = 1;
-  string refresh_token = 2;
-  int64 expires_at = 3;
+  bool success = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 expires_at = 4;
+  string error_message = 5;
+}
+
+message RevokeTokenRequest {
+  string refresh_token = 1;
+}
+
+message RevokeTokenResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ChangePasswordGrpcRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UpdateProfileGrpcRequest {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+}
+
+message UpdateProfileResponse {
+  bool success = 1;
+  string message = 2;
 }

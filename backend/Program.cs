@@ -4,23 +4,22 @@ using inzynierka.AI.OpenAI;
 using inzynierka.AI.OpenAI.Model;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Services;
+using inzynierka.Auth.Repositories;
 using inzynierka.Data;
-using inzynierka.Products.Model;
+using inzynierka.Products.Extensions;
 using inzynierka.Products.OpenFoodFacts.Import;
 using inzynierka.Products.OpenFoodFacts.Mappings;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 // New modular imports
 using inzynierka.Auth.Contracts;
-using inzynierka.Products.Contracts;
 using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
-using inzynierka.Products.Modules;
 using inzynierka.AI.Modules;
 using inzynierka.EventBus;
 
@@ -32,13 +31,77 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Redis Configuration with improved reliability
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    var configuration = provider.GetService<IConfiguration>();
+    var logger = provider.GetService<ILogger<Program>>();
+    var connectionString = configuration!.GetConnectionString("Redis") ?? "127.0.0.1:6379";
+    
+    var options = ConfigurationOptions.Parse(connectionString);
+    
+    // Connection settings
+    options.AbortOnConnectFail = false; // Allow retries instead of failing immediately
+    options.ConnectTimeout = 30000; // 30 seconds timeout for initial connection
+    options.SyncTimeout = 30000; // 30 seconds sync timeout
+    options.AsyncTimeout = 30000; // 30 seconds async timeout
+    options.ConnectRetry = 10; // Retry 10 times
+    options.ReconnectRetryPolicy = new ExponentialRetry(1000, 30000); // 1-30 seconds backoff
+    
+    // Performance settings
+    options.KeepAlive = 180; // Keep alive every 3 minutes
+    options.DefaultDatabase = 0;
+    
+    try 
+    {
+        var multiplexer = ConnectionMultiplexer.Connect(options);
+        
+        // Log connection events
+        multiplexer.ConnectionFailed += (sender, args) =>
+        {
+            logger?.LogError("Redis connection failed: {Exception}", args.Exception?.Message);
+        };
+        
+        multiplexer.ConnectionRestored += (sender, args) =>
+        {
+            logger?.LogInformation("Redis connection restored");
+        };
+        
+        multiplexer.ErrorMessage += (sender, args) =>
+        {
+            logger?.LogError("Redis error: {Message}", args.Message);
+        };
+        
+        logger?.LogInformation("Redis connection established successfully");
+        return multiplexer;
+    }
+    catch (Exception ex)
+    {
+        logger?.LogError(ex, "Failed to connect to Redis. Using fallback configuration.");
+        throw;
+    }
+});
 
 // Event Bus (szyna danych)
 builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
 
+// Auth Services and Repositories
+builder.Services.AddScoped<IAuthService, inzynierka.Auth.Services.AuthService>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
+
+// Products module services (using extension method)
+builder.Services.AddProductsServices();
+
+// Background Services
+builder.Services.AddHostedService<TokenCleanupService>();
+
 // Kontrakty modu³ów (g³ówne interfejsy komunikacji)
 builder.Services.AddScoped<IAuthContract, AuthModule>();
-builder.Services.AddScoped<IProductsContract, ProductsModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
 
 // gRPC Services (komunikacja wewnêtrzna)
@@ -56,21 +119,21 @@ builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductSe
 
 // Istniej¹ce serwisy
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
-builder.Services.AddSingleton<IOpenFoodFactsDeserializer, OpenFoodFactsDeserializer>();
 builder.Services.AddSingleton<OpenAIClient>();
-builder.Services.AddSingleton<IProductImporter, ProductImporter>();
-builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddAutoMapper(typeof(OpenFoodFactsProfile));
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
-                      ?? throw new InvalidOperationException("Connection string 'DefaultConfiguration' not found.")));
+
+// Database configuration - supports both Docker and local PostgreSQL
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+
+// Add health checks services
+builder.Services.AddHealthChecks()
+    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "127.0.0.1:6379");
 
 builder.Services.AddAuthentication(options =>
         {
@@ -110,14 +173,19 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
+// Health check endpoints
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/alive");
+
 // Configure gRPC services (nowe modu³owe serwisy)
-app.MapGrpcService<inzynierka.Auth.Grpc.Services.AuthGrpcService>();
-app.MapGrpcService<inzynierka.Products.Grpc.Services.ProductsGrpcService>();
+app.MapGrpcService<AuthGrpcService>();
+app.MapGrpcService<ProductsGrpcService>();
 
 app.UseCors(policy =>
     policy.AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader());
+
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -130,26 +198,33 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwaggerUI();
 }
 
+// Database initialization
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureDeleted();  
-    db.Database.Migrate();       
+    try 
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.EnsureCreatedAsync();
+        
+        // Run migrations
+        if (db.Database.GetPendingMigrations().Any())
+        {
+            await db.Database.MigrateAsync();
+        }
+
+        // Initialize roles
+        var roleInitService = scope.ServiceProvider.GetRequiredService<IRoleInitializationService>();
+        await roleInitService.InitializeRolesAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while initializing the database.");
+    }
 }
 
 app.UseHttpsRedirection();
 
-// Zachowanie istniej¹cego endpointu testowego
-app.MapGet("/test", async (IProductImporter importer) =>
-{
-    try {
-        Console.WriteLine("importing...");
-        importer.ImportAsync("sciezka.jsonl", 1000).Wait();
-    }catch (Exception ex) {
-        return Results.Problem(ex.Message);
-    }
-    return Results.Ok("Test");
-}).RequireAuthorization();
 
 // Zachowanie istniej¹cego AI endpointu dla kompatybilnoœci
 app.MapPost("/generate-json", async (OpenAIClient client, List<OpenAIMessage> messages) =>

@@ -1,0 +1,12 @@
+namespace inzynierka.Products.Contracts.Models;
+
+public class ProductSearchQuery
+{
+    public string? Query { get; set; }
+    public List<string>? Categories { get; set; }
+    public List<string>? Allergens { get; set; }
+    public List<string>? Ingredients { get; set; }
+    public string? Brand { get; set; }
+    public int Limit { get; set; } = 10;
+    public int Offset { get; set; } = 0;
+}

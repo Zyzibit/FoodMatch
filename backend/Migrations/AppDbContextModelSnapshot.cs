@@ -169,7 +169,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ProductIngredientTag");
                 });
 
-            modelBuilder.Entity("inzynierka.Auth.Model.TokenInfo", b =>
+            modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -177,26 +177,46 @@ namespace inzynierka.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ExpiredAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Ip")
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("RefreshToken")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.HasKey("Id");
 
-                    b.ToTable("TokenInfos");
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "DeviceId");
+
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("inzynierka.Auth.Model.User", b =>
@@ -284,17 +304,8 @@ namespace inzynierka.Migrations
                     b.Property<double?>("Carbohydrates100g")
                         .HasColumnType("double precision");
 
-                    b.Property<string>("Categories")
-                        .HasColumnType("text");
-
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Countries")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CountriesCode")
                         .HasColumnType("text");
 
                     b.Property<string>("EcoScoreGrade")
@@ -314,6 +325,9 @@ namespace inzynierka.Migrations
 
                     b.Property<double?>("Fiber100g")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("IngredientsText")
                         .HasColumnType("text");
@@ -342,7 +356,7 @@ namespace inzynierka.Migrations
                     b.Property<string>("ProductName")
                         .HasColumnType("text");
 
-                    b.Property<double?>("Proteins100g")
+                    b.Property<double>("Proteins100g")
                         .HasColumnType("double precision");
 
                     b.Property<double?>("Salt100g")
@@ -549,6 +563,17 @@ namespace inzynierka.Migrations
                     b.Navigation("IngredientTag");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
+                {
+                    b.HasOne("inzynierka.Auth.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("inzynierka.Products.Model.Tag.AllergenTag.ProductAllergenTag", b =>

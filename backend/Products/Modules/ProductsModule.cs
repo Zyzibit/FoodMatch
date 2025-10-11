@@ -1,10 +1,9 @@
 using inzynierka.Products.Contracts;
 using inzynierka.Products.Contracts.Models;
-using inzynierka.Data;
+using inzynierka.Products.Repositories;
 using inzynierka.EventBus;
 using inzynierka.Products.EventBus.Events;
 using inzynierka.Products.OpenFoodFacts.Import;
-using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.Products.Modules;
 
@@ -13,18 +12,18 @@ namespace inzynierka.Products.Modules;
 /// </summary>
 public class ProductsModule : IProductsContract
 {
-    private readonly AppDbContext _context;
+    private readonly IProductRepository _productRepository;
     private readonly IProductImporter _productImporter;
     private readonly IEventBus _eventBus;
     private readonly ILogger<ProductsModule> _logger;
 
     public ProductsModule(
-        AppDbContext context,
+        IProductRepository productRepository,
         IProductImporter productImporter,
         IEventBus eventBus,
         ILogger<ProductsModule> logger)
     {
-        _context = context;
+        _productRepository = productRepository;
         _productImporter = productImporter;
         _eventBus = eventBus;
         _logger = logger;
@@ -34,12 +33,16 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            var product = await _context.Products
-                .Include(p => p.ProductAllergenTags).ThenInclude(pat => pat.AllergenTag)
-                .Include(p => p.ProductCategoryTags).ThenInclude(pct => pct.CategoryTag)
-                .Include(p => p.ProductIngredientTags).ThenInclude(pit => pit.IngredientTag)
-                .Include(p => p.ProductCountryTags).ThenInclude(pct => pct.CountryTag)
-                .FirstOrDefaultAsync(p => p.Id.ToString() == productId);
+            if (!int.TryParse(productId, out var id))
+            {
+                return new ProductResult
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid product ID format"
+                };
+            }
+
+            var product = await _productRepository.GetProductWithDetailsAsync(id);
 
             if (product == null)
             {
@@ -53,7 +56,6 @@ public class ProductsModule : IProductsContract
             // Publikacja zdarzenia wyœwietlenia produktu
             await _eventBus.PublishAsync(new ProductViewedEvent
             {
-                UserId = "", // To mo¿na uzupe³niæ gdy bêdzie dostêpny context u¿ytkownika
                 ProductId = productId,
                 ViewTime = DateTime.UtcNow
             });
@@ -73,6 +75,12 @@ public class ProductsModule : IProductsContract
                     Allergens = product.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                     Countries = product.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                     NutritionGrade = product.NutritionGrade,
+                    Nutrition = new NutritionInfo {
+                        Carbohydrates = product.Carbohydrates100g,
+                        Proteins = product.Proteins100g,
+                        Fat = product.Fat100g,
+                        Energy = product.Energy100g
+                    },
                     EcoScoreGrade = product.EcoScoreGrade
                 }
             };
@@ -92,47 +100,21 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            var dbQuery = _context.Products.AsQueryable();
+            var totalCount = await _productRepository.GetSearchResultsCountAsync(
+                searchQuery: query.Query,
+                brand: query.Brand,
+                categories: query.Categories,
+                allergens: query.Allergens,
+                ingredients: query.Ingredients);
 
-            if (!string.IsNullOrEmpty(query.Query))
-            {
-                dbQuery = dbQuery.Where(p => p.ProductName!.Contains(query.Query) ||
-                                            p.Brands!.Contains(query.Query));
-            }
-
-            if (!string.IsNullOrEmpty(query.Brand))
-            {
-                dbQuery = dbQuery.Where(p => p.Brands!.Contains(query.Brand));
-            }
-
-            if (query.Categories?.Any() == true)
-            {
-                dbQuery = dbQuery.Where(p => p.ProductCategoryTags
-                    .Any(pct => query.Categories.Contains(pct.CategoryTag.Name)));
-            }
-
-            if (query.Allergens?.Any() == true)
-            {
-                dbQuery = dbQuery.Where(p => p.ProductAllergenTags
-                    .Any(pat => query.Allergens.Contains(pat.AllergenTag.Name)));
-            }
-
-            if (query.Ingredients?.Any() == true)
-            {
-                dbQuery = dbQuery.Where(p => p.ProductIngredientTags
-                    .Any(pit => query.Ingredients.Contains(pit.IngredientTag.Name)));
-            }
-
-            var totalCount = await dbQuery.CountAsync();
-
-            var products = await dbQuery
-                .Include(p => p.ProductAllergenTags).ThenInclude(pat => pat.AllergenTag)
-                .Include(p => p.ProductCategoryTags).ThenInclude(pct => pct.CategoryTag)
-                .Include(p => p.ProductIngredientTags).ThenInclude(pit => pit.IngredientTag)
-                .Include(p => p.ProductCountryTags).ThenInclude(pct => pct.CountryTag)
-                .Skip(query.Offset)
-                .Take(query.Limit)
-                .ToListAsync();
+            var products = await _productRepository.SearchProductsAsync(
+                searchQuery: query.Query,
+                brand: query.Brand,
+                categories: query.Categories,
+                allergens: query.Allergens,
+                ingredients: query.Ingredients,
+                limit: query.Limit,
+                offset: query.Offset);
 
             var productInfos = products.Select(p => new ProductInfo
             {
@@ -149,7 +131,6 @@ public class ProductsModule : IProductsContract
                 EcoScoreGrade = p.EcoScoreGrade
             }).ToList();
 
-            // Publikacja zdarzenia wyszukiwania
             await _eventBus.PublishAsync(new ProductSearchedEvent
             {
                 UserId = "",
@@ -175,23 +156,60 @@ public class ProductsModule : IProductsContract
         }
     }
 
+    public async Task<ProductSearchResult> GetAllProductsAsync(int limit = 50, int offset = 0)
+    {
+        try
+        {
+            var totalCount = await _productRepository.GetTotalProductsCountAsync();
+            var products = await _productRepository.GetProductsWithDetailsAsync(limit, offset);
+
+            var productInfos = products.Select(p => new ProductInfo
+            {
+                Id = p.Id.ToString(),
+                Name = p.ProductName ?? "",
+                Brand = p.Brands ?? "",
+                Barcode = p.Code ?? "",
+                ImageUrl = p.ImageUrl ?? "",
+                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
+                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
+                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
+                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
+                NutritionGrade = p.NutritionGrade,
+                EcoScoreGrade = p.EcoScoreGrade
+            }).ToList();
+
+            // Publikacja zdarzenia dostêpu do wszystkich produktów
+            await _eventBus.PublishAsync(new ProductSearchedEvent
+            {
+                UserId = "",
+                Query = "all_products",
+                ResultsCount = totalCount
+            });
+
+            return new ProductSearchResult
+            {
+                Success = true,
+                Products = productInfos,
+                TotalCount = totalCount
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all products");
+            return new ProductSearchResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
     public async Task<ProductCategoryResult> GetProductsByCategoryAsync(string category, int limit = 10, int offset = 0)
     {
         try
         {
-            var query = _context.Products
-                .Where(p => p.ProductCategoryTags.Any(pct => pct.CategoryTag.Name == category));
-
-            var totalCount = await query.CountAsync();
-
-            var products = await query
-                .Include(p => p.ProductAllergenTags).ThenInclude(pat => pat.AllergenTag)
-                .Include(p => p.ProductCategoryTags).ThenInclude(pct => pct.CategoryTag)
-                .Include(p => p.ProductIngredientTags).ThenInclude(pit => pit.IngredientTag)
-                .Include(p => p.ProductCountryTags).ThenInclude(pct => pct.CountryTag)
-                .Skip(offset)
-                .Take(limit)
-                .ToListAsync();
+            var totalCount = await _productRepository.GetProductsCountByCategoryAsync(category);
+            var products = await _productRepository.GetProductsByCategoryAsync(category, limit, offset);
 
             var productInfos = products.Select(p => new ProductInfo
             {
@@ -234,20 +252,20 @@ public class ProductsModule : IProductsContract
         }
     }
 
-    public async Task<ProductImportResult> ImportProductsAsync(string filePath, int batchSize = 1000)
+    public async Task<ProductImportResult> ImportProductsAsync(string filePath, int maxProducts = 100000, int batchSize = 1000)
     {
         try
         {
             var startTime = DateTime.UtcNow;
             
-            await _productImporter.ImportAsync(filePath, batchSize);
+            var importResult = await _productImporter.ImportAsync(filePath, maxProducts, batchSize);
             
             var duration = DateTime.UtcNow - startTime;
 
             // Publikacja zdarzenia importu
             await _eventBus.PublishAsync(new ProductImportedEvent
             {
-                ImportedCount = batchSize,
+                ImportedCount = importResult.ImportedCount,
                 FilePath = filePath,
                 Duration = duration
             });
@@ -255,8 +273,11 @@ public class ProductsModule : IProductsContract
             return new ProductImportResult
             {
                 Success = true,
-                ImportedCount = batchSize,
-                FailedCount = 0
+                ImportedCount = importResult.ImportedCount,
+                FailedCount = importResult.SkippedCount,
+                Warnings = importResult.SkippedCount > 0 
+                    ? new List<string> { $"Skipped {importResult.SkippedCount} duplicate products" }
+                    : new List<string>()
             };
         }
         catch (Exception ex)
@@ -276,16 +297,14 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            var categories = await _context.CategoryTags
-                .Select(ct => new ProductCategory
-                {
-                    Id = ct.Id.ToString(),
-                    Name = ct.Name,
-                    ProductCount = ct.ProductCategoryTags.Count
-                })
-                .ToListAsync();
+            var categories = await _productRepository.GetAllCategoriesAsync();
 
-            return categories;
+            return categories.Select(ct => new ProductCategory
+            {
+                Id = ct.Id.ToString(),
+                Name = ct.Name,
+                ProductCount = ct.ProductCategoryTags.Count
+            }).ToList();
         }
         catch (Exception ex)
         {
@@ -298,10 +317,7 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            return await _context.AllergenTags
-                .Select(at => at.Name)
-                .Distinct()
-                .ToListAsync();
+            return (await _productRepository.GetAllergenNamesAsync()).ToList();
         }
         catch (Exception ex)
         {
@@ -314,10 +330,7 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            return await _context.IngredientTags
-                .Select(it => it.Name)
-                .Distinct()
-                .ToListAsync();
+            return (await _productRepository.GetIngredientNamesAsync()).ToList();
         }
         catch (Exception ex)
         {
@@ -330,8 +343,16 @@ public class ProductsModule : IProductsContract
     {
         try
         {
-            var product = await _context.Products
-                .FirstOrDefaultAsync(p => p.Id.ToString() == productId);
+            if (!int.TryParse(productId, out var id))
+            {
+                return new ProductNutritionResult
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid product ID format"
+                };
+            }
+
+            var product = await _productRepository.GetProductByIdAsync(id);
 
             if (product == null)
             {
@@ -352,10 +373,10 @@ public class ProductsModule : IProductsContract
 
             var nutritionInfo = new NutritionInfo
             {
-                Energy = null,
-                Fat = null,
-                Carbohydrates = null,
-                Proteins = null,
+                Energy = product.Energy100g,
+                Fat = product.Fat100g,
+                Carbohydrates = product.Carbohydrates100g,
+                Proteins = product.Proteins100g,
             };
 
             return new ProductNutritionResult

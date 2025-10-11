@@ -43,7 +43,8 @@ message GetProductsByCategoryResponse {
 
 message ImportProductsRequest {
   string file_path = 1;
-  int32 batch_size = 2;
+  int32 max_products = 2;
+  int32 batch_size = 3;
 }
 
 message ImportProductsResponse {

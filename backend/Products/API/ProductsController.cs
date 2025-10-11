@@ -198,7 +198,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.ImportProductsAsync(request.FilePath, request.BatchSize);
+            var result = await _productsModule.ImportProductsAsync(request.FilePath, request.MaxProducts, request.BatchSize);
             
             if (!result.Success)
             {
@@ -219,6 +219,48 @@ public class ProductsController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
+    /// <summary>
+    /// Pobranie wszystkich produktów z paginacj¹
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAllProducts([FromQuery] int limit = 50, [FromQuery] int offset = 0)
+    {
+        try
+        {
+            // Walidacja parametrów
+            if (limit <= 0 || limit > 1000)
+            {
+                return BadRequest(new { message = "Limit must be between 1 and 1000" });
+            }
+
+            if (offset < 0)
+            {
+                return BadRequest(new { message = "Offset must be greater than or equal to 0" });
+            }
+
+            var result = await _productsModule.GetAllProductsAsync(limit, offset);
+            
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new
+            {
+                products = result.Products,
+                totalCount = result.TotalCount,
+                hasMore = result.TotalCount > (offset + limit),
+                limit = limit,
+                offset = offset
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all products");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }
 
 // DTOs dla API
@@ -236,5 +278,6 @@ public class ProductSearchRequest
 public class ProductImportRequest
 {
     public string FilePath { get; set; } = string.Empty;
+    public int MaxProducts { get; set; } = 100000;
     public int BatchSize { get; set; } = 1000;
 }

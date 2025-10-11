@@ -19,7 +19,7 @@ public class TokenService : ITokenService {
 
         // Create a symmetric security key using the secret key from the configuration.
         var authSigningKey = new SymmetricSecurityKey
-            (Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+            (Encoding.UTF8.GetBytes(_configuration["JWT:secret"]));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

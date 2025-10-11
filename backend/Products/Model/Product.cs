@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
+using inzynierka.Products.Model.Tag.IngredientTag;
 
 namespace inzynierka.Products.Model;
 
@@ -17,16 +17,13 @@ public class Product
     public string? LanguageCode { get; set; }
     public string? ProductName { get; set; }
 
+    // Relacje do tabel tagów - jedyne źródło prawdy dla kategorii, krajów, etc.
+    public ICollection<ProductIngredientTag> ProductIngredientTags { get; set; } = new List<ProductIngredientTag>();
+    public ICollection<ProductCountryTag> ProductCountryTags { get; set; } = new List<ProductCountryTag>();
+    public ICollection<ProductCategoryTag> ProductCategoryTags { get; set; } = new List<ProductCategoryTag>();
+    public ICollection<ProductAllergenTag> ProductAllergenTags { get; set; } = new List<ProductAllergenTag>();
     
-    public ICollection<ProductIngredientTag> ProductIngredientTags { get; set; }
-    public ICollection<ProductCountryTag> ProductCountryTags { get; set; }
-    public ICollection<ProductCategoryTag> ProductCategoryTags { get; set; }
-    public ICollection<ProductAllergenTag> ProductAllergenTags { get; set; }
-    
-    public string? Countries { get; set; }
-    public string? CountriesCode { get; set; }
     public string? Brands { get; set; }
-    public string? Categories { get; set; }
     public string? NutritionGrade { get; set; }
     public int? NovaGroup { get; set; }
     public string? EcoScoreGrade { get; set; }
@@ -35,6 +32,7 @@ public class Product
     public string? IsVegetarian { get; set; }
     public string? IsVegan { get; set; }
     public string? ImageUrl { get; set; }
+    
     public double? Energy100g { get; set; }
     public double? EnergyKcal100g { get; set; }
     public double? Fat100g { get; set; }
@@ -42,7 +40,7 @@ public class Product
     public double? Carbohydrates100g { get; set; }
     public double? Sugars100g { get; set; }
     public double? Fiber100g { get; set; }
-    public double? Proteins100g { get; set; }
+    public double Proteins100g { get; set; }
     public double? Salt100g { get; set; }
     public double? Sodium100g { get; set; }
     public double? EnergyKcalServing { get; set; }
