@@ -10,7 +10,6 @@ public class OpenFoodFactsDeserializer : IOpenFoodFactsDeserializer
 {
     private readonly ILogger<OpenFoodFactsDeserializer> _logger;
 
-    // ⚙️ Stałe opcje JSON – zainicjalizowane raz, reużywane (bez GC)
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -18,17 +17,13 @@ public class OpenFoodFactsDeserializer : IOpenFoodFactsDeserializer
         ReadCommentHandling = JsonCommentHandling.Skip
     };
 
-    // ⚙️ Ilość równoległych workerów do deserializacji
     private const int WORKER_COUNT = 8;
 
     public OpenFoodFactsDeserializer(ILogger<OpenFoodFactsDeserializer> logger)
     {
         _logger = logger;
     }
-
-    /// <summary>
-    /// Szybki, równoległy deserializer dużych plików JSONL.
-    /// </summary>
+    
     public async IAsyncEnumerable<OpenFoodFactsProduct> DeserializeFromJsonlFileAsync(
         string filePath,
         CancellationToken cancellationToken = default)

@@ -174,13 +174,12 @@ public class ProductsGrpcService : ProductService.ProductServiceBase
     {
         try
         {
-            var result = await _productImporter.ImportAsync(request.FilePath, request.MaxProducts, request.BatchSize);
+            await _productImporter.ImportJsonlAsync(request.FilePath);
             
             return new ImportProductsResponse
             {
                 Success = true,
                 Message = "Products imported successfully",
-                ImportedCount = result.ImportedCount
             };
         }
         catch (Exception ex)

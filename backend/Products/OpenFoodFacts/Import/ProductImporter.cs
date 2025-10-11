@@ -1,229 +1,287 @@
-﻿using inzynierka.Products.Model;
-using inzynierka.Products.Model.Tag;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using inzynierka.Products.OpenFoodFacts.Repositories;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Runtime;
 
-namespace inzynierka.Products.OpenFoodFacts.Import;
-
-public class ProductImporter : IProductImporter
+namespace inzynierka.Products.OpenFoodFacts.Import
 {
-    private readonly IOpenFoodFactsDeserializer _deserializer;
-    private readonly IOpenFoodFactsRepository _repository;
-    private readonly ILogger<ProductImporter> _logger;
-
-    private readonly ConcurrentDictionary<string, int> _countryTags = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, int> _categoryTags = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, int> _allergenTags = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, int> _ingredientTags = new(StringComparer.OrdinalIgnoreCase);
-
-    public ProductImporter(
-        IOpenFoodFactsDeserializer deserializer,
-        IOpenFoodFactsRepository repository,
-        ILogger<ProductImporter> logger)
+    /// <summary>
+    /// Importer OFF → PostgreSQL: JSONL → batch → mapowanie → repo (COPY/UPSERT).
+    /// Produkty: COPY + INSERT ON CONFLICT("CodeNorm") DO NOTHING
+    /// Tagi: BulkEnsureTagsAsync
+    /// Relacje: staging COPY + INSERT SELECT + ON CONFLICT DO NOTHING
+    /// </summary>
+    public sealed class ProductImporter : IProductImporter
     {
-        _deserializer = deserializer;
-        _repository = repository;
-        _logger = logger;
-    }
+        private readonly IOpenFoodFactsRepository _repo;
+        private readonly ILogger<ProductImporter> _logger;
 
-    public async Task<ImportResult> ImportAsync(string path, int maxProducts, int batchSize)
-    {
-        if (!File.Exists(path))
-            throw new FileNotFoundException($"Import file not found: {path}", path);
-
-        GCSettings.LatencyMode = GCLatencyMode.Batch;
-
-        int imported = 0, skipped = 0;
-        var batch = new List<(Product product, OpenFoodFactsProduct json)>(batchSize);
-
-        _logger.LogInformation("Initializing tag caches...");
-        await InitializeTagCachesAsync();
-
-        await foreach (var json in _deserializer.DeserializeFromJsonlFileAsync(path))
+        private const int ProductBatchSize = 50_000;
+        private static readonly JsonSerializerOptions JsonOpts = new()
         {
-            if (imported + skipped >= maxProducts)
-                break;
+            AllowTrailingCommas = true,
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
 
-            var product = Map(json);
-            if (string.IsNullOrWhiteSpace(product.Code))
+        public ProductImporter(IOpenFoodFactsRepository repo, ILogger<ProductImporter> logger)
+        {
+            _repo = repo;
+            _logger = logger;
+        }
+
+        public async Task ImportJsonlAsync(string filePath, CancellationToken ct = default)
+        {
+            _repo.PrepareForBulkImport();
+
+            try
             {
-                skipped++;
-                continue;
+                var products = new List<Product>(ProductBatchSize);
+                var tags = new TagBuffers(ProductBatchSize);
+
+                var processed = 0;
+                var readLines = 0;
+
+                await foreach (var rawLine in ReadLinesAsync(filePath, ct))
+                {
+                    readLines++;
+                    if (string.IsNullOrWhiteSpace(rawLine)) continue;
+
+                    var src = TryDeserialize(rawLine);
+                    if (src is null) continue;
+
+                    var code = Sanitizer(src.Code);
+                    if (string.IsNullOrWhiteSpace(code)) continue;
+                    code = code!.Trim();
+
+                    products.Add(MapToProduct(src));
+                    CollectTags(src, code, tags);
+
+                    if (products.Count < ProductBatchSize) continue;
+
+                    await FlushAsync(products, tags, ct);
+                    processed += products.Count;
+                    _logger.LogInformation("Imported so far: {Count} products (read lines: {Read})", processed, readLines);
+
+                    products.Clear();
+                    tags.Clear();
+                }
+
+                if (products.Count > 0)
+                {
+                    await FlushAsync(products, tags, ct);
+                    processed += products.Count;
+                }
+
+                _logger.LogInformation("Import finished. Total imported products (attempted): {Count}", processed);
+            }
+            finally
+            {
+                _repo.RestoreAfterBulkImport();
+            }
+        }
+
+        // ========================= Parsowanie / mapowanie =========================
+
+        private static OpenFoodFactsProduct? TryDeserialize(string jsonLine)
+        {
+            try { return JsonSerializer.Deserialize<OpenFoodFactsProduct>(jsonLine, JsonOpts); }
+            catch { return null; }
+        }
+
+        private static Product MapToProduct(OpenFoodFactsProduct src)
+        {
+            var n = src.OpenFoodFactsNutriments;
+
+            return new Product
+            {
+                Code            = Sanitizer(src.Code)!,
+                ProductName     = Sanitizer(src.ProductName),
+
+                BrandOwner      = Sanitizer(src.BrandOwner),
+                Brands          = Sanitizer(src.Brands),
+
+                Language        = Sanitizer(src.Language),
+                LanguageCode    = Sanitizer(src.LanguageCode),
+                IngredientsText = Sanitizer(src.IngredientsText),
+
+                NutritionGrade  = Sanitizer(src.NutritionGrade),
+                NovaGroup       = src.NovaGroup,
+                EcoScoreGrade   = Sanitizer(src.EcoScoreGrade),
+                ServingSize     = Sanitizer(src.ServingSize),
+                IsVegetarian    = Sanitizer(src.IsVegetarian),
+                IsVegan         = Sanitizer(src.IsVegan),
+
+                Energy100g          = n?.Energy100g,
+                EnergyKcal100g      = n?.EnergyKcal100g,
+                Fat100g             = n?.Fat100g,
+                SaturatedFat100g    = n?.SaturatedFat100g,
+                Carbohydrates100g   = n?.Carbohydrates100g,
+                Sugars100g          = n?.Sugars100g,
+                Fiber100g           = n?.Fiber100g,
+                Proteins100g        = n?.Proteins100g,
+                Salt100g            = n?.Salt100g,
+                Sodium100g          = n?.Sodium100g,
+                EnergyKcalServing   = n?.EnergyKcalServing,
+
+                LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
+            };
+        }
+
+        // ========================= Kolekcjonowanie tagów =========================
+
+        private static void CollectTags(OpenFoodFactsProduct src, string code, TagBuffers tags)
+        {
+            foreach (var t in src.CategoriesTags ?? Enumerable.Empty<string>())
+                tags.AddCategory(code, t);
+
+            foreach (var t in src.CountriesTags ?? Enumerable.Empty<string>())
+                tags.AddCountry(code, t);
+
+            foreach (var t in src.AllergensTags ?? Enumerable.Empty<string>())
+                tags.AddAllergen(code, t);
+
+            foreach (var t in src.IngredientsTags ?? Enumerable.Empty<string>())
+                tags.AddIngredient(code, t);
+        }
+
+        
+
+        private async Task FlushAsync(List<Product> products, TagBuffers tags, CancellationToken ct)
+        {
+            await _repo.BulkInsertProductsAsync(products, ct);
+
+            await _repo.BulkEnsureTagsAsync<IngredientTag>(tags.IngredientNames, ct);
+            await _repo.BulkEnsureTagsAsync<CountryTag>(tags.CountryNames, ct);
+            await _repo.BulkEnsureTagsAsync<CategoryTag>(tags.CategoryNames, ct);
+            await _repo.BulkEnsureTagsAsync<AllergenTag>(tags.AllergenNames, ct);
+
+            await _repo.BulkUpsertProductIngredientLinksAsync(tags.IngredientLinks, ct);
+            await _repo.BulkUpsertProductCountryLinksAsync(tags.CountryLinks, ct);
+            await _repo.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
+            await _repo.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
+        }
+
+        private static async IAsyncEnumerable<string> ReadLinesAsync(string filePath, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            using var fs = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 1_048_576,
+                useAsync: true);
+
+            using var reader = new StreamReader(fs);
+
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                ct.ThrowIfCancellationRequested();
+                if (line.IndexOf('\0') >= 0) line = line.Replace("\0", string.Empty);
+                yield return line;
+            }
+        }
+        
+        
+        private static string? Sanitizer(string? s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            var cleaned = new string(s.Where(ch => ch != '\0' && ch >= ' ' || ch is '\t' or '\n' or '\r').ToArray());
+            cleaned = cleaned.Trim();
+            return cleaned.Length == 0 ? null : cleaned;
+        }
+
+        
+        private static DateTime? ConvertUnixToDateTime(long? unix)
+        {
+            if (unix is null) return null;
+            try
+            {
+                var val = unix.Value;
+                if (val >= 1_000_000_000_000L) val /= 1000; // ms → s
+                return DateTimeOffset.FromUnixTimeSeconds(val).UtcDateTime;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+
+        private sealed class TagBuffers
+        {
+            public HashSet<string> IngredientNames { get; }
+            public HashSet<string> CountryNames { get; }
+            public HashSet<string> CategoryNames { get; }
+            public HashSet<string> AllergenNames { get; }
+
+            public List<(string Code, string TagName)> IngredientLinks { get; }
+            public List<(string Code, string TagName)> CountryLinks { get; }
+            public List<(string Code, string TagName)> CategoryLinks { get; }
+            public List<(string Code, string TagName)> AllergenLinks { get; }
+
+            public TagBuffers(int batchCapacity)
+            {
+                IngredientNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                CountryNames    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                CategoryNames   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                AllergenNames   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                IngredientLinks = new List<(string, string)>(batchCapacity * 3);
+                CountryLinks    = new List<(string, string)>(batchCapacity * 1);
+                CategoryLinks   = new List<(string, string)>(batchCapacity * 2);
+                AllergenLinks   = new List<(string, string)>(batchCapacity * 1);
             }
 
-            batch.Add((product, json));
-
-            if (batch.Count >= batchSize)
+            public void AddIngredient(string code, string tag)
             {
-                skipped += await FilterExistingProductsAsync(batch);
-                await ProcessBatchAsync(batch);
-                imported += batch.Count;
-                batch.Clear();
-                _logger.LogInformation("Imported {Count} (total: {Total})", batchSize, imported);
+                IngredientNames.Add(tag);
+                IngredientLinks.Add((code, tag));
+            }
+
+            public void AddCountry(string code, string tag)
+            {
+                CountryNames.Add(tag);
+                CountryLinks.Add((code, tag));
+            }
+
+            public void AddCategory(string code, string tag)
+            {
+                CategoryNames.Add(tag);
+                CategoryLinks.Add((code, tag));
+            }
+
+            public void AddAllergen(string code, string tag)
+            {
+                AllergenNames.Add(tag);
+                AllergenLinks.Add((code, tag));
+            }
+
+            public void Clear()
+            {
+                IngredientNames.Clear();
+                CountryNames.Clear();
+                CategoryNames.Clear();
+                AllergenNames.Clear();
+
+                IngredientLinks.Clear();
+                CountryLinks.Clear();
+                CategoryLinks.Clear();
+                AllergenLinks.Clear();
             }
         }
-
-        if (batch.Count > 0)
-        {
-            skipped += await FilterExistingProductsAsync(batch);
-            await ProcessBatchAsync(batch);
-            imported += batch.Count;
-        }
-
-        _ = Task.Run(() => SaveTagCachesAsync());
-
-        return new ImportResult
-        {
-            ImportedCount = imported,
-            SkippedCount = skipped
-        };
-    }
-
-    private async Task ProcessBatchAsync(List<(Product product, OpenFoodFactsProduct json)> batch)
-    {
-        foreach (var (product, json) in batch)
-        {
-            var tags = await GetAllTagsAsync(json);
-            SetupProductRelationships(product, tags);
-        }
-
-        await _repository.BulkInsertProductsAsync(batch.Select(b => b.product).ToList());
-    }
-
-    private async Task<int> FilterExistingProductsAsync(List<(Product product, OpenFoodFactsProduct json)> batch)
-    {
-        var codes = batch.Select(b => b.product.Code).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var existing = await _repository.GetExistingProductCodesBatchAsync(codes);
-        batch.RemoveAll(p => existing.Contains(p.product.Code, StringComparer.OrdinalIgnoreCase));
-        return existing.Count;
-    }
-
-    private async Task InitializeTagCachesAsync()
-    {
-        var country = await _repository.LoadTagCacheIdsAsync<CountryTag>();
-        foreach (var kv in country) _countryTags[kv.Key] = kv.Value;
-
-        var category = await _repository.LoadTagCacheIdsAsync<CategoryTag>();
-        foreach (var kv in category) _categoryTags[kv.Key] = kv.Value;
-
-        var allergen = await _repository.LoadTagCacheIdsAsync<AllergenTag>();
-        foreach (var kv in allergen) _allergenTags[kv.Key] = kv.Value;
-
-        var ingredient = await _repository.LoadTagCacheIdsAsync<IngredientTag>();
-        foreach (var kv in ingredient) _ingredientTags[kv.Key] = kv.Value;
-    }
-
-    private async Task SaveTagCachesAsync()
-    {
-        await _repository.SaveTagCacheIdsAsync<CountryTag>(_countryTags);
-        await _repository.SaveTagCacheIdsAsync<CategoryTag>(_categoryTags);
-        await _repository.SaveTagCacheIdsAsync<AllergenTag>(_allergenTags);
-        await _repository.SaveTagCacheIdsAsync<IngredientTag>(_ingredientTags);
-        _logger.LogInformation("Tag caches saved.");
-    }
-
-    private static Product Map(OpenFoodFactsProduct src)
-    {
-        return new Product
-        {
-            Code = src.Code,
-            Language = src.Language,
-            BrandOwner = src.BrandOwner,
-            ProductName = src.ProductName,
-            Brands = src.Brands,
-            NutritionGrade = src.NutritionGrade,
-            NovaGroup = src.NovaGroup,
-            EcoScoreGrade = src.EcoScoreGrade,
-            IngredientsText = CleanNullBytes(src.IngredientsText),
-            ServingSize = src.ServingSize,
-            IsVegetarian = src.IsVegetarian,
-            IsVegan = src.IsVegan,
-            LastUpdated = src.LastUpdatedT > 0 ? DateTimeOffset.FromUnixTimeSeconds(src.LastUpdatedT).UtcDateTime : null,
-            Energy100g = src.OpenFoodFactsNutriments?.Energy100g ?? 0,
-            EnergyKcal100g = src.OpenFoodFactsNutriments?.EnergyKcal100g ?? 0,
-            Fat100g = src.OpenFoodFactsNutriments?.Fat100g ?? 0,
-            SaturatedFat100g = src.OpenFoodFactsNutriments?.SaturatedFat100g ?? 0,
-            Carbohydrates100g = src.OpenFoodFactsNutriments?.Carbohydrates100g ?? 0,
-            Sugars100g = src.OpenFoodFactsNutriments?.Sugars100g ?? 0,
-            Fiber100g = src.OpenFoodFactsNutriments?.Fiber100g ?? 0,
-            Proteins100g = src.OpenFoodFactsNutriments?.Proteins100g ?? 0,
-            Salt100g = src.OpenFoodFactsNutriments?.Salt100g ?? 0,
-            Sodium100g = src.OpenFoodFactsNutriments?.Sodium100g ?? 0,
-            EnergyKcalServing = src.OpenFoodFactsNutriments?.EnergyKcalServing ?? 0,
-        };
-    }
-
-    private async Task<(List<CountryTag>, List<CategoryTag>, List<AllergenTag>, List<IngredientTag>)>
-        GetAllTagsAsync(OpenFoodFactsProduct json)
-    {
-        var countries = await GetOrCreateTagsAsync<CountryTag>(_countryTags, json.CountriesTags);
-        var categories = await GetOrCreateTagsAsync<CategoryTag>(_categoryTags, json.CategoriesTags);
-        var allergens = await GetOrCreateTagsAsync<AllergenTag>(_allergenTags, json.AllergensTags);
-        var ingredients = await GetOrCreateTagsAsync<IngredientTag>(_ingredientTags, json.IngredientsTags);
-        return (countries, categories, allergens, ingredients);
-    }
-
-    private async Task<List<T>> GetOrCreateTagsAsync<T>(
-        ConcurrentDictionary<string, int> cache, List<string>? names)
-        where T : class, ITagEntity, new()
-    {
-        if (names == null || names.Count == 0) return [];
-
-        names = names
-            .Where(n => !string.IsNullOrWhiteSpace(n))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var found = new List<T>();
-        var missing = new List<string>();
-
-        foreach (var n in names)
-        {
-            if (cache.TryGetValue(n, out var id))
-                found.Add(new T { Id = id, Name = n });
-            else
-                missing.Add(n);
-        }
-
-        if (missing.Count == 0)
-            return found;
-
-        var newTags = await _repository.CreateTagsAsync<T>(missing);
-        foreach (var tag in newTags)
-        {
-            cache[tag.Name] = tag.Id;
-            found.Add(tag);
-        }
-
-        return found;
-    }
-
-    private static void SetupProductRelationships(Product p,
-        (List<CountryTag> countries, List<CategoryTag> categories, List<AllergenTag> allergens, List<IngredientTag> ingredients) tags)
-    {
-        p.ProductCountryTags = tags.countries.Select(t => new ProductCountryTag { CountryTagId = t.Id }).ToList();
-        p.ProductCategoryTags = tags.categories.Select(t => new ProductCategoryTag { CategoryTagId = t.Id }).ToList();
-        p.ProductAllergenTags = tags.allergens.Select(t => new ProductAllergenTag { AllergenTagId = t.Id }).ToList();
-        p.ProductIngredientTags = tags.ingredients.Select(t => new ProductIngredientTag { IngredientTagId = t.Id }).ToList();
-    }
-
-    private static string? CleanNullBytes(string? v)
-    {
-        if (string.IsNullOrEmpty(v) || !v.Contains('\0'))
-            return v;
-
-        Span<char> buf = stackalloc char[v.Length];
-        int j = 0;
-        foreach (var c in v)
-            if (c != '\0') buf[j++] = c;
-        return new string(buf[..j]);
     }
 }

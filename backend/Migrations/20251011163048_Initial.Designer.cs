@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using inzynierka.Data;
@@ -11,9 +12,11 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251011163048_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -356,7 +359,7 @@ namespace inzynierka.Migrations
                     b.Property<string>("ProductName")
                         .HasColumnType("text");
 
-                    b.Property<double?>("Proteins100g")
+                    b.Property<double>("Proteins100g")
                         .HasColumnType("double precision");
 
                     b.Property<double?>("Salt100g")

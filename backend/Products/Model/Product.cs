@@ -40,7 +40,7 @@ public class Product
     public double? Carbohydrates100g { get; set; }
     public double? Sugars100g { get; set; }
     public double? Fiber100g { get; set; }
-    public double Proteins100g { get; set; }
+    public double? Proteins100g { get; set; }
     public double? Salt100g { get; set; }
     public double? Sodium100g { get; set; }
     public double? EnergyKcalServing { get; set; }

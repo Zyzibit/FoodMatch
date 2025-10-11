@@ -12,8 +12,8 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251011133407_Initial")]
-    partial class Initial
+    [Migration("20251011164658_SyncModelWithCode2")]
+    partial class SyncModelWithCode2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -359,7 +359,7 @@ namespace inzynierka.Migrations
                     b.Property<string>("ProductName")
                         .HasColumnType("text");
 
-                    b.Property<double>("Proteins100g")
+                    b.Property<double?>("Proteins100g")
                         .HasColumnType("double precision");
 
                     b.Property<double?>("Salt100g")

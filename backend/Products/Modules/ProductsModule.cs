@@ -7,9 +7,6 @@ using inzynierka.Products.OpenFoodFacts.Import;
 
 namespace inzynierka.Products.Modules;
 
-/// <summary>
-/// Implementacja kontraktu produktów - modu³ Products
-/// </summary>
 public class ProductsModule : IProductsContract
 {
     private readonly IProductRepository _productRepository;
@@ -53,7 +50,7 @@ public class ProductsModule : IProductsContract
                 };
             }
 
-            // Publikacja zdarzenia wyœwietlenia produktu
+            // Publikacja zdarzenia wyï¿½wietlenia produktu
             await _eventBus.PublishAsync(new ProductViewedEvent
             {
                 ProductId = productId,
@@ -178,7 +175,6 @@ public class ProductsModule : IProductsContract
                 EcoScoreGrade = p.EcoScoreGrade
             }).ToList();
 
-            // Publikacja zdarzenia dostêpu do wszystkich produktów
             await _eventBus.PublishAsync(new ProductSearchedEvent
             {
                 UserId = "",
@@ -226,7 +222,6 @@ public class ProductsModule : IProductsContract
                 EcoScoreGrade = p.EcoScoreGrade
             }).ToList();
 
-            // Publikacja zdarzenia dostêpu do kategorii
             await _eventBus.PublishAsync(new ProductCategoryAccessedEvent
             {
                 CategoryName = category,
@@ -258,14 +253,12 @@ public class ProductsModule : IProductsContract
         {
             var startTime = DateTime.UtcNow;
             
-            var importResult = await _productImporter.ImportAsync(filePath, maxProducts, batchSize);
+            await _productImporter.ImportJsonlAsync(filePath);
             
             var duration = DateTime.UtcNow - startTime;
 
-            // Publikacja zdarzenia importu
             await _eventBus.PublishAsync(new ProductImportedEvent
             {
-                ImportedCount = importResult.ImportedCount,
                 FilePath = filePath,
                 Duration = duration
             });
@@ -273,11 +266,6 @@ public class ProductsModule : IProductsContract
             return new ProductImportResult
             {
                 Success = true,
-                ImportedCount = importResult.ImportedCount,
-                FailedCount = importResult.SkippedCount,
-                Warnings = importResult.SkippedCount > 0 
-                    ? new List<string> { $"Skipped {importResult.SkippedCount} duplicate products" }
-                    : new List<string>()
             };
         }
         catch (Exception ex)
@@ -287,8 +275,6 @@ public class ProductsModule : IProductsContract
             {
                 Success = false,
                 ErrorMessage = ex.Message,
-                ImportedCount = 0,
-                FailedCount = 0
             };
         }
     }
@@ -363,7 +349,6 @@ public class ProductsModule : IProductsContract
                 };
             }
 
-            // Publikacja zdarzenia dostêpu do informacji ¿ywieniowych
             await _eventBus.PublishAsync(new NutritionInfoAccessedEvent
             {
                 ProductId = productId,

@@ -7,9 +7,6 @@ using inzynierka.Products.Model.Tag.IngredientTag;
 
 namespace inzynierka.Products.Repositories;
 
-/// <summary>
-/// Implementacja repozytorium produktów - obs³uguje operacje dostêpu do danych
-/// </summary>
 public class ProductRepository : IProductRepository
 {
     private readonly AppDbContext _context;

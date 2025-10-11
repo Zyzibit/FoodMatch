@@ -5,12 +5,8 @@ using inzynierka.Products.Model.Tag.IngredientTag;
 
 namespace inzynierka.Products.Repositories;
 
-/// <summary>
-/// Interfejs repozytorium produktów - definiuje operacje dostêpu do danych
-/// </summary>
 public interface IProductRepository
 {
-    // Operacje na produktach
     Task<Product?> GetProductByIdAsync(int productId);
     Task<Product?> GetProductByCodeAsync(string productCode);
     Task<Product?> GetProductWithDetailsAsync(int productId);

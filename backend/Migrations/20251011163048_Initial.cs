@@ -448,11 +448,48 @@ namespace inzynierka.Migrations
                 name: "IX_RefreshTokens_UserId_DeviceId",
                 table: "RefreshTokens",
                 columns: new[] { "UserId", "DeviceId" });
+            
+            // CodeNorm = upper(trim(Code)) + unikalny indeks (dla UPSERT-u)
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Products'
+          AND column_name = 'CodeNorm'
+    ) THEN
+        ALTER TABLE ""Products""
+        ADD COLUMN ""CodeNorm"" text GENERATED ALWAYS AS (upper(btrim(""Code""))) STORED;
+    END IF;
+END$$;
+");
+
+            migrationBuilder.Sql(@"
+CREATE UNIQUE INDEX IF NOT EXISTS ""UX_Products_CodeNorm""
+ON ""Products""(""CodeNorm"");
+");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""UX_Products_CodeNorm"";");
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Products'
+          AND column_name = 'CodeNorm'
+    ) THEN
+        ALTER TABLE ""Products"" DROP COLUMN ""CodeNorm"";
+    END IF;
+END$$;
+");
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

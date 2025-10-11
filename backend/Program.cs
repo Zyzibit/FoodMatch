@@ -34,7 +34,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Redis Configuration with improved reliability
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {
     var configuration = provider.GetService<IConfiguration>();
@@ -44,15 +43,14 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
     var options = ConfigurationOptions.Parse(connectionString);
     
     // Connection settings
-    options.AbortOnConnectFail = false; // Allow retries instead of failing immediately
-    options.ConnectTimeout = 30000; // 30 seconds timeout for initial connection
-    options.SyncTimeout = 30000; // 30 seconds sync timeout
-    options.AsyncTimeout = 30000; // 30 seconds async timeout
-    options.ConnectRetry = 10; // Retry 10 times
-    options.ReconnectRetryPolicy = new ExponentialRetry(1000, 30000); // 1-30 seconds backoff
+    options.AbortOnConnectFail = false;
+    options.ConnectTimeout = 30000; 
+    options.SyncTimeout = 30000; 
+    options.AsyncTimeout = 30000; 
+    options.ConnectRetry = 10; 
+    options.ReconnectRetryPolicy = new ExponentialRetry(1000, 30000); 
     
-    // Performance settings
-    options.KeepAlive = 180; // Keep alive every 3 minutes
+    options.KeepAlive = 180; 
     options.DefaultDatabase = 0;
     
     try 
@@ -85,29 +83,22 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
     }
 });
 
-// Event Bus (szyna danych)
 builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
 
-// Auth Services and Repositories
-builder.Services.AddScoped<IAuthService, inzynierka.Auth.Services.AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
 
-// Products module services (using extension method)
 builder.Services.AddProductsServices();
 
-// Background Services
 builder.Services.AddHostedService<TokenCleanupService>();
 
-// Kontrakty modu³ów (g³ówne interfejsy komunikacji)
 builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
 
-// gRPC Services (komunikacja wewnêtrzna)
 builder.Services.AddGrpc();
 
-// gRPC Clients (dla komunikacji miêdzy serwisami)
 builder.Services.AddGrpcClient<inzynierka.Auth.Grpc.AuthService.AuthServiceClient>(options =>
 {
     options.Address = new Uri("https://localhost:5001");
@@ -117,13 +108,11 @@ builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductSe
     options.Address = new Uri("https://localhost:5001");
 });
 
-// Istniej¹ce serwisy
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
 
 builder.Services.AddAutoMapper(typeof(OpenFoodFactsProfile));
 
-// Database configuration - supports both Docker and local PostgreSQL
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -131,7 +120,6 @@ builder.Services.AddIdentity<User, IdentityRole>()
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
-// Add health checks services
 builder.Services.AddHealthChecks()
     .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "127.0.0.1:6379");
 
@@ -173,12 +161,11 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Health check endpoints
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
 
-// Configure gRPC services (nowe modu³owe serwisy)
 app.MapGrpcService<AuthGrpcService>();
+
 app.MapGrpcService<ProductsGrpcService>();
 
 app.UseCors(policy =>
@@ -190,7 +177,6 @@ app.UseCors(policy =>
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Mapowanie kontrolerów REST API (interfejs zewnêtrzny)
 app.MapControllers();
 
 if (app.Environment.IsDevelopment()) {
@@ -198,40 +184,18 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwaggerUI();
 }
 
-// Database initialization
 using (var scope = app.Services.CreateScope())
 {
-    try 
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.EnsureCreatedAsync();
-        
-        // Run migrations
-        if (db.Database.GetPendingMigrations().Any())
-        {
-            await db.Database.MigrateAsync();
-        }
+    var sp = scope.ServiceProvider;
+    var db = sp.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
 
-        // Initialize roles
-        var roleInitService = scope.ServiceProvider.GetRequiredService<IRoleInitializationService>();
-        await roleInitService.InitializeRolesAsync();
-    }
-    catch (Exception ex)
-    {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while initializing the database.");
-    }
+    var roleInit = sp.GetRequiredService<IRoleInitializationService>();
+    await roleInit.InitializeRolesAsync();
+
+    await DbSeeder.SeedData(app);
 }
-
 app.UseHttpsRedirection();
-
-
-// Zachowanie istniej¹cego AI endpointu dla kompatybilnoœci
-app.MapPost("/generate-json", async (OpenAIClient client, List<OpenAIMessage> messages) =>
-{
-    var result = await client.SendPromptForJsonasync(messages);
-    return result is not null ? Results.Ok(result) : Results.BadRequest("Could not parse AI response as JSON.");
-});
 
 await DbSeeder.SeedData(app);  
 
