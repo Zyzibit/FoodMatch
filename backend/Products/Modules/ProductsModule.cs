@@ -50,7 +50,6 @@ public class ProductsModule : IProductsContract
                 };
             }
 
-            // Publikacja zdarzenia wy�wietlenia produktu
             await _eventBus.PublishAsync(new ProductViewedEvent
             {
                 ProductId = productId,

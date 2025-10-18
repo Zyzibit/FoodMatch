@@ -18,9 +18,6 @@ public class ProductsController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>
-    /// Pobranie produktu po ID
-    /// </summary>
     [HttpGet("{productId}")]
     public async Task<IActionResult> GetProduct(string productId)
     {
@@ -42,9 +39,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Wyszukiwanie produktów
-    /// </summary>
+
     [HttpGet("search")]
     public async Task<IActionResult> SearchProducts([FromQuery] ProductSearchRequest request)
     {
@@ -82,9 +77,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Produkty wed³ug kategorii
-    /// </summary>
+
     [HttpGet("category/{category}")]
     public async Task<IActionResult> GetProductsByCategory(string category, [FromQuery] int limit = 10, [FromQuery] int offset = 0)
     {
@@ -111,9 +104,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Pobranie wszystkich kategorii
-    /// </summary>
+
     [HttpGet("categories")]
     public async Task<IActionResult> GetCategories()
     {
@@ -129,9 +120,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Pobranie wszystkich alergenów
-    /// </summary>
+
     [HttpGet("allergens")]
     public async Task<IActionResult> GetAllergens()
     {
@@ -147,9 +136,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Pobranie wszystkich sk³adników
-    /// </summary>
+
     [HttpGet("ingredients")]
     public async Task<IActionResult> GetIngredients()
     {
@@ -165,9 +152,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Pobranie informacji ¿ywieniowych produktu
-    /// </summary>
+
     [HttpGet("{productId}/nutrition")]
     public async Task<IActionResult> GetNutritionInfo(string productId)
     {
@@ -189,9 +174,7 @@ public class ProductsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Import produktów (tylko dla administratorów)
-    /// </summary>
+
     [HttpPost("import")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ImportProducts([FromBody] ProductImportRequest request)
@@ -219,16 +202,12 @@ public class ProductsController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Pobranie wszystkich produktów z paginacj¹
-    /// </summary>
+    
     [HttpGet]
     public async Task<IActionResult> GetAllProducts([FromQuery] int limit = 50, [FromQuery] int offset = 0)
     {
         try
         {
-            // Walidacja parametrów
             if (limit <= 0 || limit > 1000)
             {
                 return BadRequest(new { message = "Limit must be between 1 and 1000" });
@@ -251,8 +230,6 @@ public class ProductsController : ControllerBase
                 products = result.Products,
                 totalCount = result.TotalCount,
                 hasMore = result.TotalCount > (offset + limit),
-                limit = limit,
-                offset = offset
             });
         }
         catch (Exception ex)
@@ -263,7 +240,7 @@ public class ProductsController : ControllerBase
     }
 }
 
-// DTOs dla API
+
 public class ProductSearchRequest
 {
     public string? Query { get; set; }

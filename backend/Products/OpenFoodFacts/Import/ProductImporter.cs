@@ -17,12 +17,6 @@ using Microsoft.Extensions.Logging;
 
 namespace inzynierka.Products.OpenFoodFacts.Import
 {
-    /// <summary>
-    /// Importer OFF → PostgreSQL: JSONL → batch → mapowanie → repo (COPY/UPSERT).
-    /// Produkty: COPY + INSERT ON CONFLICT("CodeNorm") DO NOTHING
-    /// Tagi: BulkEnsureTagsAsync
-    /// Relacje: staging COPY + INSERT SELECT + ON CONFLICT DO NOTHING
-    /// </summary>
     public sealed class ProductImporter : IProductImporter
     {
         private readonly IOpenFoodFactsRepository _repo;
@@ -48,7 +42,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
             try
             {
-                var products = new List<Product>(ProductBatchSize);
+                var products = new List<Product?>(ProductBatchSize);
                 var tags = new TagBuffers(ProductBatchSize);
 
                 var processed = 0;
@@ -65,8 +59,11 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                     var code = Sanitizer(src.Code);
                     if (string.IsNullOrWhiteSpace(code)) continue;
                     code = code!.Trim();
-
-                    products.Add(MapToProduct(src));
+                    var product = MapToProduct(src);
+                    if (product != null) {
+                        products.Add(product);
+                    }
+                    
                     CollectTags(src, code, tags);
 
                     if (products.Count < ProductBatchSize) continue;
@@ -93,7 +90,6 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             }
         }
 
-        // ========================= Parsowanie / mapowanie =========================
 
         private static OpenFoodFactsProduct? TryDeserialize(string jsonLine)
         {
@@ -101,46 +97,47 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             catch { return null; }
         }
 
-        private static Product MapToProduct(OpenFoodFactsProduct src)
+        private static Product? MapToProduct(OpenFoodFactsProduct src)
         {
             var n = src.OpenFoodFactsNutriments;
+            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null) ) {
+                return new Product {
+                    Code = Sanitizer(src.Code),
+                    ProductName = Sanitizer(src.ProductName),
 
-            return new Product
-            {
-                Code            = Sanitizer(src.Code)!,
-                ProductName     = Sanitizer(src.ProductName),
+                    BrandOwner = Sanitizer(src.BrandOwner),
+                    Brands = Sanitizer(src.Brands),
 
-                BrandOwner      = Sanitizer(src.BrandOwner),
-                Brands          = Sanitizer(src.Brands),
+                    Language = Sanitizer(src.Language),
+                    LanguageCode = Sanitizer(src.LanguageCode),
+                    IngredientsText = Sanitizer(src.IngredientsText),
 
-                Language        = Sanitizer(src.Language),
-                LanguageCode    = Sanitizer(src.LanguageCode),
-                IngredientsText = Sanitizer(src.IngredientsText),
+                    NutritionGrade = Sanitizer(src.NutritionGrade),
+                    NovaGroup = src.NovaGroup,
+                    EcoScoreGrade = Sanitizer(src.EcoScoreGrade),
+                    ServingSize = Sanitizer(src.ServingSize),
+                    IsVegetarian = Sanitizer(src.IsVegetarian),
+                    IsVegan = Sanitizer(src.IsVegan),
 
-                NutritionGrade  = Sanitizer(src.NutritionGrade),
-                NovaGroup       = src.NovaGroup,
-                EcoScoreGrade   = Sanitizer(src.EcoScoreGrade),
-                ServingSize     = Sanitizer(src.ServingSize),
-                IsVegetarian    = Sanitizer(src.IsVegetarian),
-                IsVegan         = Sanitizer(src.IsVegan),
+                    Energy100g = n.Energy100g,
+                    EnergyKcal100g = n.EnergyKcal100g,
+                    Fat100g = n.Fat100g,
+                    SaturatedFat100g = n?.SaturatedFat100g,
+                    Carbohydrates100g = n?.Carbohydrates100g,
+                    Sugars100g = n?.Sugars100g,
+                    Fiber100g = n?.Fiber100g,
+                    Proteins100g = n?.Proteins100g,
+                    Salt100g = n?.Salt100g,
+                    Sodium100g = n?.Sodium100g,
+                    EnergyKcalServing = n?.EnergyKcalServing,
 
-                Energy100g          = n?.Energy100g,
-                EnergyKcal100g      = n?.EnergyKcal100g,
-                Fat100g             = n?.Fat100g,
-                SaturatedFat100g    = n?.SaturatedFat100g,
-                Carbohydrates100g   = n?.Carbohydrates100g,
-                Sugars100g          = n?.Sugars100g,
-                Fiber100g           = n?.Fiber100g,
-                Proteins100g        = n?.Proteins100g,
-                Salt100g            = n?.Salt100g,
-                Sodium100g          = n?.Sodium100g,
-                EnergyKcalServing   = n?.EnergyKcalServing,
+                    LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
+                };
+            }
 
-                LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
-            };
+            return null;
         }
 
-        // ========================= Kolekcjonowanie tagów =========================
 
         private static void CollectTags(OpenFoodFactsProduct src, string code, TagBuffers tags)
         {
@@ -173,6 +170,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             await _repo.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
             await _repo.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
         }
+        
 
         private static async IAsyncEnumerable<string> ReadLinesAsync(string filePath, [EnumeratorCancellation] CancellationToken ct = default)
         {

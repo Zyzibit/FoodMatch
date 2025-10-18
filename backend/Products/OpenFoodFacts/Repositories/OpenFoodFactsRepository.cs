@@ -4,6 +4,7 @@ using inzynierka.Data;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace inzynierka.Products.OpenFoodFacts.Repositories
@@ -19,7 +20,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             _logger  = logger;
         }
 
-        #region Bulk link helpers
+        #region Bulk link helpers 
 
         private static async Task CreateAndFillStageAsync(
             NpgsqlConnection conn,
@@ -35,7 +36,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                     tag_name text NOT NULL
                 ) ON COMMIT DROP;";
 
-            await using (var cmd = new NpgsqlCommand(createTemp, conn, tx))
+            await using (var cmd = new NpgsqlCommand(createTemp, conn, tx) { CommandTimeout = 0 })
                 await cmd.ExecuteNonQueryAsync(ct);
 
             var copy = $@"COPY {tempName} (code, tag_name) FROM STDIN (FORMAT BINARY)";
@@ -53,23 +54,60 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             await writer.CompleteAsync(ct);
         }
 
-        private static string BuildJoinInsertSql(
+        private static string BuildJoinMergeSql(
+            string tempName,
+            string joinTable,
+            string joinProdCol,
+            string joinTagCol,
+            string tagTable)
+        {
+            // DISTINCT ogranicza porównania przy dużej liczbie duplikatów w stagingu
+            return $@"
+                MERGE INTO ""{joinTable}"" AS jt
+                USING (
+                    SELECT DISTINCT
+                           p.""Id"" AS ""{joinProdCol}"",
+                           t.""Id"" AS ""{joinTagCol}""
+                    FROM {tempName} s
+                    JOIN ""Products"" p
+                      ON upper(btrim(p.""Code"")) = upper(btrim(s.code))
+                    JOIN ""{tagTable}"" t
+                      ON upper(btrim(t.""Name"")) = upper(btrim(s.tag_name))
+                ) AS src
+                ON  jt.""{joinProdCol}"" = src.""{joinProdCol}""
+                AND jt.""{joinTagCol}"" = src.""{joinTagCol}""
+                WHEN NOT MATCHED THEN
+                  INSERT (""{joinProdCol}"", ""{joinTagCol}"")
+                  VALUES (src.""{joinProdCol}"", src.""{joinTagCol}"");";
+        }
+
+        private static async Task ExecuteLinkMergeAsync(
+            NpgsqlConnection conn,
+            NpgsqlTransaction tx,
             string tempName,
             string joinTable,
             string joinProdCol,
             string joinTagCol,
             string tagTable,
-            string tagIdCol)
+            CancellationToken ct)
         {
-            return $@"
-                INSERT INTO ""{joinTable}"" (""{joinProdCol}"", ""{joinTagCol}"")
-                SELECT p.""Id"", t.""Id""
-                FROM {tempName} s
-                JOIN ""Products"" p
-                  ON upper(btrim(p.""Code"")) = upper(btrim(s.code))
-                JOIN ""{tagTable}"" t
-                  ON upper(btrim(t.""Name"")) = upper(btrim(s.tag_name))
-                ON CONFLICT (""{joinProdCol}"",""{joinTagCol}"") DO NOTHING;";
+            await using (var cfg = new NpgsqlCommand(@"
+                SET LOCAL statement_timeout = 0;
+                SET LOCAL lock_timeout = 0;
+                SET LOCAL idle_in_transaction_session_timeout = 0;
+                SET LOCAL synchronous_commit = off;", conn, tx) { CommandTimeout = 0 })
+            {
+                await cfg.ExecuteNonQueryAsync(ct);
+            }
+
+            // Planner lepiej oszacuje koszty
+            await using (var analyze = new NpgsqlCommand($@"ANALYZE {tempName};", conn, tx) { CommandTimeout = 0 })
+                await analyze.ExecuteNonQueryAsync(ct);
+
+            var sql = BuildJoinMergeSql(tempName, joinTable, joinProdCol, joinTagCol, tagTable);
+
+            await using var cmd = new NpgsqlCommand(sql, conn, tx) { CommandTimeout = 0 };
+            await cmd.ExecuteNonQueryAsync(ct);
         }
 
         public async Task BulkUpsertProductIngredientLinksAsync(
@@ -94,16 +132,14 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 const string temp = "stage_prod_ingredient";
                 await CreateAndFillStageAsync(conn, tx, temp, items, ct);
 
-                var sql = BuildJoinInsertSql(
+                await ExecuteLinkMergeAsync(
+                    conn, tx,
                     tempName: temp,
                     joinTable: "ProductIngredientTag",
                     joinProdCol: "ProductId",
                     joinTagCol: "IngredientTagId",
                     tagTable: "IngredientTags",
-                    tagIdCol: "Id");
-
-                await using var cmd = new NpgsqlCommand(sql, conn, tx);
-                await cmd.ExecuteNonQueryAsync(ct);
+                    ct: ct);
 
                 await tx.CommitAsync(ct);
             }
@@ -140,16 +176,14 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 const string temp = "stage_prod_country";
                 await CreateAndFillStageAsync(conn, tx, temp, items, ct);
 
-                var sql = BuildJoinInsertSql(
+                await ExecuteLinkMergeAsync(
+                    conn, tx,
                     tempName: temp,
                     joinTable: "ProductCountryTag",
                     joinProdCol: "ProductId",
                     joinTagCol: "CountryTagId",
                     tagTable: "CountryTags",
-                    tagIdCol: "Id");
-
-                await using var cmd = new NpgsqlCommand(sql, conn, tx);
-                await cmd.ExecuteNonQueryAsync(ct);
+                    ct: ct);
 
                 await tx.CommitAsync(ct);
             }
@@ -186,16 +220,14 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 const string temp = "stage_prod_category";
                 await CreateAndFillStageAsync(conn, tx, temp, items, ct);
 
-                var sql = BuildJoinInsertSql(
+                await ExecuteLinkMergeAsync(
+                    conn, tx,
                     tempName: temp,
                     joinTable: "ProductCategoryTag",
                     joinProdCol: "ProductId",
                     joinTagCol: "CategoryTagId",
                     tagTable: "CategoryTags",
-                    tagIdCol: "Id");
-
-                await using var cmd = new NpgsqlCommand(sql, conn, tx);
-                await cmd.ExecuteNonQueryAsync(ct);
+                    ct: ct);
 
                 await tx.CommitAsync(ct);
             }
@@ -232,16 +264,14 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 const string temp = "stage_prod_allergen";
                 await CreateAndFillStageAsync(conn, tx, temp, items, ct);
 
-                var sql = BuildJoinInsertSql(
+                await ExecuteLinkMergeAsync(
+                    conn, tx,
                     tempName: temp,
                     joinTable: "ProductAllergenTag",
                     joinProdCol: "ProductId",
                     joinTagCol: "AllergenTagId",
                     tagTable: "AllergenTags",
-                    tagIdCol: "Id");
-
-                await using var cmd = new NpgsqlCommand(sql, conn, tx);
-                await cmd.ExecuteNonQueryAsync(ct);
+                    ct: ct);
 
                 await tx.CommitAsync(ct);
             }
@@ -337,8 +367,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
         #endregion
 
-        #region Products
-
+        #region Products (staging + COPY + INSERT ON CONFLICT DO NOTHING)
 
         public async Task BulkInsertProductsAsync(List<Product> batch, CancellationToken ct = default)
         {
@@ -363,6 +392,16 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
             try
             {
+                // Konfiguracja sesji dla długiej transakcji bulk
+                await using (var cfg = new NpgsqlCommand(@"
+                    SET LOCAL statement_timeout = 0;
+                    SET LOCAL lock_timeout = 0;
+                    SET LOCAL idle_in_transaction_session_timeout = 0;
+                    SET LOCAL synchronous_commit = off;", conn, tx) { CommandTimeout = 0 })
+                {
+                    await cfg.ExecuteNonQueryAsync(ct);
+                }
+
                 const string createTemp = @"
                     CREATE TEMP TABLE IF NOT EXISTS products_stage
                     (
@@ -394,7 +433,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         last_updated         timestamp        NULL
                     ) ON COMMIT DROP;";
 
-                await using (var cmd = new NpgsqlCommand(createTemp, conn, tx))
+                await using (var cmd = new NpgsqlCommand(createTemp, conn, tx) { CommandTimeout = 0 })
                     await cmd.ExecuteNonQueryAsync(ct);
 
                 const string copyCmd = @"
@@ -469,6 +508,10 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                     await writer.CompleteAsync(ct);
                 }
 
+                // Opcjonalnie ANALYZE staging
+                await using (var analyze = new NpgsqlCommand(@"ANALYZE products_stage;", conn, tx) { CommandTimeout = 0 })
+                    await analyze.ExecuteNonQueryAsync(ct);
+
                 const string upsert = @"
                     INSERT INTO ""Products""
                     (
@@ -530,7 +573,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                     WHERE s.code IS NOT NULL AND btrim(s.code) <> ''
                     ON CONFLICT (""CodeNorm"") DO NOTHING;";
 
-                await using (var cmd2 = new NpgsqlCommand(upsert, conn, tx))
+                await using (var cmd2 = new NpgsqlCommand(upsert, conn, tx) { CommandTimeout = 0 })
                     await cmd2.ExecuteNonQueryAsync(ct);
 
                 await tx.CommitAsync(ct);

@@ -17,7 +17,6 @@ public class Product
     public string? LanguageCode { get; set; }
     public string? ProductName { get; set; }
 
-    // Relacje do tabel tagów - jedyne źródło prawdy dla kategorii, krajów, etc.
     public ICollection<ProductIngredientTag> ProductIngredientTags { get; set; } = new List<ProductIngredientTag>();
     public ICollection<ProductCountryTag> ProductCountryTags { get; set; } = new List<ProductCountryTag>();
     public ICollection<ProductCategoryTag> ProductCategoryTags { get; set; } = new List<ProductCategoryTag>();

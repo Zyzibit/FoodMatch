@@ -8,7 +8,6 @@ using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
 using inzynierka.Products.OpenFoodFacts.Import;
-using inzynierka.Products.OpenFoodFacts.Mappings;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -111,7 +110,6 @@ builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductSe
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
 
-builder.Services.AddAutoMapper(typeof(OpenFoodFactsProfile));
 
 
 builder.Services.AddIdentity<User, IdentityRole>()
