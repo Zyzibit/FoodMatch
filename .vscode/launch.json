@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Użyj funkcji IntelliSense, aby dowiedzieć się, które atrybuty istnieją na potrzeby debugowania języka C#
+            // Użyj najechania kursorem w przypadku opisu istniejących atrybutów
+            // Aby uzyskać więcej informacji, odwiedź witrynę https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md.
+            "name": ".NET Core Launch (web)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // Jeśli zmieniono platformy docelowe, upewnij się, że zaktualizowano ścieżkę programu.
+            "program": "${workspaceFolder}/backend/bin/Debug/net8.0/inzynierka.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/backend",
+            "stopAtEntry": false,
+            // Włącz uruchamianie przeglądarki internetowej po uruchomieniu platformy ASP.NET Core. Aby uzyskać więcej informacji: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/Views"
+            }
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ]
+}
