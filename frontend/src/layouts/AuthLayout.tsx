@@ -21,10 +21,9 @@ export default function AuthLayout({ title, children }: AuthLayoutProps) {
           gridTemplateColumns: { xs: "1fr", md: "1fr 480px" },
           minHeight: "100vh",
           width: "100%",
-          pr: { md: 16 }, // odsunięcie od prawej
+          pr: { md: 16 },
         }}
       >
-        {/* LEWO — kwadrat */}
         <Box
           sx={{
             display: "grid",
@@ -48,10 +47,9 @@ export default function AuthLayout({ title, children }: AuthLayoutProps) {
           />
         </Box>
 
-        {/* PRAWO — zielony panel */}
         <Box
           sx={{
-            bgcolor: "secondary.main", // ← z theme
+            bgcolor: "secondary.main",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

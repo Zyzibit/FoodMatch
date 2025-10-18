@@ -10,8 +10,8 @@ import {
 import { InputPassword, passwordSchema } from "../../inputs/InputPassword";
 
 const loginSchema = z.object({
-  login: loginFieldSchema, // ✅ re-używamy schematu pola
-  password: passwordSchema, // ✅ spójnie z InputPassword
+  login: loginFieldSchema,
+  password: passwordSchema,
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;

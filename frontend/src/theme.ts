@@ -6,29 +6,28 @@ export const theme = createTheme(
     palette: {
       mode: "light",
 
-      // 🎨 Główne kolory aplikacji
       primary: {
-        main: "#3D3BFF",        // niebieski – przyciski, akcenty
+        main: "#3D3BFF",
         light: "#6260ff",
         dark: "#2c2acc",
       },
       secondary: {
-        main: "#2C8C7C",        // zielony – panel logowania/rejestracji
+        main: "#2C8C7C",
         light: "#47a592",
         dark: "#1f6d60",
       },
       background: {
-        default: "#e2e2e2ff",     // tło strony (białe pole)
-        paper: "#FFFFFF",       // tło elementów (np. kart)
+        default: "#e2e2e2ff",
+        paper: "#FFFFFF",
       },
       text: {
-        primary: "#111827",     // ciemny tekst
-        secondary: "#6B7280",   // szary tekst
+        primary: "#111827",
+        secondary: "#6B7280",
       },
       grey: {
-        100: "#F0F0F0",         // tło inputów
+        100: "#F0F0F0",
         300: "#D1D5DB",
-        500: "#9CA3AF",         // placeholder
+        500: "#9CA3AF",
       },
     },
 
@@ -41,7 +40,6 @@ export const theme = createTheme(
     },
 
     components: {
-      // 🔘 globalny wygląd przycisków
       MuiButton: {
         styleOverrides: {
           containedPrimary: {

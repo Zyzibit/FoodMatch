@@ -12,8 +12,6 @@ import {
   loginSchema as loginFieldSchema,
 } from "../../inputs/InputLogin";
 import { InputPassword, passwordSchema } from "../../inputs/InputPassword";
-
-// ✅ Re-używamy schematów z inputów
 const registerSchema = z
   .object({
     email: emailFieldSchema,

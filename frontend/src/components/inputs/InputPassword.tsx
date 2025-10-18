@@ -7,8 +7,6 @@ import { z } from "zod";
 import { baseInputStyle } from "./inputStyles";
 import { FieldError } from "./FieldError";
 import { useFieldValidation } from "./useFieldValidation";
-
-// ✅ Nowy schemat walidacji hasła
 export const passwordSchema = z
   .string()
   .min(8, "Hasło musi mieć co najmniej 8 znaków")
