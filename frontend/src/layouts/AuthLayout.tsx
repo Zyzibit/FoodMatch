@@ -1,71 +1,79 @@
 import { Box, Container, Typography } from "@mui/material";
 import type { ReactNode } from "react";
+import dietLogo from "../assets/diet-logo.png";
 
 type AuthLayoutProps = {
-  title: string;              // np. "DIET ZYNZI"
-  children: ReactNode;        // tu wchodzi formularz (login / register)
-  panelBg?: string;           // kolor prawego panelu (default: zielony)
-  maxFormWidth?: number;      // szerokość formularza
+  title: string;
+  children: ReactNode;
 };
 
-export default function AuthLayout({
-  title,
-  children,
-  panelBg = "#2C8C7C",        // zielony jak na screenie
-  maxFormWidth = 420,
-}: AuthLayoutProps) {
+export default function AuthLayout({ title, children }: AuthLayoutProps) {
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 420px" }, // 2 kolumny na >= md
+          gridTemplateColumns: { xs: "1fr", md: "1fr 480px" },
           minHeight: "100vh",
+          width: "100%",
+          pr: { md: 6 }, // odsunięcie od prawej
         }}
       >
-        {/* Lewa kolumna: placeholder zamiast logo */}
+        {/* LEWO — kwadrat */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            px: { xs: 2, md: 6 },
-            py: { xs: 6, md: 0 },
+            display: "grid",
+            placeItems: "center",
+            width: "100%",
+            height: "100%",
           }}
         >
-          {/* Kwadratowy placeholder */}
           <Box
+            component="img"
+            src={dietLogo}
+            alt="Diet logo"
             sx={{
-              width: { xs: "70%", sm: 380, md: 520 },
-              maxWidth: "90vw",
-              aspectRatio: "1 / 1",
-              bgcolor: "#ECECEC",
-              borderRadius: 3,
-              boxShadow: 1,
+              width: 300,
+              height: "auto",
+              borderRadius: 4,
+              boxShadow: 2,
+              objectFit: "contain",
             }}
           />
         </Box>
 
-        {/* Prawa kolumna: panel z formularzem */}
+        {/* PRAWO — zielony panel */}
         <Box
           sx={{
-            bgcolor: panelBg,
-            color: "common.white",
+            bgcolor: "secondary.main", // ← z theme
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             py: { xs: 6, md: 8 },
-            px: 3,
+            px: { xs: 3, md: 4 },
+            height: "100%",
           }}
         >
-          <Container maxWidth={false} sx={{ width: "100%", maxWidth: maxFormWidth }}>
+          <Container maxWidth={false} sx={{ width: "100%", maxWidth: 420 }}>
             <Typography
               variant="h4"
               align="center"
-              sx={{ fontWeight: 800, letterSpacing: 2, mb: 3, fontFamily: "serif" }}
+              sx={{
+                color: "#fff",
+                fontWeight: 800,
+                letterSpacing: 2,
+                mb: 2.5,
+                fontFamily: "serif",
+                lineHeight: 1.1,
+              }}
             >
-              {title.split(" ").map((line, i) => (
-                <Box component="span" key={i} sx={{ display: "block", lineHeight: 1.1 }}>
+              {"DIET\nZYNZI".split("\n").map((line, i) => (
+                <Box component="span" key={i} sx={{ display: "block" }}>
                   {line}
                 </Box>
               ))}
