@@ -1,25 +1,26 @@
 using Grpc.Core;
-using inzynierka.Auth.Services;
-using inzynierka.Auth.Grpc;
 using inzynierka.Auth.Contracts;
+using inzynierka.Auth.Grpc.Clients;
 using Microsoft.AspNetCore.Identity;
 using inzynierka.Auth.Model;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace inzynierka.Auth.Grpc.Services;
 
 public class AuthGrpcService : AuthService.AuthServiceBase
 {
     private readonly IAuthContract _authModule;
+    private readonly AuthToUsersGrpcClient _usersGrpcClient;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<AuthGrpcService> _logger;
 
     public AuthGrpcService(
         IAuthContract authModule,
+        AuthToUsersGrpcClient usersGrpcClient,
         UserManager<User> userManager,
         ILogger<AuthGrpcService> logger)
     {
         _authModule = authModule;
+        _usersGrpcClient = usersGrpcClient;
         _userManager = userManager;
         _logger = logger;
     }
@@ -53,15 +54,32 @@ public class AuthGrpcService : AuthService.AuthServiceBase
     {
         try
         {
-            var userInfo = await _authModule.GetUserInfoAsync(request.UserId);
+            // Deleguj do modułu Users - Auth nie zarządza danymi profilu
+            var userInfo = await _usersGrpcClient.GetUserInfoAsync(request.UserId);
 
-            return new GetUserInfoResponse
+            if (userInfo == null)
+            {
+                throw new RpcException(new Status(StatusCode.NotFound, "User not found"));
+            }
+
+            // Dodaj role z Auth (tylko Auth zarządza rolami)
+            var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user != null)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userInfo.Roles.Clear();
+                userInfo.Roles.AddRange(roles);
+            }
+
+            var response = new GetUserInfoResponse
             {
                 UserId = userInfo.UserId,
                 Username = userInfo.Username,
-                Email = userInfo.Email,
-                Roles = { userInfo.Roles }
+                Email = userInfo.Email
             };
+            response.Roles.AddRange(userInfo.Roles);
+
+            return response;
         }
         catch (Exception ex)
         {
@@ -150,32 +168,5 @@ public class AuthGrpcService : AuthService.AuthServiceBase
             };
         }
     }
-
-    public override async Task<UpdateProfileResponse> UpdateProfile(
-        UpdateProfileGrpcRequest request,
-        ServerCallContext context)
-    {
-        try
-        {
-            var success = await _authModule.UpdateUserProfileAsync(
-                request.UserId,
-                string.IsNullOrEmpty(request.Email) ? null : request.Email,
-                string.IsNullOrEmpty(request.Name) ? null : request.Name);
-
-            return new UpdateProfileResponse
-            {
-                Success = success,
-                Message = success ? "Profile updated successfully" : "Failed to update profile"
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating profile for user: {UserId}", request.UserId);
-            return new UpdateProfileResponse
-            {
-                Success = false,
-                Message = "Internal server error"
-            };
-        }
-    }
+    
 }

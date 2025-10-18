@@ -120,7 +120,6 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Ensure User role exists before assigning
             if (!await _roleManager.RoleExistsAsync(Roles.User))
             {
                 _logger.LogWarning("User role does not exist. Creating it now.");
@@ -132,7 +131,6 @@ public class AuthService : IAuthService
                 }
             }
 
-            // Assign User role
             var roleAssignResult = await _userManager.AddToRoleAsync(user, Roles.User);
             if (!roleAssignResult.Succeeded)
             {
@@ -140,7 +138,6 @@ public class AuthService : IAuthService
                     user.Id, string.Join(", ", roleAssignResult.Errors.Select(e => e.Description)));
             }
 
-            // Publikacja zdarzenia rejestracji
             await _eventBus.PublishAsync(new UserRegisteredEvent
             {
                 UserId = user.Id,
@@ -187,11 +184,9 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Revoke the old refresh token
             storedRefreshToken.RevokedAt = DateTime.UtcNow;
             await _refreshTokenRepository.UpdateAsync(storedRefreshToken);
 
-            // Generate new tokens
             var authResult = await GenerateTokensAsync(user, storedRefreshToken.DeviceId, storedRefreshToken.UserAgent, storedRefreshToken.IpAddress);
             
             if (authResult.Success)
@@ -336,35 +331,6 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<UserInfo> GetUserInfoAsync(string userId)
-    {
-        try
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                throw new InvalidOperationException("User not found");
-            }
-
-            var roles = await _userManager.GetRolesAsync(user);
-
-            return new UserInfo
-            {
-                UserId = user.Id,
-                Username = user.UserName ?? "",
-                Email = user.Email ?? "",
-                Roles = roles.ToList(),
-                CreatedAt = DateTime.UtcNow,
-                LastLoginAt = null
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user info for userId: {UserId}", userId);
-            throw;
-        }
-    }
-
     public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
     {
         try
@@ -392,45 +358,6 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<bool> UpdateUserProfileAsync(string userId, string? email = null, string? name = null)
-    {
-        try
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return false;
-            }
-
-            bool hasChanges = false;
-
-            if (!string.IsNullOrEmpty(email) && user.Email != email)
-            {
-                user.Email = email;
-                hasChanges = true;
-            }
-
-            if (!string.IsNullOrEmpty(name) && user.Name != name)
-            {
-                user.Name = name;
-                hasChanges = true;
-            }
-
-            if (hasChanges)
-            {
-                var result = await _userManager.UpdateAsync(user);
-                return result.Succeeded;
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating user profile for userId: {UserId}", userId);
-            return false;
-        }
-    }
-
     public async Task<List<UserSession>> GetUserSessionsAsync(string userId, string? currentRefreshToken = null)
     {
         try
@@ -451,7 +378,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting user sessions for userId: {UserId}", userId);
-            return new List<UserSession>();
+            throw;
         }
     }
 
@@ -476,7 +403,7 @@ public class AuthService : IAuthService
             var accessToken = _tokenService.GenerateAccessToken(claims);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
-            var accessTokenExpirationMinutes = double.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
             var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
             
             var expiresAt = DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes);
@@ -493,7 +420,6 @@ public class AuthService : IAuthService
                 IpAddress = ipAddress
             };
 
-            // Remove existing refresh token for this device (if any)
             if (!string.IsNullOrEmpty(deviceId))
             {
                 _logger.LogDebug("Checking for existing token for user {UserId} and device {DeviceId}", user.Id, deviceId);
@@ -517,7 +443,6 @@ public class AuthService : IAuthService
             await _refreshTokenRepository.AddAsync(refreshTokenEntity);
             _logger.LogInformation("Created new refresh token for user {UserId} with device {DeviceId}", user.Id, deviceId);
 
-            // Publikacja zdarzenia logowania
             await _eventBus.PublishAsync(new UserLoggedInEvent
             {
                 UserId = user.Id,

@@ -21,10 +21,16 @@ using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
 using inzynierka.AI.Modules;
 using inzynierka.EventBus;
+using inzynierka.Users.Contracts;
+using inzynierka.Users.Modules;
+using inzynierka.Users.Services;
 
 // gRPC Services - new modular structure
 using inzynierka.Auth.Grpc.Services;
 using inzynierka.Products.Grpc.Services;
+using inzynierka.Users.Grpc.Services;
+using inzynierka.Auth.Grpc.Clients;
+using inzynierka.Users.Grpc.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +94,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddProductsServices();
 
@@ -95,17 +102,27 @@ builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
+builder.Services.AddScoped<IUsersContract, UsersModule>();
 
 builder.Services.AddGrpc();
 
+var grpcBaseUrl = builder.Configuration["GrpcServices:BaseUrl"] ?? "https://localhost:7257";
+
 builder.Services.AddGrpcClient<inzynierka.Auth.Grpc.AuthService.AuthServiceClient>(options =>
 {
-    options.Address = new Uri("https://localhost:5001");
+    options.Address = new Uri(grpcBaseUrl);
 });
 builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductServiceClient>(options =>
 {
-    options.Address = new Uri("https://localhost:5001");
+    options.Address = new Uri(grpcBaseUrl);
 });
+builder.Services.AddGrpcClient<inzynierka.Users.Grpc.UserService.UserServiceClient>(options =>
+{
+    options.Address = new Uri(grpcBaseUrl);
+});
+
+builder.Services.AddScoped<AuthToUsersGrpcClient>();
+builder.Services.AddScoped<UsersGrpcClient>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
@@ -163,8 +180,8 @@ app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
 
 app.MapGrpcService<AuthGrpcService>();
-
 app.MapGrpcService<ProductsGrpcService>();
+app.MapGrpcService<UsersGrpcService>();
 
 app.UseCors(policy =>
     policy.AllowAnyOrigin()
@@ -195,7 +212,6 @@ using (var scope = app.Services.CreateScope())
 }
 app.UseHttpsRedirection();
 
-await DbSeeder.SeedData(app);  
+await DbSeeder.SeedData(app);
 
 app.Run();
-

@@ -55,8 +55,8 @@ public class DbSeeder {
             }
         }
 
-        // Check if any users exist to prevent duplicate seeding
-        if (userManager.Users.Any() == false)
+        var adminUsers = await userManager.GetUsersInRoleAsync(Roles.Admin);
+        if (adminUsers.Count == 0)
         {
             var user = new User
             {

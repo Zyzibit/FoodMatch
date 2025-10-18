@@ -74,6 +74,7 @@
       <Protobuf Include="Auth\Protos\auth.proto" GrpcServices="Both" />
       <Protobuf Include="Products\Protos\products.proto" GrpcServices="Both" />
       <Protobuf Include="AI\Protos\ai.proto" GrpcServices="Both" />
+      <Protobuf Include="Users\Protos\users.proto" GrpcServices="Both" />
     </ItemGroup>
 
     <ItemGroup>
