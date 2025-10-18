@@ -3,25 +3,17 @@ import type { SxProps, Theme } from "@mui/material/styles";
 export const baseInputStyle: SxProps<Theme> = {
   position: "relative",
   "& .MuiInputBase-root": {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: (t) => t.palette.grey[100],
     borderRadius: "8px",
-    color: "#333",
+    color: (t) => t.palette.text.primary,
     paddingBottom: "4px",
   },
-  "& .MuiOutlinedInput-notchedOutline": {
-    border: "none",
-  },
-  "&:hover .MuiOutlinedInput-notchedOutline": {
-    border: "none",
-  },
-  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-    border: "none",
-  },
+  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "& .Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
   "& .MuiInputBase-input::placeholder": {
-    color: "#777",
+    color: (t) => t.palette.grey[500],
     opacity: 1,
   },
-  "& .MuiInputLabel-root": {
-    display: "none",
-  },
+  "& .MuiInputLabel-root": { display: "none" },
 };

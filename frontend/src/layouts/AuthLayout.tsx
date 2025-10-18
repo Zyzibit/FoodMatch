@@ -21,7 +21,7 @@ export default function AuthLayout({ title, children }: AuthLayoutProps) {
           gridTemplateColumns: { xs: "1fr", md: "1fr 480px" },
           minHeight: "100vh",
           width: "100%",
-          pr: { md: 6 }, // odsunięcie od prawej
+          pr: { md: 16 }, // odsunięcie od prawej
         }}
       >
         {/* LEWO — kwadrat */}
@@ -38,9 +38,10 @@ export default function AuthLayout({ title, children }: AuthLayoutProps) {
             src={dietLogo}
             alt="Diet logo"
             sx={{
-              width: 300,
+              width: { xs: 280, sm: 380, md: 520 },
+              maxWidth: "95%",
               height: "auto",
-              borderRadius: 4,
+              borderRadius: 2,
               boxShadow: 2,
               objectFit: "contain",
             }}

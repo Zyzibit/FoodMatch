@@ -1,117 +1,102 @@
-import { Box, Paper, Stack, Typography, Button, Link } from "@mui/material";
+import { Box, Stack, Button, Link, Divider, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { InputLogin } from "../../inputs/InputLogin";
+import {
+  InputLogin,
+  loginSchema as loginFieldSchema,
+} from "../../inputs/InputLogin";
 import { InputPassword, passwordSchema } from "../../inputs/InputPassword";
 
-// ✅ Walidacja logowania
 const loginSchema = z.object({
-  login: z
-    .string()
-    .min(3, "Login musi mieć co najmniej 3 znaki")
-    .max(20, "Login może mieć maksymalnie 20 znaków")
-    .regex(/^[a-zA-Z0-9._-]+$/, "Dozwolone: litery, cyfry, ., _, -"),
-  password: passwordSchema, // min 8, 1 wielka litera, 1 cyfra
+  login: loginFieldSchema, // ✅ re-używamy schematu pola
+  password: passwordSchema, // ✅ spójnie z InputPassword
 });
 
-export type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = z.infer<typeof loginSchema>;
 
-type Props = {
+export function LoginForm(props: {
   onSubmitForm?: (data: LoginFormData) => void;
   onRegisterClick?: () => void;
-  onForgotClick?: () => void;
+  onForgotPasswordClick?: () => void;
   loading?: boolean;
-};
+}) {
+  const {
+    onSubmitForm,
+    onRegisterClick,
+    onForgotPasswordClick,
+    loading = false,
+  } = props;
 
-export function LoginForm({
-  onSubmitForm,
-  onRegisterClick,
-  onForgotClick,
-  loading = false,
-}: Props) {
-  const { handleSubmit, control, reset } = useForm<LoginFormData>({
+  const { handleSubmit, control } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     mode: "onSubmit",
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    onSubmitForm?.(data);
-    console.log("🔐 Logowanie:", data);
-    // reset(); // jeśli chcesz czyścić po udanym logowaniu
-  };
+  const onSubmit = (data: LoginFormData) => onSubmitForm?.(data);
 
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      sx={{ width: "100%", minHeight: "100vh", bgcolor: "#f5f5f5" }}
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      sx={{ width: "100%", maxWidth: 400, mx: "auto" }}
     >
-      <Paper
-        elevation={3}
-        sx={{ p: 4, width: "100%", maxWidth: 420, borderRadius: 3 }}
-      >
-        <Typography variant="h5" align="center" fontWeight={600} mb={3}>
-          Logowanie
+      <Stack spacing={1.5}>
+        <InputLogin control={control} placeholder="Wpisz login" />
+        <InputPassword control={control} placeholder="Wpisz hasło" />
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          sx={{
+            mt: 1.5,
+            py: 1,
+            width: "70%",
+            alignSelf: "center",
+            borderRadius: "10px",
+            textTransform: "none",
+            fontWeight: 700,
+          }}
+        >
+          Zaloguj
+        </Button>
+        <Divider sx={{ my: 1, borderColor: "rgba(255,255,255,0.15)" }} />
+        <Typography
+          variant="body2"
+          align="center"
+          sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem" }}
+        >
+          Nie masz konta?{" "}
+          <Link
+            component="button"
+            type="button"
+            underline="hover"
+            onClick={onRegisterClick}
+            sx={{ color: "rgba(255,255,255,0.95)", fontWeight: 600 }}
+          >
+            Zarejestruj się
+          </Link>
         </Typography>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Stack spacing={2}>
-            <InputLogin control={control} placeholder="Wpisz login" />
-            <InputPassword control={control} placeholder="Wpisz hasło" />
-
-            <Box sx={{ mt: 0.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                Nie masz konta?{" "}
-                <Link
-                  component="button"
-                  type="button"
-                  underline="hover"
-                  onClick={onRegisterClick}
-                >
-                  Zarejestruj się
-                </Link>
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 0.5 }}
-              >
-                Nie pamiętasz hasła?{" "}
-                <Link
-                  component="button"
-                  type="button"
-                  underline="hover"
-                  onClick={onForgotClick}
-                >
-                  Przypomnienie hasła
-                </Link>
-              </Typography>
-            </Box>
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{
-                mt: 2,
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 700,
-                py: 1.2,
-                // kolor jak na screenie (jeśli chcesz wymusić odcień)
-                backgroundColor: "#3d3bff",
-                "&:hover": { backgroundColor: "#3432e6" },
-              }}
-            >
-              Zaloguj
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
+        <Typography
+          variant="body2"
+          align="center"
+          sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem" }}
+        >
+          Nie pamiętasz hasła?{" "}
+          <Link
+            component="button"
+            type="button"
+            underline="hover"
+            onClick={onForgotPasswordClick}
+            sx={{ color: "rgba(255,255,255,0.95)", fontWeight: 600 }}
+          >
+            Przypomnienie hasła
+          </Link>
+        </Typography>
+      </Stack>
     </Box>
   );
 }

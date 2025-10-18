@@ -1,105 +1,103 @@
-import { Box, Button, Typography, Paper, Stack, Divider } from "@mui/material";
+import { Box, Stack, Button, Link, Divider, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { InputEmail } from "../../inputs/InputEmail";
-import { InputLogin } from "../../inputs/InputLogin";
+import {
+  InputEmail,
+  emailSchema as emailFieldSchema,
+} from "../../inputs/InputEmail";
+import {
+  InputLogin,
+  loginSchema as loginFieldSchema,
+} from "../../inputs/InputLogin";
 import { InputPassword, passwordSchema } from "../../inputs/InputPassword";
 
-// 🧠 schemat walidacji rejestracji
+// ✅ Re-używamy schematów z inputów
 const registerSchema = z
   .object({
-    email: z
-      .string()
-      .min(1, "Email jest wymagany")
-      .email("Niepoprawny adres email"),
-    login: z
-      .string()
-      .min(3, "Login musi mieć co najmniej 3 znaki")
-      .max(20, "Login może mieć maksymalnie 20 znaków")
-      .regex(/^[a-zA-Z0-9._-]+$/, "Dozwolone: litery, cyfry, ., _, -"),
+    email: emailFieldSchema,
+    login: loginFieldSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Hasła muszą być takie same",
+  .refine((d) => d.password === d.confirmPassword, {
     path: ["confirmPassword"],
+    message: "Hasła muszą być takie same",
   });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+export type RegisterFormData = z.infer<typeof registerSchema>;
 
-export function RegisterForm() {
-  const { handleSubmit, control, reset } = useForm<RegisterFormData>({
+export function RegisterForm({
+  onSubmitForm,
+  onLoginClick,
+  loading = false,
+}: {
+  onSubmitForm?: (data: RegisterFormData) => void;
+  onLoginClick?: () => void;
+  loading?: boolean;
+}) {
+  const { handleSubmit, control } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: "onSubmit",
   });
 
-  const onSubmit = (data: RegisterFormData) => {
-    console.log("📦 Dane rejestracji:", data);
-    reset();
-  };
+  const onSubmit = (data: RegisterFormData) => onSubmitForm?.(data);
 
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      sx={{ width: "100%", minHeight: "100vh", bgcolor: "#f5f5f5" }}
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      sx={{ width: "100%", maxWidth: 400, mx: "auto" }}
     >
-      <Paper
-        elevation={3}
-        sx={{
-          p: 4,
-          width: "100%",
-          maxWidth: 420,
-          borderRadius: 3,
-        }}
-      >
-        <Typography variant="h5" align="center" fontWeight={600} mb={3}>
-          Rejestracja
+      <Stack spacing={1.5}>
+        <InputEmail control={control} placeholder="Email" />
+        <InputLogin control={control} placeholder="Login" />
+        <InputPassword control={control} placeholder="Wpisz hasło" />
+        <InputPassword
+          name="confirmPassword"
+          control={control}
+          placeholder="Powtórz hasło"
+        />
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+          sx={{
+            mt: 1.5,
+            py: 1,
+            width: "70%",
+            alignSelf: "center",
+            borderRadius: "10px",
+            textTransform: "none",
+            fontWeight: 700,
+          }}
+        >
+          Zarejestruj się
+        </Button>
+
+        <Divider sx={{ my: 1, borderColor: "rgba(255,255,255,0.15)" }} />
+
+        <Typography
+          variant="body2"
+          align="center"
+          sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem" }}
+        >
+          Masz już konto?{" "}
+          <Link
+            component="button"
+            type="button"
+            underline="hover"
+            onClick={onLoginClick}
+            sx={{ color: "rgba(255,255,255,0.95)", fontWeight: 600 }}
+          >
+            Zaloguj się
+          </Link>
         </Typography>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Stack spacing={2}>
-            <InputEmail control={control} placeholder="Email" />
-            <InputLogin control={control} placeholder="Login" />
-            <InputPassword control={control} placeholder="Wpisz hasło" />
-            <InputPassword
-              name="confirmPassword"
-              control={control}
-              placeholder="Powtórz hasło"
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              sx={{
-                mt: 1,
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Zarejestruj się
-            </Button>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="body2" align="center" color="text.secondary">
-              Masz już konto?{" "}
-              <Typography
-                component="span"
-                color="primary"
-                sx={{ cursor: "pointer", fontWeight: 500 }}
-              >
-                Zaloguj się
-              </Typography>
-            </Typography>
-          </Stack>
-        </form>
-      </Paper>
+      </Stack>
     </Box>
   );
 }
