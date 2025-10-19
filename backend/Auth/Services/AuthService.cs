@@ -22,6 +22,13 @@ public class AuthService : IAuthService
     private readonly IUserService _userService;
     private readonly IRoleService _roleService;
 
+    // Token configuration
+    private int AccessTokenExpirationMinutes => 
+        int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+    
+    private int RefreshTokenExpirationDays => 
+        int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
+
     public AuthService(
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
@@ -42,28 +49,25 @@ public class AuthService : IAuthService
         _roleService = roleService;
     }
 
-    public async Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null)
+    public async Task<AuthenticationResult> AuthenticateAsync(
+        string username, 
+        string password, 
+        string? deviceId = null, 
+        string? userAgent = null, 
+        string? ipAddress = null)
     {
         try
         {
             var user = await _userService.GetUserByUsernameAsync(username);
             if (user == null)
             {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    ErrorMessage = "Invalid username or password"
-                };
+                return AuthenticationResult.Failed("Invalid username or password");
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, password, false);
             if (!result.Succeeded)
             {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    ErrorMessage = "Invalid username or password"
-                };
+                return AuthenticationResult.Failed("Invalid username or password");
             }
 
             return await GenerateTokensAsync(user, deviceId, userAgent, ipAddress);
@@ -71,15 +75,17 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during authentication for user: {Username}", username);
-            return new AuthenticationResult
-            {
-                Success = false,
-                ErrorMessage = "Authentication failed"
-            };
+            return AuthenticationResult.Failed("Authentication failed");
         }
     }
 
-    public async Task<AuthenticationResult> RegisterAsync(string username, string email, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null)
+    public async Task<AuthenticationResult> RegisterAsync(
+        string username, 
+        string email, 
+        string password, 
+        string? deviceId = null, 
+        string? userAgent = null, 
+        string? ipAddress = null)
     {
         try
         {
@@ -87,34 +93,20 @@ public class AuthService : IAuthService
             
             if (!createResult.Success)
             {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    ErrorMessage = createResult.ErrorMessage ?? "Registration failed"
-                };
+                return AuthenticationResult.Failed(createResult.ErrorMessage ?? "Registration failed");
             }
 
-            var user = createResult.User;
-            
-            if (user == null)
+            if (createResult.User == null)
             {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    ErrorMessage = "Failed to create user"
-                };
+                return AuthenticationResult.Failed("Failed to create user");
             }
             
-            return await GenerateTokensAsync(user, deviceId, userAgent, ipAddress);
+            return await GenerateTokensAsync(createResult.User, deviceId, userAgent, ipAddress);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during registration for user: {Username}", username);
-            return new AuthenticationResult
-            {
-                Success = false,
-                ErrorMessage = "Registration failed"
-            };
+            return AuthenticationResult.Failed("Registration failed");
         }
     }
 
@@ -123,63 +115,45 @@ public class AuthService : IAuthService
         try
         {
             var storedRefreshToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
-            if (storedRefreshToken == null || 
-                storedRefreshToken.RevokedAt != null || 
-                storedRefreshToken.ExpiryDate <= DateTime.UtcNow)
+            
+            if (!IsValidRefreshToken(storedRefreshToken))
             {
-                return new TokenRefreshResult
-                {
-                    Success = false,
-                    ErrorMessage = "Invalid refresh token"
-                };
+                return TokenRefreshResult.Failed("Invalid refresh token");
             }
 
-            var user = storedRefreshToken.User;
+            var user = storedRefreshToken!.User;
             if (user == null)
             {
-                return new TokenRefreshResult
-                {
-                    Success = false,
-                    ErrorMessage = "User not found"
-                };
+                return TokenRefreshResult.Failed("User not found");
             }
 
-            storedRefreshToken.RevokedAt = DateTime.UtcNow;
-            await _refreshTokenRepository.UpdateAsync(storedRefreshToken);
+            await RevokeRefreshTokenAsync(storedRefreshToken);
 
-            var authResult = await GenerateTokensAsync(user, storedRefreshToken.DeviceId, storedRefreshToken.UserAgent, storedRefreshToken.IpAddress);
+            var authResult = await GenerateTokensAsync(
+                user, 
+                storedRefreshToken.DeviceId, 
+                storedRefreshToken.UserAgent, 
+                storedRefreshToken.IpAddress);
             
-            if (authResult.Success)
+            if (!authResult.Success)
             {
-                await _eventBus.PublishAsync(new TokenRefreshedEvent
-                {
-                    UserId = user.Id,
-                    RefreshTime = DateTime.UtcNow
-                });
-
-                return new TokenRefreshResult
-                {
-                    Success = true,
-                    AccessToken = authResult.AccessToken,
-                    RefreshToken = authResult.RefreshToken,
-                    ExpiresAt = authResult.ExpiresAt
-                };
+                return TokenRefreshResult.Failed("Failed to generate new tokens");
             }
+
+            await PublishTokenRefreshedEventAsync(user.Id);
 
             return new TokenRefreshResult
             {
-                Success = false,
-                ErrorMessage = "Failed to generate new tokens"
+                Success = true,
+                AccessToken = authResult.AccessToken,
+                RefreshToken = authResult.RefreshToken,
+                ExpiresAt = authResult.ExpiresAt
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing token");
-            return new TokenRefreshResult
-            {
-                Success = false,
-                ErrorMessage = "Token refresh failed"
-            };
+            return TokenRefreshResult.Failed("Token refresh failed");
         }
     }
 
@@ -192,12 +166,7 @@ public class AuthService : IAuthService
             var storedRefreshToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
             if (storedRefreshToken != null)
             {
-                await _eventBus.PublishAsync(new TokenRevokedEvent
-                {
-                    UserId = storedRefreshToken.UserId,
-                    TokenId = storedRefreshToken.Id.ToString(),
-                    RevokeTime = DateTime.UtcNow
-                });
+                await PublishTokenRevokedEventAsync(storedRefreshToken);
             }
 
             return true;
@@ -214,14 +183,8 @@ public class AuthService : IAuthService
         try
         {
             await _refreshTokenRepository.RevokeAllByUserIdAsync(userId);
+            await PublishUserLoggedOutEventAsync(userId);
             
-            await _eventBus.PublishAsync(new UserLoggedOutEvent
-            {
-                UserId = userId,
-                Username = "",
-                LogoutTime = DateTime.UtcNow
-            });
-
             return true;
         }
         catch (Exception ex)
@@ -235,59 +198,34 @@ public class AuthService : IAuthService
     {
         try
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jsonToken = tokenHandler.ReadJwtToken(accessToken);
+            var tokenClaims = ParseAccessToken(accessToken);
             
-            var userId = jsonToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-            var username = jsonToken.Claims.FirstOrDefault(x => x.Type == "unique_name")?.Value ?? 
-                          jsonToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
-            var roles = jsonToken.Claims.Where(x => x.Type == ClaimTypes.Role).Select(x => x.Value).ToList();
-            var exp = jsonToken.Claims.FirstOrDefault(x => x.Type == "exp")?.Value;
-
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrEmpty(tokenClaims.Username))
             {
-                return new TokenValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "Invalid token: no username found" 
-                };
+                return TokenValidationResult.Failed("Invalid token: no username found");
             }
 
-            var user = await _userService.GetUserByUsernameAsync(username);
+            var user = await _userService.GetUserByUsernameAsync(tokenClaims.Username);
             if (user == null)
             {
-                return new TokenValidationResult 
-                { 
-                    IsValid = false, 
-                    ErrorMessage = "User not found" 
-                };
+                return TokenValidationResult.Failed("User not found");
             }
 
-            var expiresAt = exp != null ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp)).DateTime : (DateTime?)null;
-
-            await _eventBus.PublishAsync(new TokenValidatedEvent
-            {
-                UserId = user.Id,
-                IsValid = true
-            });
+            await PublishTokenValidatedEventAsync(user.Id);
 
             return new TokenValidationResult
             {
                 IsValid = true,
                 UserId = user.Id,
-                Username = username,
-                Roles = roles,
-                ExpiresAt = expiresAt
+                Username = tokenClaims.Username,
+                Roles = tokenClaims.Roles,
+                ExpiresAt = tokenClaims.ExpiresAt
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating token");
-            return new TokenValidationResult 
-            { 
-                IsValid = false, 
-                ErrorMessage = ex.Message 
-            };
+            return TokenValidationResult.Failed(ex.Message);
         }
     }
 
@@ -305,10 +243,9 @@ public class AuthService : IAuthService
             if (result)
             {
                 await RevokeAllTokensAsync(userId);
-                return true;
             }
 
-            return false;
+            return result;
         }
         catch (Exception ex)
         {
@@ -323,16 +260,9 @@ public class AuthService : IAuthService
         {
             var refreshTokens = await _refreshTokenRepository.GetActiveTokensByUserIdAsync(userId);
             
-            return refreshTokens.Select(rt => new UserSession
-            {
-                DeviceId = rt.DeviceId ?? "Unknown",
-                UserAgent = rt.UserAgent ?? "Unknown",
-                IpAddress = rt.IpAddress ?? "Unknown",
-                CreatedAt = rt.CreatedAt,
-                ExpiresAt = rt.ExpiryDate,
-                IsActive = rt.RevokedAt == null && rt.ExpiryDate > DateTime.UtcNow,
-                IsCurrent = !string.IsNullOrEmpty(currentRefreshToken) && rt.Token == currentRefreshToken
-            }).ToList();
+            return refreshTokens
+                .Select(rt => MapToUserSession(rt, currentRefreshToken))
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -341,73 +271,26 @@ public class AuthService : IAuthService
         }
     }
 
-    private async Task<AuthenticationResult> GenerateTokensAsync(User user, string? deviceId = null, string? userAgent = null, string? ipAddress = null)
+    #region Private Helper Methods
+
+    private async Task<AuthenticationResult> GenerateTokensAsync(
+        User user, 
+        string? deviceId = null, 
+        string? userAgent = null, 
+        string? ipAddress = null)
     {
         try
         {
             var roles = await _roleService.GetUserRolesAsync(user.Id);
-            
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.Name, user.UserName ?? ""),
-                new(ClaimTypes.NameIdentifier, user.Id),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
+            var claims = BuildUserClaims(user, roles);
 
             var accessToken = _tokenService.GenerateAccessToken(claims);
             var refreshToken = _tokenService.GenerateRefreshToken();
+            var expiresAt = DateTime.UtcNow.AddMinutes(AccessTokenExpirationMinutes);
 
-            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
-            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
-            
-            var expiresAt = DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes);
-
-            // Store refresh token
-            var refreshTokenEntity = new RefreshToken
-            {
-                Token = refreshToken,
-                UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
-                CreatedAt = DateTime.UtcNow,
-                DeviceId = deviceId,
-                UserAgent = userAgent,
-                IpAddress = ipAddress
-            };
-
-            if (!string.IsNullOrEmpty(deviceId))
-            {
-                _logger.LogDebug("Checking for existing token for user {UserId} and device {DeviceId}", user.Id, deviceId);
-                var existingToken = await _refreshTokenRepository.GetByUserIdAndDeviceIdAsync(user.Id, deviceId);
-                if (existingToken != null)
-                {
-                    _logger.LogInformation("Revoking existing token {TokenId} for device {DeviceId} of user {UserId}", 
-                        existingToken.Id, deviceId, user.Id);
-                    await _refreshTokenRepository.RevokeAsync(existingToken.Token);
-                }
-                else
-                {
-                    _logger.LogDebug("No existing token found for device {DeviceId} of user {UserId}", deviceId, user.Id);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("DeviceId is null or empty for user {UserId}", user.Id);
-            }
-
-            await _refreshTokenRepository.AddAsync(refreshTokenEntity);
-            _logger.LogInformation("Created new refresh token for user {UserId} with device {DeviceId}", user.Id, deviceId);
-
-            await _eventBus.PublishAsync(new UserLoggedInEvent
-            {
-                UserId = user.Id,
-                Username = user.UserName ?? "",
-                LoginTime = DateTime.UtcNow
-            });
+            await HandleDeviceTokenAsync(user.Id, deviceId);
+            await StoreRefreshTokenAsync(user.Id, refreshToken, deviceId, userAgent, ipAddress);
+            await PublishUserLoggedInEventAsync(user);
 
             return new AuthenticationResult
             {
@@ -427,11 +310,172 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating tokens for user: {UserId}", user.Id);
-            return new AuthenticationResult
-            {
-                Success = false,
-                ErrorMessage = "Failed to generate tokens"
-            };
+            return AuthenticationResult.Failed("Failed to generate tokens");
         }
     }
+
+    private List<Claim> BuildUserClaims(User user, IList<string> roles)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, user.UserName ?? ""),
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        return claims;
+    }
+
+    private async Task HandleDeviceTokenAsync(string userId, string? deviceId)
+    {
+        if (string.IsNullOrEmpty(deviceId))
+        {
+            _logger.LogWarning("DeviceId is null or empty for user {UserId}", userId);
+            return;
+        }
+
+        _logger.LogDebug("Checking for existing token for user {UserId} and device {DeviceId}", userId, deviceId);
+        
+        var existingToken = await _refreshTokenRepository.GetByUserIdAndDeviceIdAsync(userId, deviceId);
+        
+        if (existingToken != null)
+        {
+            _logger.LogInformation(
+                "Revoking existing token {TokenId} for device {DeviceId} of user {UserId}", 
+                existingToken.Id, deviceId, userId);
+            
+            await _refreshTokenRepository.RevokeAsync(existingToken.Token);
+        }
+        else
+        {
+            _logger.LogDebug("No existing token found for device {DeviceId} of user {UserId}", deviceId, userId);
+        }
+    }
+
+    private async Task StoreRefreshTokenAsync(
+        string userId, 
+        string refreshToken, 
+        string? deviceId, 
+        string? userAgent, 
+        string? ipAddress)
+    {
+        var refreshTokenEntity = new RefreshToken
+        {
+            Token = refreshToken,
+            UserId = userId,
+            ExpiryDate = DateTime.UtcNow.AddDays(RefreshTokenExpirationDays),
+            CreatedAt = DateTime.UtcNow,
+            DeviceId = deviceId,
+            UserAgent = userAgent,
+            IpAddress = ipAddress
+        };
+
+        await _refreshTokenRepository.AddAsync(refreshTokenEntity);
+        _logger.LogInformation("Created new refresh token for user {UserId} with device {DeviceId}", userId, deviceId);
+    }
+
+    private bool IsValidRefreshToken(RefreshToken? token)
+    {
+        return token != null 
+               && token.RevokedAt == null 
+               && token.ExpiryDate > DateTime.UtcNow;
+    }
+
+    private async Task RevokeRefreshTokenAsync(RefreshToken token)
+    {
+        token.RevokedAt = DateTime.UtcNow;
+        await _refreshTokenRepository.UpdateAsync(token);
+    }
+
+    private (string? Username, List<string> Roles, DateTime? ExpiresAt) ParseAccessToken(string accessToken)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jsonToken = tokenHandler.ReadJwtToken(accessToken);
+        
+        var username = jsonToken.Claims.FirstOrDefault(x => x.Type == "unique_name")?.Value ?? 
+                      jsonToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+        
+        var roles = jsonToken.Claims
+            .Where(x => x.Type == ClaimTypes.Role || 
+                       x.Type == "role") 
+            .Select(x => x.Value)
+            .ToList();
+        
+        var exp = jsonToken.Claims.FirstOrDefault(x => x.Type == "exp")?.Value;
+        var expiresAt = exp != null 
+            ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp)).DateTime 
+            : (DateTime?)null;
+
+        return (username, roles, expiresAt);
+    }
+
+    private UserSession MapToUserSession(RefreshToken token, string? currentRefreshToken)
+    {
+        return new UserSession
+        {
+            DeviceId = token.DeviceId ?? "Unknown",
+            UserAgent = token.UserAgent ?? "Unknown",
+            IpAddress = token.IpAddress ?? "Unknown",
+            CreatedAt = token.CreatedAt,
+            ExpiresAt = token.ExpiryDate,
+            IsActive = token.RevokedAt == null && token.ExpiryDate > DateTime.UtcNow,
+            IsCurrent = !string.IsNullOrEmpty(currentRefreshToken) && token.Token == currentRefreshToken
+        };
+    }
+
+    #endregion
+
+    #region Event Publishing
+
+    private async Task PublishUserLoggedInEventAsync(User user)
+    {
+        await _eventBus.PublishAsync(new UserLoggedInEvent
+        {
+            UserId = user.Id,
+            Username = user.UserName ?? "",
+            LoginTime = DateTime.UtcNow
+        });
+    }
+
+    private async Task PublishUserLoggedOutEventAsync(string userId)
+    {
+        await _eventBus.PublishAsync(new UserLoggedOutEvent
+        {
+            UserId = userId,
+            Username = "",
+            LogoutTime = DateTime.UtcNow
+        });
+    }
+
+    private async Task PublishTokenRefreshedEventAsync(string userId)
+    {
+        await _eventBus.PublishAsync(new TokenRefreshedEvent
+        {
+            UserId = userId,
+            RefreshTime = DateTime.UtcNow
+        });
+    }
+
+    private async Task PublishTokenRevokedEventAsync(RefreshToken token)
+    {
+        await _eventBus.PublishAsync(new TokenRevokedEvent
+        {
+            UserId = token.UserId,
+            TokenId = token.Id.ToString(),
+            RevokeTime = DateTime.UtcNow
+        });
+    }
+
+    private async Task PublishTokenValidatedEventAsync(string userId)
+    {
+        await _eventBus.PublishAsync(new TokenValidatedEvent
+        {
+            UserId = userId,
+            IsValid = true
+        });
+    }
+
+    #endregion
 }

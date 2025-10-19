@@ -154,4 +154,27 @@ public class UsersController : ControllerBase
 
         return Ok(new { message = "User deleted successfully" });
     }
+    
+    [HttpPost("preferences")]
+    [Authorize]
+    public async Task<IActionResult> UpdateUserFoodPreferences([FromBody] UpdateFoodPreferencesRequest request)
+    {
+        try {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var result = await _usersContract.UpdateUserFoodPreferencesAsync(userId, request);
+            if (!result) {
+                return BadRequest(new { message = "Failed to update food preferences" });
+            }
+
+            return Ok(new { message = "Food preferences updated successfully" });
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Error updating user food preferences");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }

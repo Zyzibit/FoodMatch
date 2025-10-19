@@ -13,4 +13,5 @@ public interface IUserService
     Task<int> GetTotalUsersCountAsync();
     Task<(bool Success, User? User, string? ErrorMessage)> CreateUserAsync(string username, string email, string password, string role = "User");
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
+    Task<bool> UpdateUserFoodPreferencesAsync(string userId, bool? isVegan = null, bool? isVegetarian = null, bool? isGlutenFree = null, bool? isLactoseFree = null, bool? hasNutAllergy = null, int? dailyProteinGoal = null, int? dailyCarbohydrateGoal = null, int? dailyFatGoal = null, int? dailyCalorieGoal = null);
 }

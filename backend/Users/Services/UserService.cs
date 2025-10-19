@@ -222,6 +222,85 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<bool> UpdateUserFoodPreferencesAsync(
+        string userId,
+        bool? isVegan = null,
+        bool? isVegetarian = null,
+        bool? isGlutenFree = null,
+        bool? isLactoseFree = null,
+        bool? hasNutAllergy = null,
+        int? dailyProteinGoal = null,
+        int? dailyCarbohydrateGoal = null,
+        int? dailyFatGoal = null,
+        int? dailyCalorieGoal = null)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("Cannot update food preferences: userId is null or empty.");
+            return false;
+        }
+
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("User with ID {UserId} not found", userId);
+                return false;
+            }
+
+            var hasChanges = false;
+
+            SetIfChanged(ref hasChanges, isVegan, v => user.IsVegan = v, () => user.IsVegan);
+            SetIfChanged(ref hasChanges, isVegetarian, v => user.IsVegetarian = v, () => user.IsVegetarian);
+            SetIfChanged(ref hasChanges, isGlutenFree, v => user.IsGlutenFree = v, () => user.IsGlutenFree);
+            SetIfChanged(ref hasChanges, isLactoseFree, v => user.IsLactoseFree = v, () => user.IsLactoseFree);
+            SetIfChanged(ref hasChanges, hasNutAllergy, v => user.HasNutAllergy = v, () => user.HasNutAllergy);
+
+            SetIfChanged(ref hasChanges, dailyProteinGoal, v => user.DailyProteinGoal = v, () => user.DailyProteinGoal);
+            SetIfChanged(ref hasChanges, dailyCarbohydrateGoal, v => user.DailyCarbohydrateGoal = v, () => user.DailyCarbohydrateGoal);
+            SetIfChanged(ref hasChanges, dailyFatGoal, v => user.DailyFatGoal = v, () => user.DailyFatGoal);
+            SetIfChanged(ref hasChanges, dailyCalorieGoal, v => user.DailyCalorieGoal = v, () => user.DailyCalorieGoal);
+
+            if (hasChanges)
+            {
+                user.UpdatedAt = DateTime.UtcNow;
+                var result = await _userManager.UpdateAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogError("Failed to update food preferences for user {UserId}. Errors: {Errors}", userId, errors);
+                    return false;
+                }
+
+                _logger.LogInformation("Food preferences updated for user {UserId}", userId);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating food preferences for user {UserId}", userId);
+            return false;
+        }
+    }
+    private void SetIfChanged<T>(
+        ref bool hasChanges, 
+        T? newValue, 
+        Action<T> setter, 
+        Func<T> currentValueGetter) where T : struct
+    {
+        if (newValue.HasValue)
+        {
+            if (!EqualityComparer<T>.Default.Equals(currentValueGetter(), newValue.Value))
+            {
+                setter(newValue.Value);
+                hasChanges = true;
+            }
+        }
+    }
+
     private async Task<bool> EnsureRoleAssignedAsync(User user, string role)
     {
         try
