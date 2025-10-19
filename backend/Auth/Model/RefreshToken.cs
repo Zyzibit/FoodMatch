@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using inzynierka.Users.Model;
 
 namespace inzynierka.Auth.Model;
 

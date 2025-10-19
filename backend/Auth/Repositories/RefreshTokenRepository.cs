@@ -1,5 +1,4 @@
 using inzynierka.Auth.Model;
-using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using Microsoft.EntityFrameworkCore;
 

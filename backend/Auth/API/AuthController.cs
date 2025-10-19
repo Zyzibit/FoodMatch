@@ -7,6 +7,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Contracts.Models;
+using inzynierka.Users.Model;
 
 namespace inzynierka.Auth.API;
 

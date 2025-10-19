@@ -2,6 +2,7 @@ using inzynierka.Users.Contracts;
 using inzynierka.Users.Contracts.Models;
 using inzynierka.Users.Services;
 using inzynierka.Auth.Model;
+using inzynierka.Users.Model;
 
 namespace inzynierka.Users.Modules;
 

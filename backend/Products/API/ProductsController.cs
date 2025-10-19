@@ -239,22 +239,3 @@ public class ProductsController : ControllerBase
         }
     }
 }
-
-
-public class ProductSearchRequest
-{
-    public string? Query { get; set; }
-    public string? Categories { get; set; }
-    public string? Allergens { get; set; }
-    public string? Ingredients { get; set; }
-    public string? Brand { get; set; }
-    public int Limit { get; set; } = 10;
-    public int Offset { get; set; } = 0;
-}
-
-public class ProductImportRequest
-{
-    public string FilePath { get; set; } = string.Empty;
-    public int MaxProducts { get; set; } = 100000;
-    public int BatchSize { get; set; } = 1000;
-}

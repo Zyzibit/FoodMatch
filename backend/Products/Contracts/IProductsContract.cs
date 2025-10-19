@@ -2,9 +2,6 @@ using inzynierka.Products.Contracts.Models;
 
 namespace inzynierka.Products.Contracts;
 
-/// <summary>
-/// Kontrakt dla modu³u produktów - definiuje interfejs komunikacji
-/// </summary>
 public interface IProductsContract
 {
     Task<ProductResult> GetProductAsync(string productId);

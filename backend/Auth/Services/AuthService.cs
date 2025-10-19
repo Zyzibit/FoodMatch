@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using inzynierka.Auth.EventBus.Events;
+using inzynierka.Users.Model;
 
 namespace inzynierka.Auth.Services;
 

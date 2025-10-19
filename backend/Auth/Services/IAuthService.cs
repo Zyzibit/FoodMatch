@@ -2,10 +2,13 @@ using inzynierka.Auth.Contracts.Models;
 
 namespace inzynierka.Auth.Services;
 
-public interface IAuthService
-{
-    Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null);
-    Task<AuthenticationResult> RegisterAsync(string username, string email, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null);
+public interface IAuthService {
+    Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null,
+        string? userAgent = null, string? ipAddress = null);
+
+    Task<AuthenticationResult> RegisterAsync(string username, string email, string password, string? deviceId = null,
+        string? userAgent = null, string? ipAddress = null);
+
     Task<TokenRefreshResult> RefreshTokenAsync(string refreshToken);
     Task<bool> RevokeTokenAsync(string refreshToken);
     Task<bool> RevokeAllTokensAsync(string userId);

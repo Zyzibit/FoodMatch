@@ -1,4 +1,5 @@
 ﻿using inzynierka.Auth.Model;
+using inzynierka.Users.Model;
 using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Data;

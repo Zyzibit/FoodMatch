@@ -18,12 +18,9 @@ using inzynierka.Auth.Modules;
 using inzynierka.AI.Modules;
 using inzynierka.EventBus;
 using inzynierka.Users.Contracts;
+using inzynierka.Users.Model;
 using inzynierka.Users.Modules;
 using inzynierka.Users.Services;
-
-// gRPC Services - new modular structure
-using inzynierka.Auth.Grpc.Services;
-using inzynierka.Products.Grpc.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,27 +94,8 @@ builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
 builder.Services.AddScoped<IUsersContract, UsersModule>();
 
-builder.Services.AddGrpc();
-
-var grpcBaseUrl = builder.Configuration["GrpcServices:BaseUrl"] ?? "https://localhost:7257";
-
-builder.Services.AddGrpcClient<inzynierka.Auth.Grpc.AuthService.AuthServiceClient>(options =>
-{
-    options.Address = new Uri(grpcBaseUrl);
-});
-builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductServiceClient>(options =>
-{
-    options.Address = new Uri(grpcBaseUrl);
-});
-
-// Removed Users gRPC client registration to decouple modules
-
-// Removed scoped cross-module gRPC clients
-
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
-
-
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -168,9 +146,6 @@ var app = builder.Build();
 
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
-
-app.MapGrpcService<AuthGrpcService>();
-app.MapGrpcService<ProductsGrpcService>();
 
 app.UseCors(policy =>
     policy.AllowAnyOrigin()
