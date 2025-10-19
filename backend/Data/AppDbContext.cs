@@ -70,7 +70,7 @@ public class AppDbContext : IdentityDbContext<User> {
             .WithMany(u => u.Receipts)      
             .HasForeignKey(r => r.UserId)    
             .IsRequired()                   
-            .OnDelete(DeleteBehavior.Restrict); 
+            .OnDelete(DeleteBehavior.Cascade); 
         
     }
 }
