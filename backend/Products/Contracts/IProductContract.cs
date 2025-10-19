@@ -2,7 +2,7 @@ using inzynierka.Products.Contracts.Models;
 
 namespace inzynierka.Products.Contracts;
 
-public interface IProductsContract
+public interface IProductContract
 {
     Task<ProductResult> GetProductAsync(string productId);
     Task<ProductSearchResult> SearchProductsAsync(ProductSearchQuery query);

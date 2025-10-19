@@ -93,7 +93,7 @@ builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
-builder.Services.AddScoped<IUsersContract, UsersModule>();
+builder.Services.AddScoped<IUserContract, UserModule>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();

@@ -1,7 +1,8 @@
-using inzynierka.Users.Contracts.Models;
 using inzynierka.Users.Model;
+using inzynierka.Users.Contracts.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using FoodPreferences = inzynierka.Users.Model.FoodPreferences;
 
 namespace inzynierka.Users.Services;
 
