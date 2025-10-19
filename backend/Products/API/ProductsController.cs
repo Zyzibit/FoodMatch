@@ -181,7 +181,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.ImportProductsAsync(request.FilePath, request.MaxProducts, request.BatchSize);
+            var result = await _productsModule.ImportProductsAsync(request.FilePath);
             
             if (!result.Success)
             {

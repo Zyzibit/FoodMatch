@@ -64,8 +64,13 @@ public class UserService : IUserService
 
         if (!string.IsNullOrEmpty(email) && user.Email != email)
         {
-            user.Email = email;
-            user.NormalizedEmail = email.ToUpperInvariant();
+            var setEmailResult = await _userManager.SetEmailAsync(user, email);
+            if (!setEmailResult.Succeeded)
+            {
+                _logger.LogError("Failed to set email for user {UserId}. Errors: {Errors}",
+                    userId, string.Join(", ", setEmailResult.Errors.Select(e => e.Description)));
+                return false;
+            }
             hasChanges = true;
         }
 
