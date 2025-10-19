@@ -1,0 +1,446 @@
+﻿{
+	"info": {
+		"_postman_id": "receipt-module-collection",
+		"name": "Receipt Module API",
+		"description": "Kompletna kolekcja do testowania modułu Receipt, w tym generowanie przepisów przez AI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.accessToken) {",
+									"        pm.environment.set('accessToken', response.accessToken);",
+									"        console.log('Access token saved to environment');",
+									"    }",
+									"    if (response.userId) {",
+									"        pm.environment.set('userId', response.userId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Logowanie użytkownika - automatycznie zapisuje accessToken do zmiennych środowiskowych"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\",\n  \"username\": \"testuser\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Rejestracja nowego użytkownika"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpointy autoryzacji - najpierw zaloguj się aby uzyskać token"
+		},
+		{
+			"name": "Create Receipt (Manual)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    if (response.receiptId) {",
+							"        pm.environment.set('lastReceiptId', response.receiptId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"ingredients\": [\n    {\n      \"productId\": 1,\n      \"unitId\": 1,\n      \"quantity\": 200\n    },\n    {\n      \"productId\": 2,\n      \"unitId\": 2,\n      \"quantity\": 3\n    }\n  ],\n  \"additionalProducts\": [\"sól\", \"pieprz\"],\n  \"title\": \"Makaron carbonara\",\n  \"description\": \"Klasyczny włoski makaron carbonara\",\n  \"instructions\": \"1. Ugotuj makaron\\n2. Podsmaż boczek\\n3. Wymieszaj jajka z parmezanem\\n4. Połącz wszystko\",\n  \"servings\": 4,\n  \"preparationTimeMinutes\": 30,\n  \"calories\": 650,\n  \"protein\": 25,\n  \"carbohydrates\": 70,\n  \"fats\": 28\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts"
+					]
+				},
+				"description": "Ręczne tworzenie przepisu z określonymi składnikami i instrukcjami"
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Recipe with AI",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    if (response.receiptId) {",
+							"        pm.environment.set('lastReceiptId', response.receiptId);",
+							"        console.log('AI-generated recipe ID:', response.receiptId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"productIds\": [1, 2, 3, 4, 5],\n  \"preferences\": null,\n  \"cuisineType\": \"włoska\",\n  \"desiredServings\": 4,\n  \"maxPreparationTimeMinutes\": 45,\n  \"additionalInstructions\": \"Preferuję proste przepisy\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/generate-with-ai",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"generate-with-ai"
+					]
+				},
+				"description": "Generowanie przepisu przez AI na podstawie ID produktów z bazy danych. Produkty zostaną automatycznie przypisane do ingredients z ich ID."
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Vegetarian Recipe with AI",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    if (response.receiptId) {",
+							"        pm.environment.set('lastReceiptId', response.receiptId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"productIds\": [10, 15, 20, 25],\n  \"preferences\": {\n    \"isVegetarian\": true,\n    \"isVegan\": true,\n    \"isGlutenFree\": false,\n    \"isLactoseFree\": true,\n    \"allergies\": [],\n    \"dislikedIngredients\": [],\n    \"maxCalories\": 500\n  },\n  \"cuisineType\": \"azjatycka\",\n  \"desiredServings\": 2,\n  \"maxPreparationTimeMinutes\": 30,\n  \"additionalInstructions\": \"Danie wegańskie, niskokaloryczne\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/generate-with-ai",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"generate-with-ai"
+					]
+				},
+				"description": "Generowanie wegańskiego przepisu z produktów o podanych ID z preferencjami dietetycznymi"
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Gluten-Free Recipe with AI",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    if (response.receiptId) {",
+							"        pm.environment.set('lastReceiptId', response.receiptId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"productIds\": [30, 35, 40, 45, 50],\n  \"preferences\": {\n    \"isVegetarian\": false,\n    \"isVegan\": false,\n    \"isGlutenFree\": true,\n    \"isLactoseFree\": false,\n    \"allergies\": [\"orzechy\", \"soja\"],\n    \"dislikedIngredients\": [\"grzyby\"],\n    \"maxCalories\": 700\n  },\n  \"cuisineType\": \"tradycyjna polska\",\n  \"desiredServings\": 4,\n  \"maxPreparationTimeMinutes\": 60,\n  \"additionalInstructions\": \"Przepis bezglutenowy, unikaj orzechów i soi\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/generate-with-ai",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"generate-with-ai"
+					]
+				},
+				"description": "Generowanie bezglutenowego przepisu z ograniczeniami dotyczącymi alergenów"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Receipt by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/{{lastReceiptId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"{{lastReceiptId}}"
+					]
+				},
+				"description": "Pobieranie szczegółów przepisu po ID (używa ostatnio utworzonego ID z zmiennej środowiskowej)"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Receipts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts?limit=20&offset=0",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "20"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						}
+					]
+				},
+				"description": "Pobieranie wszystkich przepisów z paginacją"
+			},
+			"response": []
+		},
+		{
+			"name": "Get My Receipts",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/me?limit=50&offset=0",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"me"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "50"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						}
+					]
+				},
+				"description": "Pobieranie przepisów zalogowanego użytkownika"
+			},
+			"response": []
+		},
+		{
+			"name": "Get AI-Generated Receipts Only",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/receipts/me?limit=50&offset=0",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"receipts",
+						"me"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "50"
+						},
+						{
+							"key": "offset",
+							"value": "0"
+						}
+					]
+				},
+				"description": "Pobieranie przepisów użytkownika (można filtrować po isAiGenerated na poziomie aplikacji)"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}

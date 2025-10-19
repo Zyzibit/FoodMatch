@@ -3,7 +3,7 @@ using inzynierka.AI.Contracts.Models;
 namespace inzynierka.AI.Contracts;
 
 /// <summary>
-/// Kontrakt dla modu³u AI - definiuje interfejs komunikacji
+/// Kontrakt dla moduï¿½u AI - definiuje interfejs komunikacji
 /// </summary>
 public interface IAIContract
 {
@@ -14,4 +14,5 @@ public interface IAIContract
     Task<NutritionalAnalysisResult> AnalyzeNutritionAsync(string productId);
     Task<AllergenDetectionResult> DetectAllergensAsync(List<string> ingredients);
     Task<HealthScoreResult> CalculateHealthScoreAsync(string productId);
+    Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request);
 }

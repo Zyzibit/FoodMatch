@@ -9,22 +9,25 @@ using System.Text.Json;
 namespace inzynierka.AI.Modules;
 
 /// <summary>
-/// Implementacja kontraktu AI - modu³ AI
+/// Implementacja kontraktu AI - moduÅ‚ AI
 /// </summary>
 public class AIModule : IAIContract
 {
     private readonly IOpenAIClient _openAIClient;
     private readonly IEventBus _eventBus;
     private readonly ILogger<AIModule> _logger;
+    private readonly IRecipeGeneratorService _recipeGeneratorService;
 
     public AIModule(
         IOpenAIClient openAIClient,
         IEventBus eventBus,
-        ILogger<AIModule> logger)
+        ILogger<AIModule> logger,
+        IRecipeGeneratorService recipeGeneratorService)
     {
         _openAIClient = openAIClient;
         _eventBus = eventBus;
         _logger = logger;
+        _recipeGeneratorService = recipeGeneratorService;
     }
 
     public async Task<AITextResult> GenerateResponseAsync(List<AIMessage> messages, AIGenerationOptions? options = null)
@@ -127,7 +130,7 @@ public class AIModule : IAIContract
         {
             var startTime = DateTime.UtcNow;
 
-            // Publikacja zdarzenia rozpoczêcia analizy
+            // Publikacja zdarzenia rozpoczï¿½cia analizy
             await _eventBus.PublishAsync(new AIAnalysisRequestedEvent
             {
                 ProductId = productId,
@@ -185,7 +188,7 @@ public class AIModule : IAIContract
             var processingTime = DateTime.UtcNow - startTime;
             const double confidenceScore = 0.85;
 
-            // Publikacja zdarzenia zakoñczenia analizy
+            // Publikacja zdarzenia zakoï¿½czenia analizy
             await _eventBus.PublishAsync(new AIAnalysisCompletedEvent
             {
                 ProductId = productId,
@@ -272,7 +275,7 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia generowania przepisów
+            // Publikacja zdarzenia generowania przepisï¿½w
             await _eventBus.PublishAsync(new RecipeGeneratedEvent
             {
                 Ingredients = ingredients,
@@ -329,7 +332,7 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia analizy ¿ywieniowej
+            // Publikacja zdarzenia analizy ï¿½ywieniowej
             await _eventBus.PublishAsync(new NutritionalAnalysisPerformedEvent
             {
                 ProductId = productId,
@@ -394,7 +397,7 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia detekcji alergenów
+            // Publikacja zdarzenia detekcji alergenï¿½w
             await _eventBus.PublishAsync(new AllergenDetectionPerformedEvent
             {
                 Ingredients = ingredients,
@@ -482,5 +485,10 @@ public class AIModule : IAIContract
                 ErrorMessage = ex.Message
             };
         }
+    }
+
+    public async Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request)
+    {
+        return await _recipeGeneratorService.GenerateRecipeAsync(request);
     }
 }

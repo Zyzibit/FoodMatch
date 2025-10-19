@@ -1,6 +1,7 @@
-﻿using inzynierka.Auth.Model;
-using inzynierka.Users.Model;
+﻿using inzynierka.Users.Model;
+using inzynierka.Receipts.Model;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.Data;
 
@@ -17,8 +18,34 @@ public class DbSeeder
         try
         {
             // resolve other dependencies
-            var userManager = scope.ServiceProvider.GetService<UserManager<User>>();
-            var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Seed Units
+            if (!await dbContext.Units.AnyAsync())
+            {
+                logger.LogInformation("Seeding units...");
+                var units = new List<Unit>
+                {
+                    new Unit { Name = "gram" },
+                    new Unit { Name = "kilogram" },
+                    new Unit { Name = "mililitr" },
+                    new Unit { Name = "litr" },
+                    new Unit { Name = "sztuka" },
+                    new Unit { Name = "łyżka" },
+                    new Unit { Name = "łyżeczka" },
+                    new Unit { Name = "szklanka" },
+                    new Unit { Name = "opakowanie" },
+                    new Unit { Name = "garść" },
+                    new Unit { Name = "plasterek" },
+                    new Unit { Name = "kostka" }
+                };
+                
+                await dbContext.Units.AddRangeAsync(units);
+                await dbContext.SaveChangesAsync();
+                logger.LogInformation("Units seeded successfully");
+            }
 
             // Create Admin role if it doesn't exist
             if (!await roleManager.RoleExistsAsync(Roles.Admin))
@@ -38,7 +65,6 @@ public class DbSeeder
                 }
             }
 
-            // Create User role if it doesn't exist
             if (!await roleManager.RoleExistsAsync(Roles.User))
             {
                 logger.LogInformation("User role is creating");
