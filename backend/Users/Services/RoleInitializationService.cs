@@ -1,4 +1,4 @@
-﻿using inzynierka.Auth.Model;
+﻿using inzynierka.Users.Model;
 
 namespace inzynierka.Users.Services;
 

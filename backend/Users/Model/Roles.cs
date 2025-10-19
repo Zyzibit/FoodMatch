@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Auth.Model;
+﻿namespace inzynierka.Users.Model;
 
 public record Roles
 {
