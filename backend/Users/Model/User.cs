@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using inzynierka.Receipts.Model;
+using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Users.Model;
 
@@ -10,6 +11,8 @@ public class User : IdentityUser {
 
     //own model
     public FoodPreferences FoodPreferences { get; set; } = new FoodPreferences();
+    
+    public ICollection<Receipt> Receipts { get; set; }
 
 }
 public class FoodPreferences {
