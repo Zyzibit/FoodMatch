@@ -12,7 +12,7 @@ public class User : IdentityUser {
     //own model
     public FoodPreferences FoodPreferences { get; set; } = new FoodPreferences();
     
-    public ICollection<Receipt> Receipts { get; set; }
+    public ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
 
 }
 public class FoodPreferences {

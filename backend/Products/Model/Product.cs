@@ -23,7 +23,7 @@ public class Product
     public ICollection<ProductCategoryTag> ProductCategoryTags { get; set; } = new List<ProductCategoryTag>();
     public ICollection<ProductAllergenTag> ProductAllergenTags { get; set; } = new List<ProductAllergenTag>();
     
-    public ICollection<ReceiptIngredient> ReceiptIngredients { get; set; }
+    public ICollection<ReceiptIngredient> ReceiptIngredients { get; set; } = new List<ReceiptIngredient>();
     
     public string? Brands { get; set; }
     public string? NutritionGrade { get; set; }
