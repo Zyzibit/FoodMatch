@@ -11,5 +11,6 @@ public interface IUserService
     Task<bool> UpdateUserProfileAsync(string userId, string? name, string? email);
     Task<bool> DeleteUserAsync(string userId);
     Task<int> GetTotalUsersCountAsync();
-    Task<User?> AddUserAsync(string username, string email, string password, string name, string role = "User");
+    Task<(bool Success, User? User, string? ErrorMessage)> CreateUserAsync(string username, string email, string password, string role = "User");
+    Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
 }

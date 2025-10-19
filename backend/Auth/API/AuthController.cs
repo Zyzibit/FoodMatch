@@ -165,9 +165,9 @@ public class AuthController : ControllerBase
 
 
     [HttpPost("validate-token")]
-    public async Task<IActionResult> ValidateToken([FromBody] ValidateTokenRequest? request = null)
+    public async Task<IActionResult> ValidateToken()
     {
-        var token = request?.Token ?? Request.Cookies["AccessToken"];
+        var token = Request.Cookies["AccessToken"] ?? null;
 
         if (string.IsNullOrEmpty(token))
         {
@@ -190,7 +190,14 @@ public class AuthController : ControllerBase
     [HttpGet("user/{userId}")]
     [Authorize]
     public async Task<IActionResult> GetUserInfo(string userId)
-    {
+    {       
+        var token = Request.Cookies["AccessToken"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new { message = "Token is required" });
+        }
+
         try
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -208,7 +215,6 @@ public class AuthController : ControllerBase
                 Email = user.Email ?? string.Empty,
                 Roles = roles.ToList(),
                 CreatedAt = DateTime.UtcNow,
-                LastLoginAt = null
             };
 
             return Ok(userInfo);
@@ -225,6 +231,13 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
+        var token = Request.Cookies["RefreshToken"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new { message = "Token is required" });
+        }
+
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -247,8 +260,6 @@ public class AuthController : ControllerBase
                 Username = user.UserName ?? string.Empty,
                 Email = user.Email ?? string.Empty,
                 Roles = roles.ToList(),
-                CreatedAt = DateTime.UtcNow,
-                LastLoginAt = null
             };
 
             return Ok(userInfo);

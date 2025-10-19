@@ -1,23 +1,17 @@
-using inzynierka.Auth.Model;
-using Microsoft.AspNetCore.Identity;
+﻿using inzynierka.Auth.Model;
 
-namespace inzynierka.Auth.Services;
-
-public interface IRoleInitializationService
-{
-    Task InitializeRolesAsync();
-}
+namespace inzynierka.Users.Services;
 
 public class RoleInitializationService : IRoleInitializationService
 {
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IRoleService _roleService;
     private readonly ILogger<RoleInitializationService> _logger;
 
     public RoleInitializationService(
-        RoleManager<IdentityRole> roleManager,
+        IRoleService roleService,
         ILogger<RoleInitializationService> logger)
     {
-        _roleManager = roleManager;
+        _roleService = roleService;
         _logger = logger;
     }
 
@@ -27,21 +21,20 @@ public class RoleInitializationService : IRoleInitializationService
 
         foreach (var role in roles)
         {
-            if (!await _roleManager.RoleExistsAsync(role))
+            if (!await _roleService.RoleExistsAsync(role))
             {
                 _logger.LogInformation("Creating role: {Role}", role);
                 
-                var result = await _roleManager.CreateAsync(new IdentityRole(role));
+                var result = await _roleService.CreateRoleAsync(role);
                 
-                if (result.Succeeded)
+                if (result)
                 {
                     _logger.LogInformation("Role {Role} created successfully", role);
                 }
                 else
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    _logger.LogError("Failed to create role {Role}. Errors: {Errors}", role, errors);
-                    throw new InvalidOperationException($"Failed to create role {role}: {errors}");
+                    _logger.LogError("Failed to create role {Role}", role);
+                    throw new InvalidOperationException($"Failed to create role {role}");
                 }
             }
             else
@@ -51,3 +44,4 @@ public class RoleInitializationService : IRoleInitializationService
         }
     }
 }
+

@@ -1,14 +1,13 @@
-using inzynierka.Auth.Services;
 using inzynierka.Auth.Contracts.Models;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using inzynierka.EventBus;
-using inzynierka.EventBus.Events;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using inzynierka.Auth.EventBus.Events;
 using inzynierka.Users.Model;
+using inzynierka.Users.Services;
 
 namespace inzynierka.Auth.Services;
 
@@ -16,38 +15,38 @@ public class AuthService : IAuthService
 {
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly UserManager<User> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly SignInManager<User> _signInManager;
     private readonly IEventBus _eventBus;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
+    private readonly IUserService _userService;
+    private readonly IRoleService _roleService;
 
     public AuthService(
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
-        UserManager<User> userManager,
-        RoleManager<IdentityRole> roleManager,
         SignInManager<User> signInManager,
         IEventBus eventBus,
         IConfiguration configuration,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IUserService userService,
+        IRoleService roleService)
     {
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
-        _userManager = userManager;
-        _roleManager = roleManager;
         _signInManager = signInManager;
         _eventBus = eventBus;
         _configuration = configuration;
         _logger = logger;
+        _userService = userService;
+        _roleService = roleService;
     }
 
     public async Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null)
     {
         try
         {
-            var user = await _userManager.FindByNameAsync(username);
+            var user = await _userService.GetUserByUsernameAsync(username);
             if (user == null)
             {
                 return new AuthenticationResult
@@ -84,63 +83,28 @@ public class AuthService : IAuthService
     {
         try
         {
-            var existingUser = await _userManager.FindByNameAsync(username);
-            if (existingUser != null)
+            var createResult = await _userService.CreateUserAsync(username, email, password);
+            
+            if (!createResult.Success)
             {
                 return new AuthenticationResult
                 {
                     Success = false,
-                    ErrorMessage = "User with this username already exists"
+                    ErrorMessage = createResult.ErrorMessage ?? "Registration failed"
                 };
             }
 
-            existingUser = await _userManager.FindByEmailAsync(email);
-            if (existingUser != null)
+            var user = createResult.User;
+            
+            if (user == null)
             {
                 return new AuthenticationResult
                 {
                     Success = false,
-                    ErrorMessage = "User with this email already exists"
+                    ErrorMessage = "Failed to create user"
                 };
             }
-
-            var user = new User
-            {
-                UserName = username,
-                Email = email,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                EmailConfirmed = true
-            };
-
-            var result = await _userManager.CreateAsync(user, password);
-            if (!result.Succeeded)
-            {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    ErrorMessage = string.Join(", ", result.Errors.Select(e => e.Description))
-                };
-            }
-
-            if (!await _roleManager.RoleExistsAsync(Roles.User))
-            {
-                _logger.LogWarning("User role does not exist. Creating it now.");
-                var roleResult = await _roleManager.CreateAsync(new IdentityRole(Roles.User));
-                if (!roleResult.Succeeded)
-                {
-                    _logger.LogError("Failed to create User role: {Errors}", 
-                        string.Join(", ", roleResult.Errors.Select(e => e.Description)));
-                }
-            }
-
-            var roleAssignResult = await _userManager.AddToRoleAsync(user, Roles.User);
-            if (!roleAssignResult.Succeeded)
-            {
-                _logger.LogWarning("Failed to assign User role to user {UserId}: {Errors}", 
-                    user.Id, string.Join(", ", roleAssignResult.Errors.Select(e => e.Description)));
-            }
-
-
+            
             return await GenerateTokensAsync(user, deviceId, userAgent, ipAddress);
         }
         catch (Exception ex)
@@ -289,7 +253,7 @@ public class AuthService : IAuthService
                 };
             }
 
-            var user = await _userManager.FindByNameAsync(username);
+            var user = await _userService.GetUserByUsernameAsync(username);
             if (user == null)
             {
                 return new TokenValidationResult 
@@ -331,16 +295,15 @@ public class AuthService : IAuthService
     {
         try
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 return false;
             }
 
-            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
-            if (result.Succeeded)
+            var result = await _userService.ChangePasswordAsync(user.Id, currentPassword, newPassword);
+            if (result)
             {
-                // Revoke all refresh tokens for security
                 await RevokeAllTokensAsync(userId);
                 return true;
             }
@@ -382,7 +345,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _roleService.GetUserRolesAsync(user.Id);
             
             var claims = new List<Claim>
             {

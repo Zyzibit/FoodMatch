@@ -1,7 +1,6 @@
 using System.Text;
 using inzynierka.AI.OpenAI;
 using inzynierka.Auth.Model;
-using inzynierka.Auth.Services;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
@@ -16,6 +15,7 @@ using inzynierka.Auth.Contracts;
 using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
 using inzynierka.AI.Modules;
+using inzynierka.Auth.Services;
 using inzynierka.EventBus;
 using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
@@ -85,6 +85,7 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddProductsServices();
 
