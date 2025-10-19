@@ -1,7 +1,7 @@
 using inzynierka.Users.Contracts;
 using inzynierka.Users.Contracts.Models;
 using inzynierka.Users.Services;
-using inzynierka.Users.Model;
+using inzynierka.Auth.Model;
 
 namespace inzynierka.Users.Modules;
 
@@ -55,14 +55,14 @@ public class UsersModule : IUsersContract
         return await _userService.GetTotalUsersCountAsync();
     }
 
-    private static UserDto MapToUserDto(UserProfile user)
+    private static UserDto MapToUserDto(User user)
     {
         return new UserDto
         {
             Id = user.Id,
             Name = user.Name,
-            UserName = user.UserName,
-            Email = user.Email,
+            UserName = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };

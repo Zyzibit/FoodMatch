@@ -3,10 +3,11 @@ using inzynierka.Auth.Contracts.Models;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using inzynierka.EventBus;
-using inzynierka.Auth.EventBus.Events;
+using inzynierka.EventBus.Events;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using inzynierka.Auth.EventBus.Events;
 
 namespace inzynierka.Auth.Services;
 
@@ -138,12 +139,6 @@ public class AuthService : IAuthService
                     user.Id, string.Join(", ", roleAssignResult.Errors.Select(e => e.Description)));
             }
 
-            await _eventBus.PublishAsync(new UserRegisteredEvent
-            {
-                UserId = user.Id,
-                Username = user.UserName,
-                Email = user.Email
-            });
 
             return await GenerateTokensAsync(user, deviceId, userAgent, ipAddress);
         }

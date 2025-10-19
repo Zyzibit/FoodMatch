@@ -3,7 +3,7 @@ using inzynierka.EventBus.Events;
 namespace inzynierka.EventBus;
 
 /// <summary>
-/// Interfejs dla szyny zdarzeñ - centralne zarz¹dzanie komunikacj¹ miêdzy modu³ami
+/// Interfejs dla szyny zdarzeï¿½ - centralne zarzï¿½dzanie komunikacjï¿½ miï¿½dzy moduï¿½ami
 /// </summary>
 public interface IEventBus
 {
@@ -17,7 +17,7 @@ public interface IEventBus
 }
 
 /// <summary>
-/// Interfejs dla handlerów zdarzeñ
+/// Interfejs dla handlerï¿½w zdarzeï¿½
 /// </summary>
 public interface IEventHandler<in TEvent> where TEvent : BaseIntegrationEvent
 {
@@ -25,18 +25,18 @@ public interface IEventHandler<in TEvent> where TEvent : BaseIntegrationEvent
 }
 
 /// <summary>
-/// In-memory implementacja szyny zdarzeñ
+/// In-memory implementacja szyny zdarzeï¿½
 /// </summary>
 public class InMemoryEventBus : IEventBus
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<InMemoryEventBus> _logger;
     private readonly Dictionary<Type, List<Type>> _handlers = new();
     private readonly object _lock = new();
 
-    public InMemoryEventBus(IServiceProvider serviceProvider, ILogger<InMemoryEventBus> logger)
+    public InMemoryEventBus(IServiceScopeFactory serviceScopeFactory, ILogger<InMemoryEventBus> logger)
     {
-        _serviceProvider = serviceProvider;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
@@ -59,33 +59,36 @@ public class InMemoryEventBus : IEventBus
         var handlerTypes = _handlers[eventType];
         var tasks = new List<Task>();
 
-        foreach (var handlerType in handlerTypes)
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
+            foreach (var handlerType in handlerTypes)
+            {
+                try
+                {
+                    var handler = scope.ServiceProvider.GetService(handlerType);
+                    if (handler is IEventHandler<TEvent> eventHandler)
+                    {
+                        tasks.Add(eventHandler.HandleAsync(@event));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating handler {HandlerType} for event {EventType}", 
+                        handlerType.Name, eventType.Name);
+                }
+            }
+
             try
             {
-                var handler = _serviceProvider.GetService(handlerType);
-                if (handler is IEventHandler<TEvent> eventHandler)
-                {
-                    tasks.Add(eventHandler.HandleAsync(@event));
-                }
+                await Task.WhenAll(tasks);
+                _logger.LogInformation("Successfully processed event {EventType} with {HandlerCount} handlers", 
+                    eventType.Name, tasks.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating handler {HandlerType} for event {EventType}", 
-                    handlerType.Name, eventType.Name);
+                _logger.LogError(ex, "Error processing event {EventType}", eventType.Name);
+                throw;
             }
-        }
-
-        try
-        {
-            await Task.WhenAll(tasks);
-            _logger.LogInformation("Successfully processed event {EventType} with {HandlerCount} handlers", 
-                eventType.Name, tasks.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing event {EventType}", eventType.Name);
-            throw;
         }
     }
 

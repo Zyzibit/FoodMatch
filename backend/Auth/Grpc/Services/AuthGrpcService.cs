@@ -1,6 +1,5 @@
 using Grpc.Core;
 using inzynierka.Auth.Contracts;
-using inzynierka.Auth.Grpc.Clients;
 using Microsoft.AspNetCore.Identity;
 using inzynierka.Auth.Model;
 
@@ -9,18 +8,15 @@ namespace inzynierka.Auth.Grpc.Services;
 public class AuthGrpcService : AuthService.AuthServiceBase
 {
     private readonly IAuthContract _authModule;
-    private readonly AuthToUsersGrpcClient _usersGrpcClient;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<AuthGrpcService> _logger;
 
     public AuthGrpcService(
         IAuthContract authModule,
-        AuthToUsersGrpcClient usersGrpcClient,
         UserManager<User> userManager,
         ILogger<AuthGrpcService> logger)
     {
         _authModule = authModule;
-        _usersGrpcClient = usersGrpcClient;
         _userManager = userManager;
         _logger = logger;
     }
@@ -54,33 +50,26 @@ public class AuthGrpcService : AuthService.AuthServiceBase
     {
         try
         {
-            // Deleguj do modułu Users - Auth nie zarządza danymi profilu
-            var userInfo = await _usersGrpcClient.GetUserInfoAsync(request.UserId);
-
-            if (userInfo == null)
+            // Auth returns identity information only (Auth does not own profile/business data)
+            var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "User not found"));
             }
 
-            // Dodaj role z Auth (tylko Auth zarządza rolami)
-            var user = await _userManager.FindByIdAsync(request.UserId);
-            if (user != null)
-            {
-                var roles = await _userManager.GetRolesAsync(user);
-                userInfo.Roles.Clear();
-                userInfo.Roles.AddRange(roles);
-            }
+            var roles = await _userManager.GetRolesAsync(user);
 
             var response = new GetUserInfoResponse
             {
-                UserId = userInfo.UserId,
-                Username = userInfo.Username,
-                Email = userInfo.Email
+                UserId = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty
             };
-            response.Roles.AddRange(userInfo.Roles);
+            response.Roles.AddRange(roles);
 
             return response;
         }
+        catch (RpcException) { throw; }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting user info for userId: {UserId}", request.UserId);

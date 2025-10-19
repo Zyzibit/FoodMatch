@@ -1,14 +1,10 @@
 using System.Text;
-using System.Text.Json;
 using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.Model;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Services;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
-using inzynierka.Products.OpenFoodFacts.Import;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,9 +24,6 @@ using inzynierka.Users.Services;
 // gRPC Services - new modular structure
 using inzynierka.Auth.Grpc.Services;
 using inzynierka.Products.Grpc.Services;
-using inzynierka.Users.Grpc.Services;
-using inzynierka.Auth.Grpc.Clients;
-using inzynierka.Users.Grpc.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,17 +56,17 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
         var multiplexer = ConnectionMultiplexer.Connect(options);
         
         // Log connection events
-        multiplexer.ConnectionFailed += (sender, args) =>
+        multiplexer.ConnectionFailed += (_, args) =>
         {
             logger?.LogError("Redis connection failed: {Exception}", args.Exception?.Message);
         };
         
-        multiplexer.ConnectionRestored += (sender, args) =>
+        multiplexer.ConnectionRestored += (_, _) =>
         {
             logger?.LogInformation("Redis connection restored");
         };
         
-        multiplexer.ErrorMessage += (sender, args) =>
+        multiplexer.ErrorMessage += (_, args) =>
         {
             logger?.LogError("Redis error: {Message}", args.Message);
         };
@@ -116,13 +109,10 @@ builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductSe
 {
     options.Address = new Uri(grpcBaseUrl);
 });
-builder.Services.AddGrpcClient<inzynierka.Users.Grpc.UserService.UserServiceClient>(options =>
-{
-    options.Address = new Uri(grpcBaseUrl);
-});
 
-builder.Services.AddScoped<AuthToUsersGrpcClient>();
-builder.Services.AddScoped<UsersGrpcClient>();
+// Removed Users gRPC client registration to decouple modules
+
+// Removed scoped cross-module gRPC clients
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
@@ -156,7 +146,7 @@ builder.Services.AddAuthentication(options =>
                 ValidAudience = builder.Configuration["JWT:ValidAudience"],
                 ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
                 ClockSkew = TimeSpan.Zero,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:secret"]))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:secret"] ?? string.Empty))
             };
             options.Events = new JwtBearerEvents
             {
@@ -181,7 +171,6 @@ app.MapHealthChecks("/alive");
 
 app.MapGrpcService<AuthGrpcService>();
 app.MapGrpcService<ProductsGrpcService>();
-app.MapGrpcService<UsersGrpcService>();
 
 app.UseCors(policy =>
     policy.AllowAnyOrigin()

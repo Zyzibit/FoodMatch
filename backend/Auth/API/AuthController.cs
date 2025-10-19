@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using inzynierka.Auth.Contracts;
 using inzynierka.Auth.Services;
 using inzynierka.Auth.Utilities;
-using inzynierka.Auth.Grpc.Clients;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using inzynierka.Auth.Model;
+using inzynierka.Auth.Contracts.Models;
 
 namespace inzynierka.Auth.API;
 
@@ -14,21 +16,21 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthContract _authModule;
     private readonly ITokenService _tokenService;
-    private readonly AuthToUsersGrpcClient _usersGrpcClient;
     private readonly ILogger<AuthController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly UserManager<User> _userManager;
 
     public AuthController(
         IConfiguration configuration,
         IAuthContract authModule, 
         ITokenService tokenService,
-        AuthToUsersGrpcClient usersGrpcClient,
+        UserManager<User> userManager,
         ILogger<AuthController> logger)
     {
         _authModule = authModule;
         _tokenService = tokenService;
         _configuration = configuration;
-        _usersGrpcClient = usersGrpcClient;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -190,13 +192,24 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userInfo = await _usersGrpcClient.GetUserInfoAsync(userId);
-            
-            if (userInfo == null)
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
-            
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var userInfo = new UserInfo
+            {
+                UserId = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = null
+            };
+
             return Ok(userInfo);
         }
         catch (Exception ex)
@@ -219,13 +232,24 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var userInfo = await _usersGrpcClient.GetUserInfoAsync(userId);
-            
-            if (userInfo == null)
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
-            
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var userInfo = new UserInfo
+            {
+                UserId = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = null
+            };
+
             return Ok(userInfo);
         }
         catch (Exception ex)
@@ -358,38 +382,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    public class LoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class RegisterRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class ValidateTokenRequest
-    {
-        public string? Token { get; set; }
-    }
-
-    public class RefreshTokenRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
-
-    public class LogoutRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
-
-    public class ChangePasswordRequest
-    {
-        public string CurrentPassword { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
-    }
+    
     
 }

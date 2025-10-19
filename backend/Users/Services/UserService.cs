@@ -1,52 +1,50 @@
+using inzynierka.Data;
 using inzynierka.Auth.Model;
-using inzynierka.Users.Model;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.Users.Services;
 
 public class UserService : IUserService
 {
-    private readonly UserManager<User> _userManager;
+    private readonly AppDbContext _dbContext;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(UserManager<User> userManager, ILogger<UserService> logger)
+    public UserService(AppDbContext dbContext, ILogger<UserService> logger)
     {
-        _userManager = userManager;
+        _dbContext = dbContext;
         _logger = logger;
     }
 
-    public async Task<UserProfile?> GetUserByIdAsync(string userId)
+    public async Task<User?> GetUserByIdAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
-        return user != null ? MapToUserProfile(user) : null;
+        var user = await _dbContext.Users.FindAsync(userId);
+        return user;
     }
 
-    public async Task<UserProfile?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        var user = await _userManager.FindByNameAsync(username);
-        return user != null ? MapToUserProfile(user) : null;
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        return user;
     }
 
-    public async Task<UserProfile?> GetUserByEmailAsync(string email)
+    public async Task<User?> GetUserByEmailAsync(string email)
     {
-        var user = await _userManager.FindByEmailAsync(email);
-        return user != null ? MapToUserProfile(user) : null;
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        return user;
     }
 
-    public async Task<List<UserProfile>> GetUsersAsync(int pageNumber, int pageSize)
+    public async Task<List<User>> GetUsersAsync(int pageNumber, int pageSize)
     {
-        var users = await _userManager.Users
+        return await _dbContext.Users
+            .OrderBy(u => u.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
-
-        return users.Select(MapToUserProfile).ToList();
     }
 
     public async Task<bool> UpdateUserProfileAsync(string userId, string? name, string? email)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)
         {
             _logger.LogWarning("User with ID {UserId} not found", userId);
@@ -54,68 +52,36 @@ public class UserService : IUserService
         }
 
         if (!string.IsNullOrEmpty(name))
-        {
             user.Name = name;
-        }
 
-        if (!string.IsNullOrEmpty(email) && email != user.Email)
-        {
-            var setEmailResult = await _userManager.SetEmailAsync(user, email);
-            if (!setEmailResult.Succeeded)
-            {
-                _logger.LogError("Failed to update email for user {UserId}: {Errors}", 
-                    userId, string.Join(", ", setEmailResult.Errors.Select(e => e.Description)));
-                return false;
-            }
-        }
+        if (!string.IsNullOrEmpty(email))
+            user.Email = email;
 
-        var result = await _userManager.UpdateAsync(user);
-        if (!result.Succeeded)
-        {
-            _logger.LogError("Failed to update user {UserId}: {Errors}", 
-                userId, string.Join(", ", result.Errors.Select(e => e.Description)));
-            return false;
-        }
+        user.UpdatedAt = DateTime.UtcNow;
+
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteUserAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)
         {
             _logger.LogWarning("User with ID {UserId} not found", userId);
             return false;
         }
 
-        var result = await _userManager.DeleteAsync(user);
-        if (!result.Succeeded)
-        {
-            _logger.LogError("Failed to delete user {UserId}: {Errors}", 
-                userId, string.Join(", ", result.Errors.Select(e => e.Description)));
-            return false;
-        }
-
+        _dbContext.Users.Remove(user);
+        await _dbContext.SaveChangesAsync();
         return true;
     }
 
     public async Task<int> GetTotalUsersCountAsync()
     {
-        return await _userManager.Users.CountAsync();
+        return await _dbContext.Users.CountAsync();
     }
 
-    private static UserProfile MapToUserProfile(User user)
-    {
-        return new UserProfile
-        {
-            Id = user.Id,
-            Name = user.Name,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            CreatedAt = DateTime.UtcNow, 
-            UpdatedAt = null
-        };
-    }
 }
-

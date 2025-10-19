@@ -1,4 +1,4 @@
-using Google.Protobuf.WellKnownTypes;
+using System;
 
 namespace inzynierka.Users.Model;
 
@@ -9,6 +9,5 @@ public class UserProfile
     public string UserName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public Timestamp UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
-
