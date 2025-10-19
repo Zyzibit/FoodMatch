@@ -7,18 +7,18 @@ using inzynierka.Products.OpenFoodFacts.Import;
 
 namespace inzynierka.Products.Modules;
 
-public class ProductsModule : IProductsContract
+public class ProductModule : IProductContract
 {
     private readonly IProductRepository _productRepository;
     private readonly IProductImporter _productImporter;
     private readonly IEventBus _eventBus;
-    private readonly ILogger<ProductsModule> _logger;
+    private readonly ILogger<ProductModule> _logger;
 
-    public ProductsModule(
+    public ProductModule(
         IProductRepository productRepository,
         IProductImporter productImporter,
         IEventBus eventBus,
-        ILogger<ProductsModule> logger)
+        ILogger<ProductModule> logger)
     {
         _productRepository = productRepository;
         _productImporter = productImporter;

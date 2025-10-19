@@ -2,7 +2,7 @@ using inzynierka.Users.Contracts.Models;
 
 namespace inzynierka.Users.Contracts;
 
-public interface IUsersContract
+public interface IUserContract
 {
     Task<UserDto?> GetUserByIdAsync(string userId);
     Task<UserDto?> GetUserByUsernameAsync(string username);

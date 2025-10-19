@@ -1,3 +1,4 @@
+using UserEntity = inzynierka.Users.Model.User;
 using inzynierka.Users.Contracts.Models;
 using inzynierka.Users.Model;
 

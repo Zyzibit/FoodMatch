@@ -1,17 +1,16 @@
 using inzynierka.Users.Contracts;
 using inzynierka.Users.Contracts.Models;
-using inzynierka.Users.Services;
-using inzynierka.Auth.Model;
 using inzynierka.Users.Model;
+using inzynierka.Users.Services;
 
 namespace inzynierka.Users.Modules;
 
-public class UsersModule : IUsersContract
+public class UserModule : IUserContract
 {
     private readonly IUserService _userService;
-    private readonly ILogger<UsersModule> _logger;
+    private readonly ILogger<UserModule> _logger;
 
-    public UsersModule(IUserService userService, ILogger<UsersModule> logger)
+    public UserModule(IUserService userService, ILogger<UserModule> logger)
     {
         _userService = userService;
         _logger = logger;

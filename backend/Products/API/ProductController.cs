@@ -7,14 +7,14 @@ namespace inzynierka.Products.API;
 
 [ApiController]
 [Route("api/v1/products")]
-public class ProductsController : ControllerBase
+public class ProductController : ControllerBase
 {
-    private readonly IProductsContract _productsModule;
-    private readonly ILogger<ProductsController> _logger;
+    private readonly IProductContract _productModule;
+    private readonly ILogger<ProductController> _logger;
 
-    public ProductsController(IProductsContract productsModule, ILogger<ProductsController> logger)
+    public ProductController(IProductContract productModule, ILogger<ProductController> logger)
     {
-        _productsModule = productsModule;
+        _productModule = productModule;
         _logger = logger;
     }
 
@@ -23,7 +23,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.GetProductAsync(productId);
+            var result = await _productModule.GetProductAsync(productId);
             
             if (!result.Success)
             {
@@ -56,7 +56,7 @@ public class ProductsController : ControllerBase
                 Offset = request.Offset
             };
 
-            var result = await _productsModule.SearchProductsAsync(query);
+            var result = await _productModule.SearchProductsAsync(query);
             
             if (!result.Success)
             {
@@ -83,7 +83,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.GetProductsByCategoryAsync(category, limit, offset);
+            var result = await _productModule.GetProductsByCategoryAsync(category, limit, offset);
             
             if (!result.Success)
             {
@@ -110,7 +110,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var categories = await _productsModule.GetCategoriesAsync();
+            var categories = await _productModule.GetCategoriesAsync();
             return Ok(categories);
         }
         catch (Exception ex)
@@ -126,7 +126,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var allergens = await _productsModule.GetAllergensAsync();
+            var allergens = await _productModule.GetAllergensAsync();
             return Ok(allergens);
         }
         catch (Exception ex)
@@ -142,7 +142,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var ingredients = await _productsModule.GetIngredientsAsync();
+            var ingredients = await _productModule.GetIngredientsAsync();
             return Ok(ingredients);
         }
         catch (Exception ex)
@@ -158,7 +158,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.GetNutritionInfoAsync(productId);
+            var result = await _productModule.GetNutritionInfoAsync(productId);
             
             if (!result.Success)
             {
@@ -181,7 +181,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.ImportProductsAsync(request.FilePath);
+            var result = await _productModule.ImportProductsAsync(request.FilePath);
             
             if (!result.Success)
             {
@@ -218,7 +218,7 @@ public class ProductsController : ControllerBase
                 return BadRequest(new { message = "Offset must be greater than or equal to 0" });
             }
 
-            var result = await _productsModule.GetAllProductsAsync(limit, offset);
+            var result = await _productModule.GetAllProductsAsync(limit, offset);
             
             if (!result.Success)
             {
