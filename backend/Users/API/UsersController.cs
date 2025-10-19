@@ -155,6 +155,24 @@ public class UsersController : ControllerBase
         return Ok(new { message = "User deleted successfully" });
     }
     
+    [HttpGet("preferences")]
+    [Authorize]
+    public async Task<IActionResult> GetUserFoodPreferences()
+    {
+        try {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+            var preferences = await _usersContract.GetUserFoodPreferencesAsync(userId);
+            return Ok(preferences);
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Error getting user food preferences");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+    
     [HttpPost("preferences")]
     [Authorize]
     public async Task<IActionResult> UpdateUserFoodPreferences([FromBody] UpdateFoodPreferencesRequest request)

@@ -1,6 +1,6 @@
 ﻿namespace inzynierka.Users.Contracts.Models;
 
-public class UpdateFoodPreferencesRequest {
+public class FoodPreferencesDto {
     public bool IsVegan { get; set; }
     public bool IsVegetarian { get; set; }
     public bool HasGlutenIntolerance { get; set; }

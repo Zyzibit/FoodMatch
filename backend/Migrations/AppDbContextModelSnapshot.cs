@@ -639,6 +639,52 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+                {
+                    b.OwnsOne("inzynierka.Users.Model.FoodPreferences", "FoodPreferences", b1 =>
+                        {
+                            b1.Property<string>("UserId")
+                                .HasColumnType("text");
+
+                            b1.Property<int>("DailyCalorieGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyCarbohydrateGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyFatGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyProteinGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool>("HasGlutenIntolerance")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("HasLactoseIntolerance")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("HasNutAllergy")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("IsVegan")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("IsVegetarian")
+                                .HasColumnType("boolean");
+
+                            b1.HasKey("UserId");
+
+                            b1.ToTable("AspNetUsers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserId");
+                        });
+
+                    b.Navigation("FoodPreferences")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("inzynierka.Products.Model.Product", b =>
                 {
                     b.Navigation("ProductAllergenTags");

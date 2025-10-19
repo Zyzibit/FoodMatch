@@ -30,5 +30,9 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.OwnsOne(u => u.FoodPreferences);
+        });;
     }
 }

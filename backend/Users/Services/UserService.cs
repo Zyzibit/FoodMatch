@@ -1,3 +1,4 @@
+using inzynierka.Users.Contracts.Models;
 using inzynierka.Users.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -145,7 +146,6 @@ public class UserService : IUserService
     {
         try
         {
-            // Walidacja - sprawdź czy użytkownik już istnieje
             if (await UserExistsByUsernameAsync(username))
             {
                 _logger.LogWarning("Attempt to create user with existing username: {Username}", username);
@@ -222,17 +222,15 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<FoodPreferences> GetUserFoodPreferencesAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        return user?.FoodPreferences;
+    }
+    
     public async Task<bool> UpdateUserFoodPreferencesAsync(
         string userId,
-        bool? isVegan = null,
-        bool? isVegetarian = null,
-        bool? isGlutenFree = null,
-        bool? isLactoseFree = null,
-        bool? hasNutAllergy = null,
-        int? dailyProteinGoal = null,
-        int? dailyCarbohydrateGoal = null,
-        int? dailyFatGoal = null,
-        int? dailyCalorieGoal = null)
+        FoodPreferences foodPreferences)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -251,16 +249,16 @@ public class UserService : IUserService
 
             var hasChanges = false;
 
-            SetIfChanged(ref hasChanges, isVegan, v => user.IsVegan = v, () => user.IsVegan);
-            SetIfChanged(ref hasChanges, isVegetarian, v => user.IsVegetarian = v, () => user.IsVegetarian);
-            SetIfChanged(ref hasChanges, isGlutenFree, v => user.IsGlutenFree = v, () => user.IsGlutenFree);
-            SetIfChanged(ref hasChanges, isLactoseFree, v => user.IsLactoseFree = v, () => user.IsLactoseFree);
-            SetIfChanged(ref hasChanges, hasNutAllergy, v => user.HasNutAllergy = v, () => user.HasNutAllergy);
+            SetIfChanged(ref hasChanges, foodPreferences.IsVegan, v => user.FoodPreferences.IsVegan = v, () => user.FoodPreferences.IsVegan);
+            SetIfChanged(ref hasChanges, foodPreferences.IsVegetarian, v => user.FoodPreferences.IsVegetarian = v, () =>user.FoodPreferences.IsVegetarian);
+            SetIfChanged(ref hasChanges, foodPreferences.HasGlutenIntolerance, v => user.FoodPreferences.HasGlutenIntolerance = v, () => user.FoodPreferences.HasGlutenIntolerance);
+            SetIfChanged(ref hasChanges, foodPreferences.HasLactoseIntolerance, v => user.FoodPreferences.HasLactoseIntolerance = v, () => user.FoodPreferences.HasLactoseIntolerance);
+            SetIfChanged(ref hasChanges, foodPreferences.HasNutAllergy, v => user.FoodPreferences.HasNutAllergy = v, () => user.FoodPreferences.HasNutAllergy);
 
-            SetIfChanged(ref hasChanges, dailyProteinGoal, v => user.DailyProteinGoal = v, () => user.DailyProteinGoal);
-            SetIfChanged(ref hasChanges, dailyCarbohydrateGoal, v => user.DailyCarbohydrateGoal = v, () => user.DailyCarbohydrateGoal);
-            SetIfChanged(ref hasChanges, dailyFatGoal, v => user.DailyFatGoal = v, () => user.DailyFatGoal);
-            SetIfChanged(ref hasChanges, dailyCalorieGoal, v => user.DailyCalorieGoal = v, () => user.DailyCalorieGoal);
+            SetIfChanged(ref hasChanges, foodPreferences.DailyProteinGoal, v => user.FoodPreferences.DailyProteinGoal = v, () => user.FoodPreferences.DailyProteinGoal);
+            SetIfChanged(ref hasChanges, foodPreferences.DailyCarbohydrateGoal, v => user.FoodPreferences.DailyCarbohydrateGoal = v, () => user.FoodPreferences.DailyCarbohydrateGoal);
+            SetIfChanged(ref hasChanges, foodPreferences.DailyFatGoal, v => user.FoodPreferences.DailyFatGoal = v, () => user.FoodPreferences.DailyFatGoal);
+            SetIfChanged(ref hasChanges, foodPreferences.DailyCalorieGoal, v => user.FoodPreferences.DailyCalorieGoal = v, () => user.FoodPreferences.DailyCalorieGoal);
 
             if (hasChanges)
             {
@@ -305,7 +303,6 @@ public class UserService : IUserService
     {
         try
         {
-            // Sprawdź czy rola istnieje, jeśli nie - utwórz ją
             if (!await _roleService.RoleExistsAsync(role))
             {
                 _logger.LogWarning("Role {Role} does not exist. Creating it now.", role);

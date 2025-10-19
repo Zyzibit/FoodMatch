@@ -11,6 +11,7 @@ public interface IUsersContract
     Task<bool> UpdateUserProfileAsync(string userId, UpdateUserProfileRequest request);
     Task<bool> DeleteUserAsync(string userId);
     Task<int> GetTotalUsersCountAsync();
-    Task <bool> UpdateUserFoodPreferencesAsync(string userId);
+    Task <bool> UpdateUserFoodPreferencesAsync(string userId, UpdateFoodPreferencesRequest request);
+    Task <FoodPreferencesDto> GetUserFoodPreferencesAsync(string userId);
 }
 

@@ -56,6 +56,44 @@ public class UsersModule : IUsersContract
         return await _userService.GetTotalUsersCountAsync();
     }
 
+    public Task<bool> UpdateUserFoodPreferencesAsync(string userId, UpdateFoodPreferencesRequest request) {
+        return _userService.UpdateUserFoodPreferencesAsync(
+            userId,
+            new FoodPreferences
+            {
+                IsVegan = request.IsVegan,
+                IsVegetarian = request.IsVegetarian,
+                HasGlutenIntolerance = request.HasGlutenIntolerance,
+                HasLactoseIntolerance = request.HasLactoseIntolerance,
+                HasNutAllergy = request.HasNutAllergy,
+                DailyCarbohydrateGoal = request.DailyCarbohydrateGoal,
+                DailyProteinGoal = request.DailyProteinGoal,
+                DailyFatGoal = request.DailyFatGoal,
+                DailyCalorieGoal = request.DailyCalorieGoal
+            }
+        );
+    }
+    
+    public Task <FoodPreferencesDto> GetUserFoodPreferencesAsync(string userId) {
+        var result = _userService.GetUserFoodPreferencesAsync(userId);
+        return result.ContinueWith(task => 
+        {
+            var prefs = task.Result;
+            return new FoodPreferencesDto
+            {
+                IsVegan = prefs.IsVegan,
+                IsVegetarian = prefs.IsVegetarian,
+                HasGlutenIntolerance = prefs.HasGlutenIntolerance,
+                HasLactoseIntolerance = prefs.HasLactoseIntolerance,
+                HasNutAllergy = prefs.HasNutAllergy,
+                DailyCarbohydrateGoal = prefs.DailyCarbohydrateGoal,
+                DailyProteinGoal = prefs.DailyProteinGoal,
+                DailyFatGoal = prefs.DailyFatGoal,
+                DailyCalorieGoal = prefs.DailyCalorieGoal
+            };
+        });
+    }
+
     private static UserDto MapToUserDto(User user)
     {
         return new UserDto
@@ -69,3 +107,4 @@ public class UsersModule : IUsersContract
         };
     }
 }
+
