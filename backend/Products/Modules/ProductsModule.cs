@@ -246,7 +246,7 @@ public class ProductsModule : IProductsContract
         }
     }
 
-    public async Task<ProductImportResult> ImportProductsAsync(string filePath, int maxProducts = 100000, int batchSize = 1000)
+    public async Task<ProductImportResult> ImportProductsAsync(string filePath)
     {
         try
         {

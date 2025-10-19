@@ -6,7 +6,7 @@ public class TokenCleanupService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TokenCleanupService> _logger;
-    private readonly TimeSpan _period = TimeSpan.FromHours(1); // Run every hour
+    private readonly TimeSpan _period = TimeSpan.FromHours(1); 
 
     public TokenCleanupService(IServiceProvider serviceProvider, ILogger<TokenCleanupService> logger)
     {

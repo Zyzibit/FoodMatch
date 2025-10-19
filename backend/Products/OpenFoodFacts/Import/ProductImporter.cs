@@ -22,7 +22,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private readonly IOpenFoodFactsRepository _repo;
         private readonly ILogger<ProductImporter> _logger;
 
-        private const int ProductBatchSize = 50_000;
+        private const int ProductBatchSize = 50;
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             AllowTrailingCommas = true,
@@ -100,8 +100,8 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private static Product? MapToProduct(OpenFoodFactsProduct src)
         {
             var n = src.OpenFoodFactsNutriments;
-            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null) ) {
-                return new Product {
+            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null && src.LanguageCode == "pl")) {
+                var product = new Product {
                     Code = Sanitizer(src.Code),
                     ProductName = Sanitizer(src.ProductName),
 
@@ -133,6 +133,8 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
                     LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
                 };
+                Console.WriteLine(product);
+                return product;
             }
 
             return null;

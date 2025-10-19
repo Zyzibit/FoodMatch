@@ -219,74 +219,6 @@ namespace inzynierka.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("inzynierka.Auth.Model.User", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.ToTable("AspNetUsers", (string)null);
-                });
-
             modelBuilder.Entity("inzynierka.Products.Model.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -495,6 +427,80 @@ namespace inzynierka.Migrations
                     b.ToTable("IngredientTags");
                 });
 
+            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -506,7 +512,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("inzynierka.Auth.Model.User", null)
+                    b.HasOne("inzynierka.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -515,7 +521,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("inzynierka.Auth.Model.User", null)
+                    b.HasOne("inzynierka.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -530,7 +536,7 @@ namespace inzynierka.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Auth.Model.User", null)
+                    b.HasOne("inzynierka.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -539,7 +545,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("inzynierka.Auth.Model.User", null)
+                    b.HasOne("inzynierka.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -567,7 +573,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
                 {
-                    b.HasOne("inzynierka.Auth.Model.User", "User")
+                    b.HasOne("inzynierka.Users.Model.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -631,6 +637,52 @@ namespace inzynierka.Migrations
                     b.Navigation("CountryTag");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+                {
+                    b.OwnsOne("inzynierka.Users.Model.FoodPreferences", "FoodPreferences", b1 =>
+                        {
+                            b1.Property<string>("UserId")
+                                .HasColumnType("text");
+
+                            b1.Property<int>("DailyCalorieGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyCarbohydrateGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyFatGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyProteinGoal")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool>("HasGlutenIntolerance")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("HasLactoseIntolerance")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("HasNutAllergy")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("IsVegan")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("IsVegetarian")
+                                .HasColumnType("boolean");
+
+                            b1.HasKey("UserId");
+
+                            b1.ToTable("AspNetUsers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserId");
+                        });
+
+                    b.Navigation("FoodPreferences")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("inzynierka.Products.Model.Product", b =>

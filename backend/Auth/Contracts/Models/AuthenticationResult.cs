@@ -8,5 +8,14 @@
         public DateTime? ExpiresAt { get; set; }
         public UserInfo? User { get; set; }
         public string? ErrorMessage { get; set; }
+
+        public static AuthenticationResult Failed(string errorMessage)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                ErrorMessage = errorMessage
+            };
+        }
     }
 }

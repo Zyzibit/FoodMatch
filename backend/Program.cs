@@ -1,14 +1,9 @@
 using System.Text;
-using System.Text.Json;
 using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.Model;
 using inzynierka.Auth.Model;
-using inzynierka.Auth.Services;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
-using inzynierka.Products.OpenFoodFacts.Import;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +15,12 @@ using inzynierka.Auth.Contracts;
 using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
 using inzynierka.AI.Modules;
+using inzynierka.Auth.Services;
 using inzynierka.EventBus;
-
-// gRPC Services - new modular structure
-using inzynierka.Auth.Grpc.Services;
-using inzynierka.Products.Grpc.Services;
+using inzynierka.Users.Contracts;
+using inzynierka.Users.Model;
+using inzynierka.Users.Modules;
+using inzynierka.Users.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,17 +53,17 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
         var multiplexer = ConnectionMultiplexer.Connect(options);
         
         // Log connection events
-        multiplexer.ConnectionFailed += (sender, args) =>
+        multiplexer.ConnectionFailed += (_, args) =>
         {
             logger?.LogError("Redis connection failed: {Exception}", args.Exception?.Message);
         };
         
-        multiplexer.ConnectionRestored += (sender, args) =>
+        multiplexer.ConnectionRestored += (_, _) =>
         {
             logger?.LogInformation("Redis connection restored");
         };
         
-        multiplexer.ErrorMessage += (sender, args) =>
+        multiplexer.ErrorMessage += (_, args) =>
         {
             logger?.LogError("Redis error: {Message}", args.Message);
         };
@@ -88,6 +84,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddProductsServices();
 
@@ -95,22 +93,10 @@ builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
-
-builder.Services.AddGrpc();
-
-builder.Services.AddGrpcClient<inzynierka.Auth.Grpc.AuthService.AuthServiceClient>(options =>
-{
-    options.Address = new Uri("https://localhost:5001");
-});
-builder.Services.AddGrpcClient<inzynierka.Products.Grpc.ProductService.ProductServiceClient>(options =>
-{
-    options.Address = new Uri("https://localhost:5001");
-});
+builder.Services.AddScoped<IUsersContract, UsersModule>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
-
-
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -139,7 +125,7 @@ builder.Services.AddAuthentication(options =>
                 ValidAudience = builder.Configuration["JWT:ValidAudience"],
                 ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
                 ClockSkew = TimeSpan.Zero,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:secret"]))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:secret"] ?? string.Empty))
             };
             options.Events = new JwtBearerEvents
             {
@@ -161,10 +147,6 @@ var app = builder.Build();
 
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
-
-app.MapGrpcService<AuthGrpcService>();
-
-app.MapGrpcService<ProductsGrpcService>();
 
 app.UseCors(policy =>
     policy.AllowAnyOrigin()
@@ -195,7 +177,6 @@ using (var scope = app.Services.CreateScope())
 }
 app.UseHttpsRedirection();
 
-await DbSeeder.SeedData(app);  
+await DbSeeder.SeedData(app);
 
 app.Run();
-

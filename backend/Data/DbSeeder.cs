@@ -1,106 +1,106 @@
 ﻿using inzynierka.Auth.Model;
-using inzynierka.Products.Model;
+using inzynierka.Users.Model;
 using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Data;
 
-public class DbSeeder {
-    public static async Task SeedData(IApplicationBuilder app)
+public class DbSeeder
 {
-    // Create a scoped service provider to resolve dependencies
-    using var scope = app.ApplicationServices.CreateScope();
-
-    // resolve the logger service
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbSeeder>>();
-
-    try
+    public static async Task SeedData(IApplicationBuilder app)
     {
-        // resolve other dependencies
-        var userManager = scope.ServiceProvider.GetService<UserManager<User>>();
-        var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
+        // Create a scoped service provider to resolve dependencies
+        using var scope = app.ApplicationServices.CreateScope();
 
-        // Create Admin role if it doesn't exist
-        if ((await roleManager.RoleExistsAsync(Roles.Admin)) == false)
+        // resolve the logger service
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbSeeder>>();
+
+        try
         {
-            logger.LogInformation("Admin role is creating");
-            var roleResult = await roleManager
-              .CreateAsync(new IdentityRole(Roles.Admin));
+            // resolve other dependencies
+            var userManager = scope.ServiceProvider.GetService<UserManager<User>>();
+            var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
 
-            if (roleResult.Succeeded == false)
+            // Create Admin role if it doesn't exist
+            if (!await roleManager.RoleExistsAsync(Roles.Admin))
             {
-                var roleErrors = roleResult.Errors.Select(e => e.Description);
-                logger.LogError($"Failed to create admin role. Errors : {string.Join(",", roleErrors)}");
+                logger.LogInformation("Admin role is creating");
+                var roleResult = await roleManager
+                    .CreateAsync(new IdentityRole(Roles.Admin));
+
+                if (!roleResult.Succeeded)
+                {
+                    var roleErrors = roleResult.Errors.Select(e => e.Description);
+                    logger.LogError($"Failed to create admin role. Errors : {string.Join(",", roleErrors)}");
+                }
+                else
+                {
+                    logger.LogInformation("Admin role is created");
+                }
             }
-            else
+
+            // Create User role if it doesn't exist
+            if (!await roleManager.RoleExistsAsync(Roles.User))
             {
-                logger.LogInformation("Admin role is created");
+                logger.LogInformation("User role is creating");
+                var roleResult = await roleManager
+                    .CreateAsync(new IdentityRole(Roles.User));
+
+                if (!roleResult.Succeeded)
+                {
+                    var roleErrors = roleResult.Errors.Select(e => e.Description);
+                    logger.LogError($"Failed to create user role. Errors : {string.Join(",", roleErrors)}");
+                }
+                else
+                {
+                    logger.LogInformation("User role is created");
+                }
+            }
+
+            var adminUsers = await userManager.GetUsersInRoleAsync(Roles.Admin);
+            if (adminUsers.Count == 0)
+            {
+                var user = new User
+                {
+                    Name = "Admin",
+                    UserName = "admin@gmail.com",
+                    Email = "admin@gmail.com",
+                    EmailConfirmed = true,
+                    SecurityStamp = Guid.NewGuid().ToString()
+                };
+
+                // Attempt to create admin user
+                var createUserResult = await userManager
+                    .CreateAsync(user, "Admin@123");
+
+                // Validate user creation
+                if (!createUserResult.Succeeded)
+                {
+                    var errors = createUserResult.Errors.Select(e => e.Description);
+                    logger.LogError(
+                        $"Failed to create admin user. Errors: {string.Join(", ", errors)}"
+                    );
+                    return;
+                }
+
+                // adding role to user
+                var addUserToRoleResult = await userManager
+                    .AddToRoleAsync(user, Roles.Admin);
+
+                if (!addUserToRoleResult.Succeeded)
+                {
+                    var errors = addUserToRoleResult.Errors.Select(e => e.Description);
+                    logger.LogError($"Failed to add admin role to user. Errors : {string.Join(",", errors)}");
+                }
+                else
+                {
+                    logger.LogInformation("Admin user is created");
+                }
             }
         }
 
-        // Create User role if it doesn't exist
-        if ((await roleManager.RoleExistsAsync(Roles.User)) == false)
+        catch (Exception ex)
         {
-            logger.LogInformation("User role is creating");
-            var roleResult = await roleManager
-              .CreateAsync(new IdentityRole(Roles.User));
-
-            if (roleResult.Succeeded == false)
-            {
-                var roleErrors = roleResult.Errors.Select(e => e.Description);
-                logger.LogError($"Failed to create user role. Errors : {string.Join(",", roleErrors)}");
-            }
-            else
-            {
-                logger.LogInformation("User role is created");
-            }
-        }
-
-        // Check if any users exist to prevent duplicate seeding
-        if (userManager.Users.Any() == false)
-        {
-            var user = new User
-            {
-                Name = "Admin",
-                UserName = "admin@gmail.com",
-                Email = "admin@gmail.com",
-                EmailConfirmed = true,
-                SecurityStamp = Guid.NewGuid().ToString()
-            };
-
-            // Attempt to create admin user
-            var createUserResult = await userManager
-                  .CreateAsync(user: user, password: "Admin@123");
-
-            // Validate user creation
-            if (createUserResult.Succeeded == false)
-            {
-                var errors = createUserResult.Errors.Select(e => e.Description);
-                logger.LogError(
-                    $"Failed to create admin user. Errors: {string.Join(", ", errors)}"
-                );
-                return;
-            }
-
-            // adding role to user
-            var addUserToRoleResult = await userManager
-                            .AddToRoleAsync(user: user, role: Roles.Admin);
-
-            if (addUserToRoleResult.Succeeded == false)
-            {
-                var errors = addUserToRoleResult.Errors.Select(e => e.Description);
-                logger.LogError($"Failed to add admin role to user. Errors : {string.Join(",", errors)}");
-            }
-            else
-            {
-                logger.LogInformation("Admin user is created");
-            }
+            logger.LogCritical(ex.Message);
         }
     }
-
-      catch (Exception ex)
-    {
-        logger.LogCritical(ex.Message);
-    }
-
-}
 }

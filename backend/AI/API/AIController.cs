@@ -17,10 +17,7 @@ public class AIController : ControllerBase
         _aiModule = aiModule;
         _logger = logger;
     }
-
-    /// <summary>
-    /// Generowanie odpowiedzi tekstowej AI
-    /// </summary>
+    
     [HttpPost("generate-text")]
     [Authorize]
     public async Task<IActionResult> GenerateText([FromBody] GenerateTextRequest request)
@@ -62,10 +59,7 @@ public class AIController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Generowanie odpowiedzi JSON AI
-    /// </summary>
+    
     [HttpPost("generate-json")]
     [Authorize]
     public async Task<IActionResult> GenerateJson([FromBody] GenerateJsonRequest request)
@@ -98,10 +92,7 @@ public class AIController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Analiza produktu
-    /// </summary>
+    
     [HttpPost("analyze-product/{productId}")]
     [Authorize]
     public async Task<IActionResult> AnalyzeProduct(string productId, [FromBody] ProductAnalysisRequest request)
@@ -132,7 +123,7 @@ public class AIController : ControllerBase
     }
 
     /// <summary>
-    /// Rekomendacje przepisów
+    /// Rekomendacje przepisï¿½w
     /// </summary>
     [HttpPost("recipe-recommendations")]
     [Authorize]
@@ -173,7 +164,7 @@ public class AIController : ControllerBase
     }
 
     /// <summary>
-    /// Analiza ¿ywieniowa
+    /// Analiza ï¿½ywieniowa
     /// </summary>
     [HttpGet("nutrition-analysis/{productId}")]
     [Authorize]
@@ -204,7 +195,7 @@ public class AIController : ControllerBase
     }
 
     /// <summary>
-    /// Detekcja alergenów
+    /// Detekcja alergenï¿½w
     /// </summary>
     [HttpPost("detect-allergens")]
     [Authorize]

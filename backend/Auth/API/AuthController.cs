@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using inzynierka.Auth.Contracts;
-using inzynierka.Auth.Contracts.Models;
 using inzynierka.Auth.Services;
 using inzynierka.Auth.Utilities;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using inzynierka.Auth.Model;
+using inzynierka.Auth.Contracts.Models;
+using inzynierka.Users.Model;
 
 namespace inzynierka.Auth.API;
 
@@ -15,17 +18,24 @@ public class AuthController : ControllerBase
     private readonly IAuthContract _authModule;
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly UserManager<User> _userManager;
 
-    public AuthController(IAuthContract authModule, ITokenService tokenService, ILogger<AuthController> logger)
+    public AuthController(
+        IConfiguration configuration,
+        IAuthContract authModule, 
+        ITokenService tokenService,
+        UserManager<User> userManager,
+        ILogger<AuthController> logger)
     {
         _authModule = authModule;
         _tokenService = tokenService;
+        _configuration = configuration;
+        _userManager = userManager;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Logowanie u¿ytkownika
-    /// </summary>
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -47,10 +57,10 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = result.ErrorMessage });
             }
 
-            // Ustaw tokeny w ciasteczkach
-            var accessTokenExpirationMinutes = 60;
-            var refreshTokenExpirationDays = 7;
-
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
+            
+            
             _tokenService.SetAccessTokenCookie(Response, result.AccessToken, accessTokenExpirationMinutes);
             _tokenService.SetRefreshTokenCookie(Response, result.RefreshToken ?? "", refreshTokenExpirationDays);
 
@@ -69,10 +79,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Rejestracja nowego u¿ytkownika
-    /// </summary>
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -94,9 +101,8 @@ public class AuthController : ControllerBase
                 return BadRequest(new { message = result.ErrorMessage });
             }
 
-            // Ustaw tokeny w ciasteczkach
-            var accessTokenExpirationMinutes = 60;
-            var refreshTokenExpirationDays = 7;
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
 
             _tokenService.SetAccessTokenCookie(Response, result.AccessToken, accessTokenExpirationMinutes);
             _tokenService.SetRefreshTokenCookie(Response, result.RefreshToken ?? "", refreshTokenExpirationDays);
@@ -116,14 +122,10 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Odnowienie tokenu dostêpu
-    /// </summary>
+    
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest? request = null)
     {
-        // Spróbuj pobraæ refresh token z ciasteczka jeœli nie ma w body
         var refreshToken = request?.RefreshToken ?? Request.Cookies["RefreshToken"];
 
         if (string.IsNullOrEmpty(refreshToken))
@@ -140,9 +142,8 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = result.ErrorMessage });
             }
 
-            // Ustaw nowe tokeny w ciasteczkach
-            var accessTokenExpirationMinutes = 60;
-            var refreshTokenExpirationDays = 7;
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
 
             _tokenService.SetAccessTokenCookie(Response, result.AccessToken, accessTokenExpirationMinutes);
             _tokenService.SetRefreshTokenCookie(Response, result.RefreshToken ?? "", refreshTokenExpirationDays);
@@ -162,14 +163,11 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Walidacja tokenu
-    /// </summary>
+
     [HttpPost("validate-token")]
-    public async Task<IActionResult> ValidateToken([FromBody] ValidateTokenRequest? request = null)
+    public async Task<IActionResult> ValidateToken()
     {
-        // Spróbuj pobraæ token z body lub z ciasteczka
-        var token = request?.Token ?? Request.Cookies["AccessToken"];
+        var token = Request.Cookies["AccessToken"] ?? null;
 
         if (string.IsNullOrEmpty(token))
         {
@@ -188,16 +186,37 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Pobranie informacji o u¿ytkowniku
-    /// </summary>
+
     [HttpGet("user/{userId}")]
     [Authorize]
     public async Task<IActionResult> GetUserInfo(string userId)
-    {
+    {       
+        var token = Request.Cookies["AccessToken"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new { message = "Token is required" });
+        }
+
         try
         {
-            var userInfo = await _authModule.GetUserInfoAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var userInfo = new UserInfo
+            {
+                UserId = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+                CreatedAt = DateTime.UtcNow,
+            };
+
             return Ok(userInfo);
         }
         catch (Exception ex)
@@ -207,10 +226,18 @@ public class AuthController : ControllerBase
         }
     }
 
+  
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
+        var token = Request.Cookies["RefreshToken"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return BadRequest(new { message = "Token is required" });
+        }
+
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -219,7 +246,22 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var userInfo = await _authModule.GetUserInfoAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var userInfo = new UserInfo
+            {
+                UserId = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Roles = roles.ToList(),
+            };
+
             return Ok(userInfo);
         }
         catch (Exception ex)
@@ -228,10 +270,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Wylogowanie - uniewa¿nienie refresh token
-    /// </summary>
+    
     [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)
@@ -256,7 +295,6 @@ public class AuthController : ControllerBase
                 success = await _authModule.RevokeAllTokensAsync(userId);
             }
 
-            // Usuñ ciasteczka
             _tokenService.RemoveAccessTokenCookie(Response);
             _tokenService.RemoveRefreshTokenCookie(Response);
 
@@ -269,9 +307,7 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Zmiana has³a u¿ytkownika
-    /// </summary>
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
@@ -296,7 +332,6 @@ public class AuthController : ControllerBase
                 return BadRequest(new { message = "Failed to change password. Please check your current password." });
             }
 
-            // Po zmianie has³a usuñ wszystkie tokeny z ciasteczek dla bezpieczeñstwa
             _tokenService.RemoveAccessTokenCookie(Response);
             _tokenService.RemoveRefreshTokenCookie(Response);
 
@@ -308,41 +343,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Aktualizacja profilu u¿ytkownika
-    /// </summary>
-    [HttpPut("profile")]
-    [Authorize]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
-    {
-        try
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized(new { message = "Invalid token" });
-            }
-
-            var success = await _authModule.UpdateUserProfileAsync(userId, request.Email, request.Name);
-
-            if (!success)
-            {
-                return BadRequest(new { message = "Failed to update profile" });
-            }
-
-            return Ok(new { message = "Profile updated successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating profile");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
-    }
-
-    /// <summary>
-    /// Pobranie aktywnych sesji u¿ytkownika
-    /// </summary>
+    
     [HttpGet("sessions")]
     [Authorize]
     public async Task<IActionResult> GetUserSessions()
@@ -355,7 +356,6 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            // Pobierz aktualny refresh token z ciasteczka
             var currentRefreshToken = Request.Cookies["RefreshToken"];
 
             var sessions = await _authModule.GetUserSessionsAsync(userId, currentRefreshToken);
@@ -394,43 +394,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    public class LoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class RegisterRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class ValidateTokenRequest
-    {
-        public string? Token { get; set; }
-    }
-
-    public class RefreshTokenRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
-
-    public class LogoutRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
-
-    public class ChangePasswordRequest
-    {
-        public string CurrentPassword { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
-    }
-
-    public class UpdateProfileRequest
-    {
-        public string? Email { get; set; }
-        public string? Name { get; set; }
-    }
+    
+    
 }

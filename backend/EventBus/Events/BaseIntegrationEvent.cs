@@ -1,8 +1,5 @@
 namespace inzynierka.EventBus.Events;
 
-/// <summary>
-/// Bazowa klasa dla wszystkich zdarzeñ w systemie
-/// </summary>
 public abstract class BaseIntegrationEvent
 {
     public Guid Id { get; } = Guid.NewGuid();

@@ -181,7 +181,7 @@ public class ProductsController : ControllerBase
     {
         try
         {
-            var result = await _productsModule.ImportProductsAsync(request.FilePath, request.MaxProducts, request.BatchSize);
+            var result = await _productsModule.ImportProductsAsync(request.FilePath);
             
             if (!result.Success)
             {
@@ -238,23 +238,4 @@ public class ProductsController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-}
-
-
-public class ProductSearchRequest
-{
-    public string? Query { get; set; }
-    public string? Categories { get; set; }
-    public string? Allergens { get; set; }
-    public string? Ingredients { get; set; }
-    public string? Brand { get; set; }
-    public int Limit { get; set; } = 10;
-    public int Offset { get; set; } = 0;
-}
-
-public class ProductImportRequest
-{
-    public string FilePath { get; set; } = string.Empty;
-    public int MaxProducts { get; set; } = 100000;
-    public int BatchSize { get; set; } = 1000;
 }

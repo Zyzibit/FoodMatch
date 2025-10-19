@@ -1,18 +1,18 @@
 using inzynierka.Auth.Contracts.Models;
-using inzynierka.Auth.Model;
 
 namespace inzynierka.Auth.Services;
 
-public interface IAuthService
-{
-    Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null);
-    Task<AuthenticationResult> RegisterAsync(string username, string email, string password, string? deviceId = null, string? userAgent = null, string? ipAddress = null);
+public interface IAuthService {
+    Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null,
+        string? userAgent = null, string? ipAddress = null);
+
+    Task<AuthenticationResult> RegisterAsync(string username, string email, string password, string? deviceId = null,
+        string? userAgent = null, string? ipAddress = null);
+
     Task<TokenRefreshResult> RefreshTokenAsync(string refreshToken);
     Task<bool> RevokeTokenAsync(string refreshToken);
     Task<bool> RevokeAllTokensAsync(string userId);
     Task<TokenValidationResult> ValidateTokenAsync(string accessToken);
-    Task<UserInfo> GetUserInfoAsync(string userId);
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
-    Task<bool> UpdateUserProfileAsync(string userId, string? email = null, string? name = null);
     Task<List<UserSession>> GetUserSessionsAsync(string userId, string? currentRefreshToken = null);
 }

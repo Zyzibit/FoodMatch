@@ -1,10 +1,11 @@
-﻿using inzynierka.Auth.Model;
+﻿using inzynierka.Users.Model;
 using inzynierka.Data.Configuration;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
+using inzynierka.Auth.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,5 +30,9 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.OwnsOne(u => u.FoodPreferences);
+        });;
     }
 }
