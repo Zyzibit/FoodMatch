@@ -11,6 +11,9 @@ public class Receipt {
     public bool IsAiGenerated { get; set; }
     
     public ICollection<ReceiptIngredient> Ingredients { get; set; }
+    
+    public List <string>? AdditionalProducts { get; set; }
+    
     public string Title { get; set; }
     
     public string Description { get; set; }
