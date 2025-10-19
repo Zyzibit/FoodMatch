@@ -101,8 +101,8 @@ public class AuthController : ControllerBase
                 return BadRequest(new { message = result.ErrorMessage });
             }
 
-            var accessTokenExpirationMinutes = 60;
-            var refreshTokenExpirationDays = 7;
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
 
             _tokenService.SetAccessTokenCookie(Response, result.AccessToken, accessTokenExpirationMinutes);
             _tokenService.SetRefreshTokenCookie(Response, result.RefreshToken ?? "", refreshTokenExpirationDays);
@@ -142,8 +142,8 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = result.ErrorMessage });
             }
 
-            var accessTokenExpirationMinutes = 60;
-            var refreshTokenExpirationDays = 7;
+            var accessTokenExpirationMinutes = int.Parse(_configuration["JWT:AccessTokenExpirationMinutes"] ?? "60");
+            var refreshTokenExpirationDays = int.Parse(_configuration["JWT:RefreshTokenExpirationDays"] ?? "7");
 
             _tokenService.SetAccessTokenCookie(Response, result.AccessToken, accessTokenExpirationMinutes);
             _tokenService.SetRefreshTokenCookie(Response, result.RefreshToken ?? "", refreshTokenExpirationDays);

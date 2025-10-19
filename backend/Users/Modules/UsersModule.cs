@@ -73,25 +73,24 @@ public class UsersModule : IUsersContract
             }
         );
     }
-    
-    public Task <FoodPreferencesDto> GetUserFoodPreferencesAsync(string userId) {
-        var result = _userService.GetUserFoodPreferencesAsync(userId);
-        return result.ContinueWith(task => 
-        {
-            var prefs = task.Result;
-            return new FoodPreferencesDto
-            {
-                IsVegan = prefs.IsVegan,
-                IsVegetarian = prefs.IsVegetarian,
-                HasGlutenIntolerance = prefs.HasGlutenIntolerance,
-                HasLactoseIntolerance = prefs.HasLactoseIntolerance,
-                HasNutAllergy = prefs.HasNutAllergy,
-                DailyCarbohydrateGoal = prefs.DailyCarbohydrateGoal,
-                DailyProteinGoal = prefs.DailyProteinGoal,
-                DailyFatGoal = prefs.DailyFatGoal,
-                DailyCalorieGoal = prefs.DailyCalorieGoal
-            };
-        });
+
+    public async Task<FoodPreferencesDto?> GetUserFoodPreferencesAsync(string userId) {
+        var prefs = await _userService.GetUserFoodPreferencesAsync(userId);
+        if (prefs == null) {
+            return null;
+        }
+
+        return new FoodPreferencesDto {
+            IsVegan = prefs.IsVegan,
+            IsVegetarian = prefs.IsVegetarian,
+            HasGlutenIntolerance = prefs.HasGlutenIntolerance,
+            HasLactoseIntolerance = prefs.HasLactoseIntolerance,
+            HasNutAllergy = prefs.HasNutAllergy,
+            DailyCarbohydrateGoal = prefs.DailyCarbohydrateGoal,
+            DailyProteinGoal = prefs.DailyProteinGoal,
+            DailyFatGoal = prefs.DailyFatGoal,
+            DailyCalorieGoal = prefs.DailyCalorieGoal
+        };
     }
 
     private static UserDto MapToUserDto(User user)
