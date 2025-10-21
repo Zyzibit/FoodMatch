@@ -11,6 +11,7 @@ public interface IProductRepository
     Task<Product?> GetProductByCodeAsync(string productCode);
     Task<Product?> GetProductWithDetailsAsync(int productId);
     Task<IEnumerable<Product>> GetProductsWithDetailsAsync(int limit, int offset);
+    Task<IEnumerable<Product>> GetProductsByIdsAsync(List<int> productIds);
     Task<IEnumerable<Product>> SearchProductsAsync(
         string? searchQuery = null,
         string? brand = null,

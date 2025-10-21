@@ -5,7 +5,7 @@
 namespace inzynierka.Migrations
 {
     /// <inheritdoc />
-    public partial class decoupingofuserandauth : Migration
+    public partial class addedreceipttotalweight : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -1,5 +1,6 @@
 using System.Text;
 using inzynierka.AI.OpenAI;
+using inzynierka.AI.OpenAI.PromptBuilders;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
@@ -21,6 +22,10 @@ using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
 using inzynierka.Users.Modules;
 using inzynierka.Users.Services;
+using inzynierka.Receipts.Repositories;
+using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Modules;
+using inzynierka.Receipts.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +99,14 @@ builder.Services.AddHostedService<TokenCleanupService>();
 builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
 builder.Services.AddScoped<IUserContract, UserModule>();
+builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
+builder.Services.AddScoped<IReceiptService, UserReceiptService>();
+builder.Services.AddScoped<IReceiptContract, ReceiptModule>();
+builder.Services.AddScoped<IUnitRepository, UnitRepository>();
+builder.Services.AddScoped<IUnitService, UnitService>();
+builder.Services.AddScoped<IUnitContract, UnitModule>();
+builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
+builder.Services.AddScoped<IRecipePromptBuilder, RecipePromptBuilder>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();

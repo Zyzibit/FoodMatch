@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -7,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace inzynierka.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -45,6 +46,17 @@ namespace inzynierka.Migrations
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FoodPreferences_IsVegan = table.Column<bool>(type: "boolean", nullable: false),
+                    FoodPreferences_IsVegetarian = table.Column<bool>(type: "boolean", nullable: false),
+                    FoodPreferences_HasGlutenIntolerance = table.Column<bool>(type: "boolean", nullable: false),
+                    FoodPreferences_HasLactoseIntolerance = table.Column<bool>(type: "boolean", nullable: false),
+                    FoodPreferences_HasNutAllergy = table.Column<bool>(type: "boolean", nullable: false),
+                    FoodPreferences_DailyProteinGoal = table.Column<int>(type: "integer", nullable: false),
+                    FoodPreferences_DailyCarbohydrateGoal = table.Column<int>(type: "integer", nullable: false),
+                    FoodPreferences_DailyFatGoal = table.Column<int>(type: "integer", nullable: false),
+                    FoodPreferences_DailyCalorieGoal = table.Column<int>(type: "integer", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -131,7 +143,7 @@ namespace inzynierka.Migrations
                     Carbohydrates100g = table.Column<double>(type: "double precision", nullable: true),
                     Sugars100g = table.Column<double>(type: "double precision", nullable: true),
                     Fiber100g = table.Column<double>(type: "double precision", nullable: true),
-                    Proteins100g = table.Column<double>(type: "double precision", nullable: false),
+                    Proteins100g = table.Column<double>(type: "double precision", nullable: true),
                     Salt100g = table.Column<double>(type: "double precision", nullable: true),
                     Sodium100g = table.Column<double>(type: "double precision", nullable: true),
                     EnergyKcalServing = table.Column<double>(type: "double precision", nullable: true),
@@ -140,6 +152,19 @@ namespace inzynierka.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Products", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Units",
+                columns: table => new
+                {
+                    UnitId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Units", x => x.UnitId);
                 });
 
             migrationBuilder.CreateTable(
@@ -246,6 +271,37 @@ namespace inzynierka.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Receipts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    IsAiGenerated = table.Column<bool>(type: "boolean", nullable: false),
+                    AdditionalProducts = table.Column<List<string>>(type: "text[]", nullable: true),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Instructions = table.Column<string>(type: "text", nullable: false),
+                    Servings = table.Column<int>(type: "integer", nullable: false),
+                    PreparationTimeMinutes = table.Column<int>(type: "integer", nullable: false),
+                    Calories = table.Column<int>(type: "integer", nullable: false),
+                    Protein = table.Column<int>(type: "integer", nullable: false),
+                    Carbohydrates = table.Column<int>(type: "integer", nullable: false),
+                    Fats = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Receipts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Receipts_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -370,6 +426,38 @@ namespace inzynierka.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ReceiptIngredients",
+                columns: table => new
+                {
+                    ReceiptId = table.Column<int>(type: "integer", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    UnitId = table.Column<int>(type: "integer", nullable: false),
+                    Quantity = table.Column<decimal>(type: "numeric", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReceiptIngredients", x => new { x.ReceiptId, x.ProductId });
+                    table.ForeignKey(
+                        name: "FK_ReceiptIngredients_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReceiptIngredients_Receipts_ReceiptId",
+                        column: x => x.ReceiptId,
+                        principalTable: "Receipts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReceiptIngredients_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "UnitId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -434,6 +522,21 @@ namespace inzynierka.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReceiptIngredients_ProductId",
+                table: "ReceiptIngredients",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReceiptIngredients_UnitId",
+                table: "ReceiptIngredients",
+                column: "UnitId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Receipts_UserId",
+                table: "Receipts",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_ExpiryDate",
                 table: "RefreshTokens",
                 column: "ExpiryDate");
@@ -448,48 +551,11 @@ namespace inzynierka.Migrations
                 name: "IX_RefreshTokens_UserId_DeviceId",
                 table: "RefreshTokens",
                 columns: new[] { "UserId", "DeviceId" });
-            
-            // CodeNorm = upper(trim(Code)) + unikalny indeks (dla UPSERT-u)
-            migrationBuilder.Sql(@"
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'Products'
-          AND column_name = 'CodeNorm'
-    ) THEN
-        ALTER TABLE ""Products""
-        ADD COLUMN ""CodeNorm"" text GENERATED ALWAYS AS (upper(btrim(""Code""))) STORED;
-    END IF;
-END$$;
-");
-
-            migrationBuilder.Sql(@"
-CREATE UNIQUE INDEX IF NOT EXISTS ""UX_Products_CodeNorm""
-ON ""Products""(""CodeNorm"");
-");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""UX_Products_CodeNorm"";");
-            migrationBuilder.Sql(@"
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'Products'
-          AND column_name = 'CodeNorm'
-    ) THEN
-        ALTER TABLE ""Products"" DROP COLUMN ""CodeNorm"";
-    END IF;
-END$$;
-");
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -518,6 +584,9 @@ END$$;
                 name: "ProductIngredientTag");
 
             migrationBuilder.DropTable(
+                name: "ReceiptIngredients");
+
+            migrationBuilder.DropTable(
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
@@ -537,6 +606,12 @@ END$$;
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Receipts");
+
+            migrationBuilder.DropTable(
+                name: "Units");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

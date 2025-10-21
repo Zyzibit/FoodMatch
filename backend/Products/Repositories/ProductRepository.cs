@@ -85,6 +85,21 @@ public class ProductRepository : IProductRepository
         }
     }
 
+    public async Task<IEnumerable<Product>> GetProductsByIdsAsync(List<int> productIds)
+    {
+        try
+        {
+            return await _context.Products
+                .Where(p => productIds.Contains(p.Id))
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting products by IDs: {ProductIds}", string.Join(", ", productIds));
+            throw;
+        }
+    }
+
     public async Task<IEnumerable<Product>> SearchProductsAsync(
         string? searchQuery = null,
         string? brand = null,

@@ -6,6 +6,7 @@ using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
+using inzynierka.Receipts.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,10 @@ public class AppDbContext : IdentityDbContext<User> {
     public DbSet<IngredientTag> IngredientTags  { get; set; }
     public DbSet<CountryTag> CountryTags { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    
+    public DbSet<Receipt> Receipts { get; set; }
+    public DbSet<ReceiptIngredient> ReceiptIngredients { get; set; }
+    public DbSet<Unit> Units { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -34,5 +39,38 @@ public class AppDbContext : IdentityDbContext<User> {
         {
             entity.OwnsOne(u => u.FoodPreferences);
         });;
+        
+        modelBuilder.Entity<Receipt>()
+            .HasKey(r => r.Id);
+
+        modelBuilder.Entity<ReceiptIngredient>()
+            .HasKey(ri => new { ri.ReceiptId, ri.ProductId }); 
+
+        modelBuilder.Entity<ReceiptIngredient>()
+            .HasOne(ri => ri.Receipt)
+            .WithMany(r => r.Ingredients)
+            .HasForeignKey(ri => ri.ReceiptId);
+
+
+        modelBuilder.Entity<ReceiptIngredient>()
+            .HasOne(ri => ri.Product)
+            .WithMany(p => p.ReceiptIngredients)
+            .HasForeignKey(ri => ri.ProductId)
+            .HasPrincipalKey(p => p.Id); 
+
+        modelBuilder.Entity<ReceiptIngredient>()
+            .HasOne(ri => ri.Unit)
+            .WithMany()
+            .HasForeignKey(ri => ri.UnitId);
+            
+        modelBuilder.Entity<Unit>()
+            .HasKey(u => u.UnitId);
+        modelBuilder.Entity<Receipt>()
+            .HasOne(r => r.User)            
+            .WithMany(u => u.Receipts)      
+            .HasForeignKey(r => r.UserId)    
+            .IsRequired()                   
+            .OnDelete(DeleteBehavior.Cascade); 
+        
     }
 }
