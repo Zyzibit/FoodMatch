@@ -51,10 +51,11 @@ public class UserReceiptService : IReceiptService
                 Instructions = request.Instructions,
                 Servings = request.Servings,
                 PreparationTimeMinutes = request.PreparationTimeMinutes,
-                Calories = request.Calories,
-                Protein = request.Protein,
-                Carbohydrates = request.Carbohydrates,
-                Fats = request.Fats,
+                TotalWeightGrams = request.TotalWeightGrams,
+                Calories = request.CaloriesPer100G,
+                Protein = request.ProteinPer100G,
+                Carbohydrates = request.CarbohydratesPer100G,
+                Fats = request.FatsPer100G,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -97,14 +98,14 @@ public class UserReceiptService : IReceiptService
             var products = await _productRepository.GetProductsByIdsAsync(request.ProductIds);
             var productsList = products.ToList();
             
-            if (!productsList.Any())
-            {
-                return new CreateReceiptResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "No products found with the provided IDs" 
-                };
-            }
+            // if (!productsList.Any())
+            // {
+            //     return new CreateReceiptResult 
+            //     { 
+            //         Success = false, 
+            //         ErrorMessage = "No products found with the provided IDs" 
+            //     };
+            // }
             
             var foundProductIds = productsList.Select(p => p.Id).ToList();
             var missingProductIds = request.ProductIds.Except(foundProductIds).ToList();
@@ -114,12 +115,10 @@ public class UserReceiptService : IReceiptService
                 _logger.LogWarning("Missing products with IDs: {MissingIds}", string.Join(", ", missingProductIds));
             }
             
-            // Przygotuj nazwy produktów dla AI
             var ingredientNames = productsList
                 .Select(p => p.ProductName ?? p.Brands ?? $"Produkt {p.Id}")
                 .ToList();
             
-            // Wywołanie modułu AI do wygenerowania przepisu
             var aiRequest = new GenerateRecipeRequest
             {
                 AvailableIngredients = ingredientNames,
@@ -175,6 +174,7 @@ public class UserReceiptService : IReceiptService
                 Instructions = generatedRecipe.Instructions,
                 Servings = generatedRecipe.Servings,
                 PreparationTimeMinutes = generatedRecipe.PreparationTimeMinutes,
+                TotalWeightGrams = generatedRecipe.TotalWeightGrams,
                 Calories = generatedRecipe.EstimatedCalories,
                 Protein = generatedRecipe.EstimatedProtein,
                 Carbohydrates = generatedRecipe.EstimatedCarbohydrates,
@@ -253,7 +253,6 @@ public class UserReceiptService : IReceiptService
             return null;
         }
 
-        // Spróbuj znaleźć pasujący składnik z AI
         var matchingIngredient = aiIngredients
             .FirstOrDefault(ai => productName.Contains(ai.Name, StringComparison.OrdinalIgnoreCase) ||
                                  ai.Name.Contains(productName, StringComparison.OrdinalIgnoreCase));
@@ -329,10 +328,11 @@ public class UserReceiptService : IReceiptService
             Instructions = receipt.Instructions,
             Servings = receipt.Servings,
             PreparationTimeMinutes = receipt.PreparationTimeMinutes,
-            Calories = receipt.Calories,
-            Protein = receipt.Protein,
-            Carbohydrates = receipt.Carbohydrates,
-            Fats = receipt.Fats,
+            TotalWeightGrams = receipt.TotalWeightGrams,
+            CaloriesPer100G = receipt.Calories,
+            ProteinPer100G = receipt.Protein,
+            CarbohydratesPer100G = receipt.Carbohydrates,
+            FatsPer100G = receipt.Fats,
             CreatedAt = receipt.CreatedAt
         };
     }

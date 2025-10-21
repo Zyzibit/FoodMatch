@@ -14,10 +14,11 @@ public class ReceiptDto
     public string Instructions { get; set; } = string.Empty;
     public int Servings { get; set; }
     public int PreparationTimeMinutes { get; set; }
-    public int Calories { get; set; }
-    public int Protein { get; set; }
-    public int Carbohydrates { get; set; }
-    public int Fats { get; set; }
+    public int TotalWeightGrams { get; set; }
+    public int CaloriesPer100G { get; set; }
+    public int ProteinPer100G { get; set; }
+    public int CarbohydratesPer100G { get; set; }
+    public int FatsPer100G { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -34,4 +35,3 @@ public class ReceiptsListResult
     public List<ReceiptDto> Receipts { get; set; } = new List<ReceiptDto>();
     public int TotalCount { get; set; }
 }
-

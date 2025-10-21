@@ -14,6 +14,7 @@ public class Product
     [Required]
     public string Code { get; set; }
     public string? Language { get; set; }
+    
     public string? BrandOwner { get; set; }
     public string? LanguageCode { get; set; }
     public string? ProductName { get; set; }
@@ -34,7 +35,6 @@ public class Product
     public string? IsVegetarian { get; set; }
     public string? IsVegan { get; set; }
     public string? ImageUrl { get; set; }
-    
     public double? Energy100g { get; set; }
     public double? EnergyKcal100g { get; set; }
     public double? Fat100g { get; set; }

@@ -28,6 +28,9 @@ public class Receipt {
     public int PreparationTimeMinutes { get; set; }
     
     [Required]
+    public int TotalWeightGrams { get; set; }
+    
+    [Required]
     public int Calories { get; set; }
     [Required]
     public int Protein { get; set; }
@@ -38,4 +41,3 @@ public class Receipt {
     
     public DateTime CreatedAt { get; set; }
 }
-

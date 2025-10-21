@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using inzynierka.AI.Contracts.Models;
 using inzynierka.AI.OpenAI.Model;
-using inzynierka.Receipts.Contracts;
+using inzynierka.AI.OpenAI.PromptBuilders;
 
 namespace inzynierka.AI.OpenAI;
 
@@ -14,30 +14,30 @@ public class RecipeGeneratorService : IRecipeGeneratorService
 {
     private readonly IOpenAIClient _openAIClient;
     private readonly ILogger<RecipeGeneratorService> _logger;
-    private readonly IUnitContract _unitContract;
+    private readonly IRecipePromptBuilder _promptBuilder;
 
     public RecipeGeneratorService(
         IOpenAIClient openAiClient, 
         ILogger<RecipeGeneratorService> logger,
-        IUnitContract unitContract)
+        IRecipePromptBuilder promptBuilder)
     {
         _openAIClient = openAiClient;
         _logger = logger;
-        _unitContract = unitContract;
+        _promptBuilder = promptBuilder;
     }
 
     public async Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request)
     {
         try
         {
-            var prompt = await BuildRecipePromptAsync(request);
+            var prompt = await _promptBuilder.BuildPromptAsync(request);
             var messages = new List<OpenAIMessage>
             {
                 new OpenAIMessage(
                     "system",
-                    "Jesteś ekspertem kulinarnym, który pomaga użytkownikom tworzyć przepisy kulinarne. " +
-                    "Generujesz przepisy w formacie JSON zgodnie z podanym schematem. " +
-                    "Zwracaj TYLKO poprawny JSON bez dodatkowych komentarzy."
+                    "Jesteś ekspertem kulinarnym specjalizującym się w tworzeniu praktycznych, " +
+                    "smacznych i zdrowych przepisów. Tworzysz przepisy w formacie JSON zgodnie z instrukcjami. " +
+                    "Zwracasz WYŁĄCZNIE poprawny JSON bez dodatkowych komentarzy, wyjaśnień czy formatowania markdown."
                 ),
                 new OpenAIMessage("user", prompt)
             };
@@ -46,10 +46,11 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             
             if (result == null)
             {
+                _logger.LogError("Failed to parse AI response - received null");
                 return new GenerateRecipeResult
                 {
                     Success = false,
-                    ErrorMessage = "Failed to parse AI response"
+                    ErrorMessage = "Nie udało się przetworzyć odpowiedzi AI"
                 };
             }
 
@@ -68,8 +69,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             {
                 Success = false,
                 ErrorMessage = "Przekroczono limit zapytań do OpenAI API. " +
-                              "Proszę spróbować ponownie za chwilę. " +
-                              "Jeśli problem się powtarza, sprawdź limity na koncie OpenAI: https://platform.openai.com/account/limits"
+                              "Proszę spróbować ponownie za chwilę."
             };
         }
         catch (HttpRequestException ex)
@@ -81,148 +81,87 @@ public class RecipeGeneratorService : IRecipeGeneratorService
                 ErrorMessage = $"Błąd połączenia z OpenAI API: {ex.Message}"
             };
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
-            _logger.LogError(ex, "Error generating recipe with AI");
+            _logger.LogError(ex, "JSON parsing error in recipe generation");
             return new GenerateRecipeResult
             {
                 Success = false,
-                ErrorMessage = $"Błąd podczas generowania przepisu: {ex.Message}"
+                ErrorMessage = "Błąd w formacie odpowiedzi AI. Spróbuj ponownie."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error generating recipe with AI");
+            return new GenerateRecipeResult
+            {
+                Success = false,
+                ErrorMessage = $"Nieoczekiwany błąd podczas generowania przepisu: {ex.Message}"
             };
         }
     }
 
-    private async Task<string> BuildRecipePromptAsync(GenerateRecipeRequest request)
-    {
-        var promptBuilder = new System.Text.StringBuilder();
-        promptBuilder.AppendLine("Wygeneruj przepis kulinarny na podstawie następujących informacji:");
-        promptBuilder.AppendLine();
-        
-        if (request.AvailableIngredients.Any())
-        {
-            promptBuilder.AppendLine("Dostępne składniki:");
-            foreach (var ingredient in request.AvailableIngredients)
-            {
-                promptBuilder.AppendLine($"- {ingredient}");
-            }
-            promptBuilder.AppendLine();
-            promptBuilder.AppendLine("WAŻNE INSTRUKCJE:");
-            promptBuilder.AppendLine("- NIE MUSISZ używać wszystkich podanych składników");
-            promptBuilder.AppendLine("- Użyj tylko tych składników, które pasują do siebie i mają sens w przepisie");
-            promptBuilder.AppendLine("- Jeśli jakieś składniki nie pasują (np. napoje, gotowe przekąski, produkty z różnych kategorii), po prostu je pomiń");
-            promptBuilder.AppendLine("- Jeśli składniki są bardzo różnorodne, wybierz te które najlepiej współgrają i stwórz z nich spójne danie");
-            promptBuilder.AppendLine("- Możesz zasugerować dodanie podstawowych składników (sól, pieprz, olej, masło) jeśli są potrzebne");
-            promptBuilder.AppendLine();
-        }
-
-        if (request.Preferences != null)
-        {
-            promptBuilder.AppendLine("Preferencje żywieniowe:");
-            if (request.Preferences.IsVegetarian) promptBuilder.AppendLine("- Wegetariański");
-            if (request.Preferences.IsVegan) promptBuilder.AppendLine("- Wegański");
-            if (request.Preferences.IsGlutenFree) promptBuilder.AppendLine("- Bezglutenowy");
-            if (request.Preferences.IsLactoseFree) promptBuilder.AppendLine("- Bez laktozy");
-            if (request.Preferences.Allergies.Any())
-            {
-                promptBuilder.AppendLine($"- Alergeny do uniknięcia: {string.Join(", ", request.Preferences.Allergies)}");
-            }
-            if (request.Preferences.DislikedIngredients.Any())
-            {
-                promptBuilder.AppendLine($"- Składniki do uniknięcia: {string.Join(", ", request.Preferences.DislikedIngredients)}");
-            }
-            if (request.Preferences.MaxCalories.HasValue)
-            {
-                promptBuilder.AppendLine($"- Maksymalna liczba kalorii: {request.Preferences.MaxCalories}");
-            }
-            promptBuilder.AppendLine();
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.CuisineType))
-        {
-            promptBuilder.AppendLine($"Typ kuchni: {request.CuisineType}");
-        }
-
-        if (request.DesiredServings.HasValue)
-        {
-            promptBuilder.AppendLine($"Liczba porcji: {request.DesiredServings}");
-        }
-
-        if (request.MaxPreparationTimeMinutes.HasValue)
-        {
-            promptBuilder.AppendLine($"Maksymalny czas przygotowania: {request.MaxPreparationTimeMinutes} minut");
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.AdditionalInstructions))
-        {
-            promptBuilder.AppendLine($"Dodatkowe wskazówki: {request.AdditionalInstructions}");
-        }
-
-        promptBuilder.AppendLine();
-        promptBuilder.AppendLine("Zwróć przepis w następującym formacie JSON:");
-        promptBuilder.AppendLine(@"{
-  ""title"": ""Nazwa przepisu"",
-  ""description"": ""Krótki opis przepisu"",
-  ""ingredients"": [
-    {
-      ""name"": ""Nazwa składnika"",
-      ""quantity"": ""ilosc składnika jako liczba (np. 100, 0.5)"",
-      ""unit"": ""jednostka miary""
-    }
-  ],
-  ""instructions"": ""Krok po kroku instrukcje przygotowania, oddzielone nowymi liniami"",
-  ""servings"": ilosc porcji jako liczba calkowitas,
-  ""preparationTimeMinutes"": ""fill in total preparation time in minutes"",
-  ""estimatedCalories"": ""estimated calories based on ingredients"",
-  ""estimatedProtein"": ""estimated protein in grams"",
-  ""estimatedCarbohydrates"": ""estimated carbohydrates in grams"",
-  ""estimatedFats"": ""estimated fats in grams""
-}");
-
-        var units = await _unitContract.GetAllUnitsAsync();
-        
-        if (units.Any())
-        {
-            promptBuilder.AppendLine();
-            promptBuilder.AppendLine("DOZWOLONE JEDNOSTKI dla pola 'unit':");
-            
-            foreach (var unit in units)
-            {
-                promptBuilder.AppendLine($"- {unit.Name} ({unit.PromptDescription})");
-            }
-            
-            promptBuilder.AppendLine();
-            promptBuilder.AppendLine("WAŻNE: Używaj TYLKO jednostek z powyższej listy. Pisz nazwy jednostek dokładnie tak jak podano.");
-        }
-
-        return promptBuilder.ToString();
-    }
-
     private GeneratedRecipe ParseRecipeFromJson(JsonElement jsonElement)
     {
-        var recipe = new GeneratedRecipe
+        try
         {
-            Title = jsonElement.GetProperty("title").GetString() ?? "",
-            Description = jsonElement.GetProperty("description").GetString() ?? "",
-            Instructions = jsonElement.GetProperty("instructions").GetString() ?? "",
-            EstimatedFats = jsonElement.GetProperty("estimatedFats").GetInt32(),
-            EstimatedCalories = jsonElement.GetProperty("estimatedCalories").GetInt32(),
-            EstimatedProtein = jsonElement.GetProperty("estimatedProtein").GetInt32(),
-            EstimatedCarbohydrates = jsonElement.GetProperty("estimatedCarbohydrates").GetInt32(),
-            Servings = jsonElement.GetProperty("servings").GetInt32(),
-            PreparationTimeMinutes = jsonElement.GetProperty("preparationTimeMinutes").GetInt32()
-        };
-
-        var ingredientsArray = jsonElement.GetProperty("ingredients");
-        foreach (var ingredientElement in ingredientsArray.EnumerateArray())
-        {
-            recipe.Ingredients.Add(new GeneratedRecipeIngredient
+            var recipe = new GeneratedRecipe
             {
-                Name = ingredientElement.GetProperty("name").GetString() ?? "",
-                Quantity = ingredientElement.GetProperty("quantity").GetDecimal(),
-                Unit = ingredientElement.GetProperty("unit").GetString() ?? ""
-            });
-        }
+                Title = jsonElement.GetProperty("title").GetString() ?? "Bez tytułu",
+                Description = jsonElement.GetProperty("description").GetString() ?? "",
+                Instructions = jsonElement.GetProperty("instructions").GetString() ?? "",
+                Servings = jsonElement.GetProperty("servings").GetInt32(),
+                PreparationTimeMinutes = jsonElement.GetProperty("preparationTimeMinutes").GetInt32(),
+                TotalWeightGrams = GetIntProperty(jsonElement, "totalWeightGrams"),
+                EstimatedCalories = GetIntProperty(jsonElement, "estimatedCalories"),
+                EstimatedProtein = GetIntProperty(jsonElement, "estimatedProtein"),
+                EstimatedCarbohydrates = GetIntProperty(jsonElement, "estimatedCarbohydrates"),
+                EstimatedFats = GetIntProperty(jsonElement, "estimatedFats")
+            };
 
-        return recipe;
+            var ingredientsArray = jsonElement.GetProperty("ingredients");
+            foreach (var ingredientElement in ingredientsArray.EnumerateArray())
+            {
+                recipe.Ingredients.Add(new GeneratedRecipeIngredient
+                {
+                    Name = ingredientElement.GetProperty("name").GetString() ?? "",
+                    Quantity = GetDecimalProperty(ingredientElement, "quantity"),
+                    Unit = ingredientElement.GetProperty("unit").GetString() ?? ""
+                });
+            }
+
+            return recipe;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error parsing recipe JSON structure");
+            throw new JsonException("Błąd parsowania struktury przepisu", ex);
+        }
+    }
+
+    private int GetIntProperty(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+            return 0;
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.Number => property.GetInt32(),
+            JsonValueKind.String when int.TryParse(property.GetString(), out var value) => value,
+            _ => 0
+        };
+    }
+
+    private decimal GetDecimalProperty(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+            return 0;
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.Number => property.GetDecimal(),
+            JsonValueKind.String when decimal.TryParse(property.GetString(), out var value) => value,
+            _ => 0
+        };
     }
 }

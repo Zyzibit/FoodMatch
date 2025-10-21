@@ -1,5 +1,6 @@
 using System.Text;
 using inzynierka.AI.OpenAI;
+using inzynierka.AI.OpenAI.PromptBuilders;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
@@ -105,6 +106,7 @@ builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IUnitContract, UnitModule>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
+builder.Services.AddScoped<IRecipePromptBuilder, RecipePromptBuilder>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
