@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using inzynierka.AI.Contracts.Models;
 using inzynierka.AI.OpenAI.Model;
+using inzynierka.Receipts.Contracts;
 
 namespace inzynierka.AI.OpenAI;
 
@@ -13,18 +14,23 @@ public class RecipeGeneratorService : IRecipeGeneratorService
 {
     private readonly IOpenAIClient _openAIClient;
     private readonly ILogger<RecipeGeneratorService> _logger;
+    private readonly IUnitContract _unitContract;
 
-    public RecipeGeneratorService(IOpenAIClient openAiClient, ILogger<RecipeGeneratorService> logger)
+    public RecipeGeneratorService(
+        IOpenAIClient openAiClient, 
+        ILogger<RecipeGeneratorService> logger,
+        IUnitContract unitContract)
     {
         _openAIClient = openAiClient;
         _logger = logger;
+        _unitContract = unitContract;
     }
 
     public async Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request)
     {
         try
         {
-            var prompt = BuildRecipePrompt(request);
+            var prompt = await BuildRecipePromptAsync(request);
             var messages = new List<OpenAIMessage>
             {
                 new OpenAIMessage(
@@ -86,7 +92,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         }
     }
 
-    private string BuildRecipePrompt(GenerateRecipeRequest request)
+    private async Task<string> BuildRecipePromptAsync(GenerateRecipeRequest request)
     {
         var promptBuilder = new System.Text.StringBuilder();
         promptBuilder.AppendLine("Wygeneruj przepis kulinarny na podstawie następujących informacji:");
@@ -171,22 +177,22 @@ public class RecipeGeneratorService : IRecipeGeneratorService
   ""estimatedCarbohydrates"": ""estimated carbohydrates in grams"",
   ""estimatedFats"": ""estimated fats in grams""
 }");
-        promptBuilder.AppendLine();
-        promptBuilder.AppendLine("DOZWOLONE JEDNOSTKI dla pola 'unit':");
-        promptBuilder.AppendLine("- gram (dla suchych składników, np. mąka, cukier)");
-        promptBuilder.AppendLine("- kilogram (dla dużych ilości suchych składników)");
-        promptBuilder.AppendLine("- mililitr (dla płynów, np. mleko, woda)");
-        promptBuilder.AppendLine("- litr (dla dużych ilości płynów)");
-        promptBuilder.AppendLine("- sztuka (dla produktów liczonych w sztukach, np. jajka, pomidory)");
-        promptBuilder.AppendLine("- łyżka (dla przypraw i małych ilości)");
-        promptBuilder.AppendLine("- łyżeczka (dla bardzo małych ilości, przypraw)");
-        promptBuilder.AppendLine("- szklanka (dla sypkich produktów i płynów)");
-        promptBuilder.AppendLine("- opakowanie (dla produktów pakowanych)");
-        promptBuilder.AppendLine("- garść (dla produktów sypkich jak orzechy, rodzynki)");
-        promptBuilder.AppendLine("- plasterek (dla serów, wędlin, chleba)");
-        promptBuilder.AppendLine("- kostka (dla masła, bulionów)");
-        promptBuilder.AppendLine();
-        promptBuilder.AppendLine("WAŻNE: Używaj TYLKO jednostek z powyższej listy. Pisz je małymi literami bez polskich znaków diakrytycznych tam gdzie to możliwe.");
+
+        var units = await _unitContract.GetAllUnitsAsync();
+        
+        if (units.Any())
+        {
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine("DOZWOLONE JEDNOSTKI dla pola 'unit':");
+            
+            foreach (var unit in units)
+            {
+                promptBuilder.AppendLine($"- {unit.Name} ({unit.PromptDescription})");
+            }
+            
+            promptBuilder.AppendLine();
+            promptBuilder.AppendLine("WAŻNE: Używaj TYLKO jednostek z powyższej listy. Pisz nazwy jednostek dokładnie tak jak podano.");
+        }
 
         return promptBuilder.ToString();
     }

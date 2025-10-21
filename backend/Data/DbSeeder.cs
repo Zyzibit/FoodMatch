@@ -28,18 +28,78 @@ public class DbSeeder
                 logger.LogInformation("Seeding units...");
                 var units = new List<Unit>
                 {
-                    new Unit { Name = "gram" },
-                    new Unit { Name = "kilogram" },
-                    new Unit { Name = "mililitr" },
-                    new Unit { Name = "litr" },
-                    new Unit { Name = "sztuka" },
-                    new Unit { Name = "łyżka" },
-                    new Unit { Name = "łyżeczka" },
-                    new Unit { Name = "szklanka" },
-                    new Unit { Name = "opakowanie" },
-                    new Unit { Name = "garść" },
-                    new Unit { Name = "plasterek" },
-                    new Unit { Name = "kostka" }
+                    new Unit 
+                    { 
+                        Name = "gram", 
+                        Description = "Unit of mass in the metric system",
+                        PromptDescription = "Use for solid ingredients weight (e.g., flour, sugar, meat). 1000 grams = 1 kilogram"
+                    },
+                    new Unit 
+                    { 
+                        Name = "kilogram", 
+                        Description = "Unit of mass equal to 1000 grams",
+                        PromptDescription = "Use for heavier solid ingredients (e.g., large pieces of meat, bulk vegetables)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "mililitr", 
+                        Description = "Unit of volume in the metric system",
+                        PromptDescription = "Use for liquid ingredients (e.g., water, milk, oil). 1000 milliliters = 1 liter"
+                    },
+                    new Unit 
+                    { 
+                        Name = "litr", 
+                        Description = "Unit of volume equal to 1000 milliliters",
+                        PromptDescription = "Use for larger amounts of liquid ingredients"
+                    },
+                    new Unit 
+                    { 
+                        Name = "sztuka", 
+                        Description = "Counting unit for individual items",
+                        PromptDescription = "Use for countable items (e.g., 2 eggs, 3 apples, 1 onion)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "łyżka", 
+                        Description = "Tablespoon - approximately 15ml",
+                        PromptDescription = "Use for small amounts of ingredients (e.g., 2 tablespoons of oil, 1 tablespoon of honey)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "łyżeczka", 
+                        Description = "Teaspoon - approximately 5ml",
+                        PromptDescription = "Use for very small amounts, typically spices and seasonings (e.g., 1 teaspoon of salt)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "szklanka", 
+                        Description = "Glass/cup - approximately 250ml",
+                        PromptDescription = "Use for larger amounts of dry or liquid ingredients (e.g., 1 cup of rice, 2 cups of water)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "opakowanie", 
+                        Description = "Package or container unit",
+                        PromptDescription = "Use for pre-packaged ingredients (e.g., 1 package of cream, 1 pack of yeast)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "garść", 
+                        Description = "Handful - approximate amount",
+                        PromptDescription = "Use for approximate amounts of small items (e.g., a handful of nuts, herbs, or berries)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "plasterek", 
+                        Description = "Slice - thin piece cut from something",
+                        PromptDescription = "Use for sliced ingredients (e.g., 2 slices of bread, 4 slices of cheese, 3 slices of lemon)"
+                    },
+                    new Unit 
+                    { 
+                        Name = "kostka", 
+                        Description = "Cube or small block",
+                        PromptDescription = "Use for cube-shaped items or bouillon cubes (e.g., 1 cube of butter, 2 bouillon cubes)"
+                    }
                 };
                 
                 await dbContext.Units.AddRangeAsync(units);

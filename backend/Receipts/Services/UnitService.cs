@@ -20,7 +20,6 @@ public class UnitService : IUnitService
     {
         try
         {
-            // Sprawdź czy jednostka o takiej nazwie już istnieje
             if (await _unitRepository.UnitNameExistsAsync(request.Name))
             {
                 return new UnitOperationResult
@@ -88,7 +87,6 @@ public class UnitService : IUnitService
     {
         try
         {
-            // Sprawdź czy jednostka istnieje
             if (!await _unitRepository.UnitExistsAsync(id))
             {
                 return new UnitOperationResult
@@ -98,7 +96,6 @@ public class UnitService : IUnitService
                 };
             }
 
-            // Sprawdź czy nazwa nie jest już używana przez inną jednostkę
             if (await _unitRepository.UnitNameExistsAsync(request.Name, id))
             {
                 return new UnitOperationResult
@@ -148,7 +145,6 @@ public class UnitService : IUnitService
     {
         try
         {
-            // Sprawdź czy jednostka istnieje
             if (!await _unitRepository.UnitExistsAsync(id))
             {
                 return new UnitOperationResult
