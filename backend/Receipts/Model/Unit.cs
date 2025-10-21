@@ -6,6 +6,7 @@ public class Unit
 {
     [Key]
     public int UnitId { get; set; }
+
     [Required]
     [MinLength(1)]
     public string Name { get; set; }

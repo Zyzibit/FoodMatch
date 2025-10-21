@@ -72,4 +72,9 @@
       <Folder Include="Products\OpenFoodFacts\Services\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Postman\Receipts.postman_collection.json" />
+      <_ContentIncludedByDefault Remove="Postman\Receipts.postman_environment.json" />
+    </ItemGroup>
+
 </Project>

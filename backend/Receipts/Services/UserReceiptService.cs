@@ -177,14 +177,23 @@ public class UserReceiptService : IReceiptService
                 Carbohydrates = generatedRecipe.EstimatedCarbohydrates,
                 Fats = generatedRecipe.EstimatedFats,
                 CreatedAt = DateTime.UtcNow,
-                Ingredients = usedProducts.Select(p => new ReceiptIngredient
-                {
-                    ProductId = p.Id,
-                    UnitId = GetUnitIdForIngredient(generatedRecipe.Ingredients.FirstOrDefault(ai => 
-                        (p.ProductName != null && ai.Name.ToLowerInvariant().Contains(p.ProductName.ToLowerInvariant())) ||
-                        (p.Brands != null && ai.Name.ToLowerInvariant().Contains(p.Brands.ToLowerInvariant())))?.Unit),
-                    Quantity = GetQuantityForIngredient(p.ProductName, generatedRecipe.Ingredients)
-                }).ToList(),
+                Ingredients = usedProducts
+                    .Select(p => new
+                    {
+                        Product = p,
+                        Quantity = GetQuantityForIngredient(p.ProductName, generatedRecipe.Ingredients),
+                        UnitId = GetUnitIdForIngredient(generatedRecipe.Ingredients.FirstOrDefault(ai => 
+                            (p.ProductName != null && ai.Name.ToLowerInvariant().Contains(p.ProductName.ToLowerInvariant())) ||
+                            (p.Brands != null && ai.Name.ToLowerInvariant().Contains(p.Brands.ToLowerInvariant())))?.Unit)
+                    })
+                    .Where(x => x.Quantity.HasValue)
+                    .Select(x => new ReceiptIngredient
+                    {
+                        ProductId = x.Product.Id,
+                        UnitId = x.UnitId,
+                        Quantity = x.Quantity!.Value
+                    })
+                    .ToList(),
                 AdditionalProducts = additionalIngredients
             };
 
@@ -210,17 +219,26 @@ public class UserReceiptService : IReceiptService
         }
     }
     
-    private decimal GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
+    private decimal? GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
     {
         if (string.IsNullOrEmpty(productName))
-            return 100; // Domyślna wartość
-            
+        {
+            _logger.LogWarning("Product name is null or empty, cannot determine quantity");
+            return null;
+        }
+
         // Spróbuj znaleźć pasujący składnik z AI
         var matchingIngredient = aiIngredients
             .FirstOrDefault(ai => productName.Contains(ai.Name, StringComparison.OrdinalIgnoreCase) ||
                                  ai.Name.Contains(productName, StringComparison.OrdinalIgnoreCase));
         
-        return matchingIngredient?.Quantity ?? 100; // Domyślnie 100g jeśli nie znaleziono
+        if (matchingIngredient == null)
+        {
+            _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", productName);
+            return null;
+        }
+
+        return matchingIngredient.Quantity;
     }
 
     private int GetUnitIdForIngredient(string? unitName)
