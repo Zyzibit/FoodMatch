@@ -101,6 +101,9 @@ builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<IReceiptService, UserReceiptService>();
 builder.Services.AddScoped<IReceiptContract, ReceiptModule>();
+builder.Services.AddScoped<IUnitRepository, UnitRepository>();
+builder.Services.AddScoped<IUnitService, UnitService>();
+builder.Services.AddScoped<IUnitContract, UnitModule>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();

@@ -14,9 +14,9 @@ public class RecipeGeneratorService : IRecipeGeneratorService
     private readonly IOpenAIClient _openAIClient;
     private readonly ILogger<RecipeGeneratorService> _logger;
 
-    public RecipeGeneratorService(IOpenAIClient openAIClient, ILogger<RecipeGeneratorService> logger)
+    public RecipeGeneratorService(IOpenAIClient openAiClient, ILogger<RecipeGeneratorService> logger)
     {
-        _openAIClient = openAIClient;
+        _openAIClient = openAiClient;
         _logger = logger;
     }
 
@@ -159,12 +159,12 @@ public class RecipeGeneratorService : IRecipeGeneratorService
   ""ingredients"": [
     {
       ""name"": ""Nazwa składnika"",
-      ""quantity"": 100.0,
-      ""unit"": ""gram""
+      ""quantity"": ""ilosc składnika jako liczba (np. 100, 0.5)"",
+      ""unit"": ""jednostka miary""
     }
   ],
   ""instructions"": ""Krok po kroku instrukcje przygotowania, oddzielone nowymi liniami"",
-  ""servings"": 4,
+  ""servings"": ilosc porcji jako liczba calkowitas,
   ""preparationTimeMinutes"": ""fill in total preparation time in minutes"",
   ""estimatedCalories"": ""estimated calories based on ingredients"",
   ""estimatedProtein"": ""estimated protein in grams"",
@@ -198,7 +198,12 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             Title = jsonElement.GetProperty("title").GetString() ?? "",
             Description = jsonElement.GetProperty("description").GetString() ?? "",
             Instructions = jsonElement.GetProperty("instructions").GetString() ?? "",
-            EstimatedFats = jsonElement.GetProperty("estimatedFats").GetInt32()
+            EstimatedFats = jsonElement.GetProperty("estimatedFats").GetInt32(),
+            EstimatedCalories = jsonElement.GetProperty("estimatedCalories").GetInt32(),
+            EstimatedProtein = jsonElement.GetProperty("estimatedProtein").GetInt32(),
+            EstimatedCarbohydrates = jsonElement.GetProperty("estimatedCarbohydrates").GetInt32(),
+            Servings = jsonElement.GetProperty("servings").GetInt32(),
+            PreparationTimeMinutes = jsonElement.GetProperty("preparationTimeMinutes").GetInt32()
         };
 
         var ingredientsArray = jsonElement.GetProperty("ingredients");

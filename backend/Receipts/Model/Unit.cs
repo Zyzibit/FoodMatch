@@ -10,4 +10,10 @@ public class Unit
     [Required]
     [MinLength(1)]
     public string Name { get; set; }
+
+    [Required]
+    public string Description { get; set; } = string.Empty;
+
+    [Required]
+    public string PromptDescription { get; set; } = string.Empty;
 }
