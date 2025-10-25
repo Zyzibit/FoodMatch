@@ -5,10 +5,6 @@ using inzynierka.Receipts.Contracts;
 
 namespace inzynierka.Receipts.Services;
 
-/// <summary>
-/// Helper service for receipt data mapping and unit resolution.
-/// Provides utility methods for converting domain models to DTOs and handling unit conversions.
-/// </summary>
 public class ReceiptService
 {
     private readonly ILogger<ReceiptService> _logger;
@@ -52,10 +48,7 @@ public class ReceiptService
             CreatedAt = receipt.CreatedAt
         };
     }
-
-    /// <summary>
-    /// Resolves a unit ID from a unit name with fallback to default 'gram' unit.
-    /// </summary>
+    
     public async Task<int> GetUnitIdForIngredientAsync(string? unitName)
     {
         if (string.IsNullOrEmpty(unitName))
