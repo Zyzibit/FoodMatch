@@ -202,7 +202,6 @@ public class UserReceiptService : IReceiptService
                     continue;
                 }
 
-                // Mapuj nazwę produktu dla GetQuantityForIngredient
                 var productName = !string.IsNullOrWhiteSpace(product.Name) ? product.Name : product.Brand;
                 var quantity = GetQuantityForIngredient(productName, generatedRecipe.Ingredients);
                 if (!quantity.HasValue)
@@ -213,7 +212,6 @@ public class UserReceiptService : IReceiptService
 
                 try
                 {
-                    // Parsuj ID z string na int
                     if (!int.TryParse(product.Id, out var productId))
                     {
                         _logger.LogError("Failed to parse product ID: {ProductId}", product.Id);

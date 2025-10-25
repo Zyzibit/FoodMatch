@@ -317,7 +317,7 @@ public class UserService : IUserService
                 }
             }
 
-            // Przypisz rolę użytkownikowi
+            // Assign role to user
             var roleAssigned = await _roleService.AddUserToRoleAsync(user.Id, role);
             if (!roleAssigned)
             {

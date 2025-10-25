@@ -19,7 +19,7 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Pobiera wszystkie jednostki miary
+    /// Gets all units of measure
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllUnits()
@@ -37,7 +37,7 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Pobiera jednostkę po ID
+    /// Gets a unit by ID
     /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUnit(int id)
@@ -90,7 +90,7 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Aktualizuje istniejącą jednostkę miary
+    /// Updates an existing unit of measure
     /// </summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
@@ -123,7 +123,7 @@ public class UnitsController : ControllerBase
     }
 
     /// <summary>
-    /// Usuwa jednostkę miary
+    /// Deletes a unit of measure
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]

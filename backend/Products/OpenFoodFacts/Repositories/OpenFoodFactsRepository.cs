@@ -61,7 +61,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             string joinTagCol,
             string tagTable)
         {
-            // DISTINCT ogranicza porównania przy dużej liczbie duplikatów w stagingu
+            // DISTINCT limits comparisons with a large number of duplicates in staging
             return $@"
                 MERGE INTO ""{joinTable}"" AS jt
                 USING (
@@ -100,7 +100,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 await cfg.ExecuteNonQueryAsync(ct);
             }
 
-            // Planner lepiej oszacuje koszty
+            // Planner will better estimate costs
             await using (var analyze = new NpgsqlCommand($@"ANALYZE {tempName};", conn, tx) { CommandTimeout = 0 })
                 await analyze.ExecuteNonQueryAsync(ct);
 
@@ -392,7 +392,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
             try
             {
-                // Konfiguracja sesji dla długiej transakcji bulk
+                // Session configuration for long bulk transaction
                 await using (var cfg = new NpgsqlCommand(@"
                     SET LOCAL statement_timeout = 0;
                     SET LOCAL lock_timeout = 0;
@@ -508,7 +508,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                     await writer.CompleteAsync(ct);
                 }
 
-                // Opcjonalnie ANALYZE staging
+                // Optionally ANALYZE staging
                 await using (var analyze = new NpgsqlCommand(@"ANALYZE products_stage;", conn, tx) { CommandTimeout = 0 })
                     await analyze.ExecuteNonQueryAsync(ct);
 
