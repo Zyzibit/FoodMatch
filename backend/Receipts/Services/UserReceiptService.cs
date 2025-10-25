@@ -7,6 +7,7 @@ using inzynierka.Products.Contracts;
 
 namespace inzynierka.Receipts.Services;
 
+
 public class UserReceiptService : IReceiptService
 {
     private readonly IReceiptRepository _receiptRepository;
@@ -14,19 +15,25 @@ public class UserReceiptService : IReceiptService
     private readonly IAIContract _aiContract;
     private readonly IProductContract _productContract;
     private readonly ReceiptService _receiptService;
+    private readonly IRecipeProductService _recipeProductService;
+    private readonly IRecipeIngredientMatcher _ingredientMatcher;
 
     public UserReceiptService(
         IReceiptRepository receiptRepository, 
         ILogger<UserReceiptService> logger,
         IAIContract aiContract,
         IProductContract productContract,
-        ReceiptService receiptService)
+        ReceiptService receiptService,
+        IRecipeProductService recipeProductService,
+        IRecipeIngredientMatcher ingredientMatcher)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
         _aiContract = aiContract;
         _productContract = productContract;
         _receiptService = receiptService;
+        _recipeProductService = recipeProductService;
+        _ingredientMatcher = ingredientMatcher;
     }
 
     public async Task<CreateReceiptResult> CreateReceiptAsync(string userId, CreateReceiptRequest request)
@@ -147,19 +154,13 @@ public class UserReceiptService : IReceiptService
             var generatedRecipe = aiResult.Recipe;
 
             var userProvidedIngredientNames = ingredientNames.Select(n => n.ToLowerInvariant()).ToList();
-            var additionalIngredientsData = generatedRecipe.Ingredients
-                .Where(ai => !userProvidedIngredientNames.Any(userIng => 
-                    ai.Name.ToLowerInvariant().Contains(userIng) || 
-                    userIng.Contains(ai.Name.ToLowerInvariant())))
-                .ToList();
+            var additionalIngredientsData = _ingredientMatcher.GetAdditionalIngredients(
+                userProvidedIngredientNames,
+                generatedRecipe.Ingredients);
 
-            var usedProducts = productsList
-                .Where(p => generatedRecipe.Ingredients.Any(ai => 
-                    (!string.IsNullOrWhiteSpace(p.Name) && ai.Name.ToLowerInvariant().Contains(p.Name.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(p.Name) && p.Name.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(p.Brand) && ai.Name.ToLowerInvariant().Contains(p.Brand.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(p.Brand) && p.Brand.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant()))))
-                .ToList();
+            var usedProducts = _ingredientMatcher.GetMatchingProducts(
+                productsList,
+                generatedRecipe.Ingredients);
 
             if (usedProducts.Count < productsList.Count)
             {
@@ -190,19 +191,16 @@ public class UserReceiptService : IReceiptService
 
             foreach (var product in usedProducts)
             {
-                var aiIngredient = generatedRecipe.Ingredients.FirstOrDefault(ai => 
-                    (!string.IsNullOrWhiteSpace(product.Name) && ai.Name.ToLowerInvariant().Contains(product.Name.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(product.Name) && product.Name.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(product.Brand) && ai.Name.ToLowerInvariant().Contains(product.Brand.ToLowerInvariant())) ||
-                    (!string.IsNullOrWhiteSpace(product.Brand) && product.Brand.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())));
+                var aiIngredient = _ingredientMatcher.FindMatchingRecipeIngredient(product, generatedRecipe.Ingredients);
 
                 if (aiIngredient == null)
                 {
-                    _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", product.Name);
+                    _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", 
+                        _ingredientMatcher.GetProductDisplayName(product));
                     continue;
                 }
 
-                var productName = !string.IsNullOrWhiteSpace(product.Name) ? product.Name : product.Brand;
+                var productName = _ingredientMatcher.GetProductDisplayName(product);
                 var quantity = GetQuantityForIngredient(productName, generatedRecipe.Ingredients);
                 if (!quantity.HasValue)
                 {
@@ -228,7 +226,8 @@ public class UserReceiptService : IReceiptService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to add ingredient {ProductName} with unit {Unit}", productName, aiIngredient.Unit);
+                    _logger.LogError(ex, "Failed to add ingredient {ProductName} with unit {Unit}", 
+                        productName, aiIngredient.Unit);
                 }
             }
 
@@ -236,7 +235,7 @@ public class UserReceiptService : IReceiptService
             {
                 try
                 {
-                    var aiGeneratedProduct = await _receiptService.CreateAiGeneratedProductAsync(additionalIngredient);
+                    var aiGeneratedProduct = await _recipeProductService.CreateAiGeneratedProductAsync(additionalIngredient);
                     var unitId = await _receiptService.GetUnitIdForIngredientAsync(additionalIngredient.Unit);
                     
                     receipt.Ingredients.Add(new ReceiptIngredient
@@ -279,5 +278,4 @@ public class UserReceiptService : IReceiptService
     {
         return _receiptService.GetQuantityForIngredient(productName, aiIngredients);
     }
-
 }
