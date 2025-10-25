@@ -31,13 +31,12 @@ public class OpenAIClient : IOpenAIClient {
 
         var response = await _httpClient.PostAsync(_configuration["AI:ApiLink"], content);
         
-        // Obsługa błędu 429 (Too Many Requests)
+        // Handle 429 (Too Many Requests) error
         if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             _logger.LogError("OpenAI API Rate Limit exceeded (429). Response: {ErrorContent}", errorContent);
             
-            // Sprawdź czy są headery z informacją o limitach
             if (response.Headers.TryGetValues("x-ratelimit-remaining-requests", out var remaining))
             {
                 _logger.LogWarning("Remaining requests: {Remaining}", string.Join(", ", remaining));
@@ -56,7 +55,6 @@ public class OpenAIClient : IOpenAIClient {
             );
         }
         
-        // Obsługa innych błędów HTTP
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
