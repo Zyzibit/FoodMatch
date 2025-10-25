@@ -3,9 +3,7 @@ using inzynierka.Receipts.Model;
 using inzynierka.Receipts.Repositories;
 using inzynierka.AI.Contracts;
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Model;
-using inzynierka.Products.Repositories;
-using inzynierka.Receipts.Contracts;
+using inzynierka.Products.Contracts;
 
 namespace inzynierka.Receipts.Services;
 
@@ -14,21 +12,21 @@ public class UserReceiptService : IReceiptService
     private readonly IReceiptRepository _receiptRepository;
     private readonly ILogger<UserReceiptService> _logger;
     private readonly IAIContract _aiContract;
-    private readonly IProductRepository _productRepository;
-    private readonly IUnitContract _unitContract;
+    private readonly IProductContract _productContract;
+    private readonly ReceiptService _receiptService;
 
     public UserReceiptService(
         IReceiptRepository receiptRepository, 
         ILogger<UserReceiptService> logger,
         IAIContract aiContract,
-        IProductRepository productRepository,
-        IUnitContract unitContract)
+        IProductContract productContract,
+        ReceiptService receiptService)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
         _aiContract = aiContract;
-        _productRepository = productRepository;
-        _unitContract = unitContract;
+        _productContract = productContract;
+        _receiptService = receiptService;
     }
 
     public async Task<CreateReceiptResult> CreateReceiptAsync(string userId, CreateReceiptRequest request)
@@ -74,20 +72,20 @@ public class UserReceiptService : IReceiptService
         var receipt = await _receiptRepository.GetReceiptByIdAsync(id);
         if (receipt == null) return null;
 
-        return MapToDto(receipt);
+        return _receiptService.MapToDto(receipt);
     }
 
     public async Task<ReceiptsListResult> GetAllReceiptsAsync(int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetAllReceiptsAsync(limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.Select(_receiptService.MapToDto).ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
     public async Task<ReceiptsListResult> GetUserReceiptsAsync(string userId, int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetUserReceiptsAsync(userId, limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.Select(_receiptService.MapToDto).ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
@@ -95,28 +93,34 @@ public class UserReceiptService : IReceiptService
     {
         try
         {
-            var products = await _productRepository.GetProductsByIdsAsync(request.ProductIds);
-            var productsList = products.ToList();
+            var productsInfo = await _productContract.GetProductsByIdsAsync(request.ProductIds);
+            var productsList = productsInfo.ToList();
             
-            // if (!productsList.Any())
-            // {
-            //     return new CreateReceiptResult 
-            //     { 
-            //         Success = false, 
-            //         ErrorMessage = "No products found with the provided IDs" 
-            //     };
-            // }
+            if (!productsList.Any())
+            {
+                return new CreateReceiptResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "No products found with the provided IDs" 
+                };
+            }
             
-            var foundProductIds = productsList.Select(p => p.Id).ToList();
+            var foundProductIds = productsList
+                .Select(p => int.TryParse(p.Id, out var id) ? id : -1)
+                .Where(id => id != -1)
+                .ToList();
+            
             var missingProductIds = request.ProductIds.Except(foundProductIds).ToList();
-            
+                    
             if (missingProductIds.Any())
             {
                 _logger.LogWarning("Missing products with IDs: {MissingIds}", string.Join(", ", missingProductIds));
             }
             
             var ingredientNames = productsList
-                .Select(p => p.ProductName ?? p.Brands ?? $"Produkt {p.Id}")
+                .Select(p => string.IsNullOrWhiteSpace(p.Name) 
+                    ? (string.IsNullOrWhiteSpace(p.Brand) ? $"Product {p.Id}" : p.Brand)
+                    : p.Name)
                 .ToList();
             
             var aiRequest = new GenerateRecipeRequest
@@ -143,24 +147,24 @@ public class UserReceiptService : IReceiptService
             var generatedRecipe = aiResult.Recipe;
 
             var userProvidedIngredientNames = ingredientNames.Select(n => n.ToLowerInvariant()).ToList();
-            var additionalIngredients = generatedRecipe.Ingredients
+            var additionalIngredientsData = generatedRecipe.Ingredients
                 .Where(ai => !userProvidedIngredientNames.Any(userIng => 
                     ai.Name.ToLowerInvariant().Contains(userIng) || 
                     userIng.Contains(ai.Name.ToLowerInvariant())))
-                .Select(i => $"{i.Name} ({i.Quantity} {i.Unit})")
                 .ToList();
 
             var usedProducts = productsList
                 .Where(p => generatedRecipe.Ingredients.Any(ai => 
-                    (p.ProductName != null && ai.Name.ToLowerInvariant().Contains(p.ProductName.ToLowerInvariant())) ||
-                    (p.ProductName != null && p.ProductName.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
-                    (p.Brands != null && ai.Name.ToLowerInvariant().Contains(p.Brands.ToLowerInvariant())) ||
-                    (p.Brands != null && p.Brands.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant()))))
+                    (!string.IsNullOrWhiteSpace(p.Name) && ai.Name.ToLowerInvariant().Contains(p.Name.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(p.Name) && p.Name.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(p.Brand) && ai.Name.ToLowerInvariant().Contains(p.Brand.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(p.Brand) && p.Brand.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant()))))
                 .ToList();
 
             if (usedProducts.Count < productsList.Count)
             {
-                var unusedProducts = productsList.Except(usedProducts).Select(p => p.ProductName ?? p.Id.ToString());
+                var unusedProducts = productsList.Except(usedProducts)
+                    .Select(p => string.IsNullOrWhiteSpace(p.Name) ? p.Id : p.Name);
                 _logger.LogInformation("AI used {UsedCount}/{TotalCount} products. Unused: {UnusedProducts}", 
                     usedProducts.Count, productsList.Count, string.Join(", ", unusedProducts));
             }
@@ -181,52 +185,78 @@ public class UserReceiptService : IReceiptService
                 Fats = generatedRecipe.EstimatedFats,
                 CreatedAt = DateTime.UtcNow,
                 Ingredients = new List<ReceiptIngredient>(),
-                AdditionalProducts = additionalIngredients
+                AdditionalProducts = new List<string>()
             };
 
-            // Process ingredients with proper async handling
             foreach (var product in usedProducts)
             {
                 var aiIngredient = generatedRecipe.Ingredients.FirstOrDefault(ai => 
-                    (product.ProductName != null && ai.Name.ToLowerInvariant().Contains(product.ProductName.ToLowerInvariant())) ||
-                    (product.ProductName != null && product.ProductName.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
-                    (product.Brands != null && ai.Name.ToLowerInvariant().Contains(product.Brands.ToLowerInvariant())) ||
-                    (product.Brands != null && product.Brands.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())));
+                    (!string.IsNullOrWhiteSpace(product.Name) && ai.Name.ToLowerInvariant().Contains(product.Name.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(product.Name) && product.Name.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(product.Brand) && ai.Name.ToLowerInvariant().Contains(product.Brand.ToLowerInvariant())) ||
+                    (!string.IsNullOrWhiteSpace(product.Brand) && product.Brand.ToLowerInvariant().Contains(ai.Name.ToLowerInvariant())));
 
                 if (aiIngredient == null)
                 {
-                    _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", product.ProductName);
+                    _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", product.Name);
                     continue;
                 }
 
-                var quantity = GetQuantityForIngredient(product.ProductName, generatedRecipe.Ingredients);
+                var productName = !string.IsNullOrWhiteSpace(product.Name) ? product.Name : product.Brand;
+                var quantity = GetQuantityForIngredient(productName, generatedRecipe.Ingredients);
                 if (!quantity.HasValue)
                 {
-                    _logger.LogWarning("Could not determine quantity for product: {ProductName}", product.ProductName);
+                    _logger.LogWarning("Could not determine quantity for product: {ProductName}", productName);
                     continue;
                 }
 
                 try
                 {
-                    var unitId = await GetUnitIdForIngredientAsync(aiIngredient.Unit);
+                    if (!int.TryParse(product.Id, out var productId))
+                    {
+                        _logger.LogError("Failed to parse product ID: {ProductId}", product.Id);
+                        continue;
+                    }
+
+                    var unitId = await _receiptService.GetUnitIdForIngredientAsync(aiIngredient.Unit);
                     receipt.Ingredients.Add(new ReceiptIngredient
                     {
-                        ProductId = product.Id,
+                        ProductId = productId,
                         UnitId = unitId,
                         Quantity = quantity.Value
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to add ingredient {ProductName} with unit {Unit}", product.ProductName, aiIngredient.Unit);
-                    // Continue processing other ingredients
+                    _logger.LogError(ex, "Failed to add ingredient {ProductName} with unit {Unit}", productName, aiIngredient.Unit);
+                }
+            }
+
+            foreach (var additionalIngredient in additionalIngredientsData)
+            {
+                try
+                {
+                    var aiGeneratedProduct = await _receiptService.CreateAiGeneratedProductAsync(additionalIngredient);
+                    var unitId = await _receiptService.GetUnitIdForIngredientAsync(additionalIngredient.Unit);
+                    
+                    receipt.Ingredients.Add(new ReceiptIngredient
+                    {
+                        ProductId = aiGeneratedProduct.Id,
+                        UnitId = unitId,
+                        Quantity = additionalIngredient.Quantity
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to add AI-generated ingredient {IngredientName}", additionalIngredient.Name);
+                    receipt.AdditionalProducts.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
                 }
             }
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
             
-            _logger.LogInformation("AI-generated recipe created with ID: {ReceiptId}, with {Count} ingredients and {AdditionalCount} additional ingredients", 
-                added.Id, receipt.Ingredients.Count, receipt.AdditionalProducts?.Count ?? 0);
+            _logger.LogInformation("AI-generated recipe created with ID: {ReceiptId}, with {Count} ingredients and {AdditionalCount} AI-generated products", 
+                added.Id, receipt.Ingredients.Count, additionalIngredientsData.Count);
             
             return new CreateReceiptResult 
             { 
@@ -247,93 +277,7 @@ public class UserReceiptService : IReceiptService
     
     private decimal? GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
     {
-        if (string.IsNullOrEmpty(productName))
-        {
-            _logger.LogWarning("Product name is null or empty, cannot determine quantity");
-            return null;
-        }
-
-        var matchingIngredient = aiIngredients
-            .FirstOrDefault(ai => productName.Contains(ai.Name, StringComparison.OrdinalIgnoreCase) ||
-                                 ai.Name.Contains(productName, StringComparison.OrdinalIgnoreCase));
-        
-        if (matchingIngredient == null)
-        {
-            _logger.LogWarning("No matching AI ingredient found for product: {ProductName}", productName);
-            return null;
-        }
-
-        return matchingIngredient.Quantity;
+        return _receiptService.GetQuantityForIngredient(productName, aiIngredients);
     }
 
-    private async Task<int> GetUnitIdForIngredientAsync(string? unitName)
-    {
-        if (string.IsNullOrEmpty(unitName))
-        {
-            throw new ArgumentException("Unit name cannot be null or empty", nameof(unitName));
-        }
-            
-        try
-        {
-            var units = await _unitContract.GetAllUnitsAsync();
-            
-            if (!units.Any())
-            {
-                throw new InvalidOperationException("No units found in the database. Please ensure units are seeded.");
-            }
-            
-            var unit = units.FirstOrDefault(u => 
-                u.Name.Equals(unitName, StringComparison.OrdinalIgnoreCase));
-            
-            if (unit != null)
-            {
-                return unit.UnitId;
-            }
-            
-            _logger.LogWarning("Unit '{UnitName}' not found in database, trying default unit", unitName);
-            
-            var defaultUnit = units.FirstOrDefault(u => 
-                u.Name.Equals("gram", StringComparison.OrdinalIgnoreCase));
-            
-            if (defaultUnit != null)
-            {
-                return defaultUnit.UnitId;
-            }
-            
-            throw new InvalidOperationException($"Unit '{unitName}' not found in database and default unit 'gram' is also missing. Available units: {string.Join(", ", units.Select(u => u.Name))}");
-        }
-        catch (Exception ex) when (ex is not InvalidOperationException && ex is not ArgumentException)
-        {
-            _logger.LogError(ex, "Error getting unit ID for unit name: {UnitName}", unitName);
-            throw new InvalidOperationException($"Failed to retrieve unit '{unitName}' from database", ex);
-        }
-    }
-    
-    private static ReceiptDto MapToDto(Receipt receipt)
-    {
-        return new ReceiptDto
-        {
-            Id = receipt.Id,
-            UserId = receipt.UserId,
-            IsAiGenerated = receipt.IsAiGenerated,
-            Ingredients = receipt.Ingredients.Select(i => new ReceiptIngredientReadDto
-            {
-                ProductId = i.ProductId,
-                UnitId = i.UnitId,
-                Quantity = i.Quantity
-            }).ToList(),
-            AdditionalProducts = receipt.AdditionalProducts,
-            Title = receipt.Title,
-            Description = receipt.Description,
-            Instructions = receipt.Instructions,
-            Servings = receipt.Servings,
-            PreparationTimeMinutes = receipt.PreparationTimeMinutes,
-            TotalWeightGrams = receipt.TotalWeightGrams,
-            CaloriesPer100G = receipt.Calories,
-            ProteinPer100G = receipt.Protein,
-            CarbohydratesPer100G = receipt.Carbohydrates,
-            FatsPer100G = receipt.Fats,
-            CreatedAt = receipt.CreatedAt
-        };
-    }
 }

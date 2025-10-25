@@ -1,6 +1,7 @@
 using inzynierka.Products.Contracts;
 using inzynierka.Products.Contracts.Models;
 using inzynierka.Products.Repositories;
+using inzynierka.Products.Model;
 using inzynierka.EventBus;
 using inzynierka.Products.EventBus.Events;
 using inzynierka.Products.OpenFoodFacts.Import;
@@ -64,7 +65,7 @@ public class ProductModule : IProductContract
                     Id = product.Id.ToString(),
                     Name = product.ProductName ?? "",
                     Brand = product.Brands ?? "",
-                    Barcode = product.Code ?? "",
+                    Barcode = product.Code,
                     ImageUrl = product.ImageUrl ?? "",
                     Categories = product.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
                     Ingredients = product.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
@@ -117,7 +118,7 @@ public class ProductModule : IProductContract
                 Id = p.Id.ToString(),
                 Name = p.ProductName ?? "",
                 Brand = p.Brands ?? "",
-                Barcode = p.Code ?? "",
+                Barcode = p.Code,
                 ImageUrl = p.ImageUrl ?? "",
                 Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
                 Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
@@ -164,7 +165,7 @@ public class ProductModule : IProductContract
                 Id = p.Id.ToString(),
                 Name = p.ProductName ?? "",
                 Brand = p.Brands ?? "",
-                Barcode = p.Code ?? "",
+                Barcode = p.Code,
                 ImageUrl = p.ImageUrl ?? "",
                 Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
                 Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
@@ -211,7 +212,7 @@ public class ProductModule : IProductContract
                 Id = p.Id.ToString(),
                 Name = p.ProductName ?? "",
                 Brand = p.Brands ?? "",
-                Barcode = p.Code ?? "",
+                Barcode = p.Code,
                 ImageUrl = p.ImageUrl ?? "",
                 Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
                 Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
@@ -373,6 +374,127 @@ public class ProductModule : IProductContract
         {
             _logger.LogError(ex, "Error getting nutrition info for product: {ProductId}", productId);
             return new ProductNutritionResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
+
+    public async Task<IEnumerable<ProductInfo>> GetProductsByIdsAsync(IEnumerable<int> ids)
+    {
+        if (ids == null) return Enumerable.Empty<ProductInfo>();
+
+        var idList = ids.Where(id => id > 0).Distinct().ToList();
+        if (!idList.Any()) return Enumerable.Empty<ProductInfo>();
+
+        try
+        {
+            var products = await _productRepository.GetProductsByIdsAsync(idList);
+            if (products == null) return Enumerable.Empty<ProductInfo>();
+
+            var productInfos = products.Select(p => new ProductInfo
+            {
+                Id = p.Id.ToString(),
+                Name = p.ProductName ?? string.Empty,
+                Brand = p.Brands ?? string.Empty,
+                Barcode = p.Code,
+                ImageUrl = p.ImageUrl ?? string.Empty,
+                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
+                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
+                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
+                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
+                NutritionGrade = p.NutritionGrade,
+                EcoScoreGrade = p.EcoScoreGrade
+            }).ToList();
+
+            return productInfos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania produktów po Id: {Ids}", string.Join(", ", idList));
+            return Enumerable.Empty<ProductInfo>();
+        }
+    }
+    
+    
+    public async Task<ProductResult> AddAiProductAsync(string productName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(productName))
+            {
+                return new ProductResult
+                {
+                    Success = false,
+                    ErrorMessage = "Product name cannot be empty"
+                };
+            }
+
+            var existingProduct = await _productRepository.GetProductByNameAsync(productName.Trim());
+
+            if (existingProduct != null)
+            {
+                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}", productName, existingProduct.Id);
+                
+                return new ProductResult
+                {
+                    Success = true,
+                    Product = new ProductInfo
+                    {
+                        Id = existingProduct.Id.ToString(),
+                        Name = existingProduct.ProductName ?? "",
+                        Brand = existingProduct.Brands ?? "",
+                        Barcode = existingProduct.Code,
+                        ImageUrl = existingProduct.ImageUrl ?? "",
+                        Categories = new List<string>(),
+                        Ingredients = new List<string>(),
+                        Allergens = new List<string>(),
+                        Countries = new List<string>(),
+                        NutritionGrade = existingProduct.NutritionGrade,
+                        EcoScoreGrade = existingProduct.EcoScoreGrade
+                    }
+                };
+            }
+
+            var aiProduct = new Product
+            {
+                Code = $"AI-GENERATED-{Guid.NewGuid()}",
+                ProductName = productName.Trim(),
+                IsAiGenerated = true,
+                Language = "en",
+                LastUpdated = DateTime.UtcNow
+            };
+
+            var createdProduct = await _productRepository.AddProductAsync(aiProduct);
+            await _productRepository.SaveChangesAsync();
+
+            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", productName, createdProduct.Id);
+
+            return new ProductResult
+            {
+                Success = true,
+                Product = new ProductInfo
+                {
+                    Id = createdProduct.Id.ToString(),
+                    Name = createdProduct.ProductName ?? "",
+                    Brand = createdProduct.Brands ?? "",
+                    Barcode = createdProduct.Code,
+                    ImageUrl = createdProduct.ImageUrl ?? "",
+                    Categories = new List<string>(),
+                    Ingredients = new List<string>(),
+                    Allergens = new List<string>(),
+                    Countries = new List<string>(),
+                    NutritionGrade = createdProduct.NutritionGrade,
+                    EcoScoreGrade = createdProduct.EcoScoreGrade
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", productName);
+            return new ProductResult
             {
                 Success = false,
                 ErrorMessage = ex.Message

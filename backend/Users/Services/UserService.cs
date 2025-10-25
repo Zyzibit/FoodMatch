@@ -164,7 +164,6 @@ public class UserService : IUserService
                 return (false, null, "User with this email already exists");
             }
 
-            // Tworzenie użytkownika
             var user = new User
             {
                 UserName = username,
@@ -181,8 +180,6 @@ public class UserService : IUserService
                 _logger.LogWarning("Failed to create user {Username}. Errors: {Errors}", username, errorMessage);
                 return (false, null, errorMessage);
             }
-
-            // Zarządzanie rolą przy użyciu RoleService
             var roleAssigned = await EnsureRoleAssignedAsync(user, role);
             if (!roleAssigned)
             {
@@ -320,7 +317,7 @@ public class UserService : IUserService
                 }
             }
 
-            // Przypisz rolę użytkownikowi
+            // Assign role to user
             var roleAssigned = await _roleService.AddUserToRoleAsync(user.Id, role);
             if (!roleAssigned)
             {

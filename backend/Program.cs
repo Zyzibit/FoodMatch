@@ -100,6 +100,7 @@ builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IAIContract, AIModule>();
 builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
+builder.Services.AddScoped<ReceiptService>();
 builder.Services.AddScoped<IReceiptService, UserReceiptService>();
 builder.Services.AddScoped<IReceiptContract, ReceiptModule>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();

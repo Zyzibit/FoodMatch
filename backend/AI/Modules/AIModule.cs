@@ -8,9 +8,6 @@ using System.Text.Json;
 
 namespace inzynierka.AI.Modules;
 
-/// <summary>
-/// Implementacja kontraktu AI - moduł AI
-/// </summary>
 public class AIModule : IAIContract
 {
     private readonly IOpenAIClient _openAIClient;
