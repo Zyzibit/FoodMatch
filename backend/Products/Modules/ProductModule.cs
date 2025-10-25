@@ -381,6 +381,44 @@ public class ProductModule : IProductContract
         }
     }
 
+
+    public async Task<IEnumerable<ProductInfo>> GetProductsByIdsAsync(IEnumerable<int> ids)
+    {
+        if (ids == null) return Enumerable.Empty<ProductInfo>();
+
+        var idList = ids.Where(id => id > 0).Distinct().ToList();
+        if (!idList.Any()) return Enumerable.Empty<ProductInfo>();
+
+        try
+        {
+            var products = await _productRepository.GetProductsByIdsAsync(idList);
+            if (products == null) return Enumerable.Empty<ProductInfo>();
+
+            var productInfos = products.Select(p => new ProductInfo
+            {
+                Id = p.Id.ToString(),
+                Name = p.ProductName ?? string.Empty,
+                Brand = p.Brands ?? string.Empty,
+                Barcode = p.Code,
+                ImageUrl = p.ImageUrl ?? string.Empty,
+                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
+                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
+                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
+                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
+                NutritionGrade = p.NutritionGrade,
+                EcoScoreGrade = p.EcoScoreGrade
+            }).ToList();
+
+            return productInfos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania produktów po Id: {Ids}", string.Join(", ", idList));
+            return Enumerable.Empty<ProductInfo>();
+        }
+    }
+    
+    
     public async Task<ProductResult> AddAiProductAsync(string productName)
     {
         try
