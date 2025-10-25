@@ -13,4 +13,5 @@ public interface IProductContract
     Task<List<string>> GetAllergensAsync();
     Task<List<string>> GetIngredientsAsync();
     Task<ProductNutritionResult> GetNutritionInfoAsync(string productId);
+    Task<ProductResult> AddAiProductAsync(string productName);
 }

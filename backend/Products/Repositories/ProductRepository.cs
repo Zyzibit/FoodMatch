@@ -46,6 +46,20 @@ public class ProductRepository : IProductRepository
         }
     }
 
+    public async Task<Product?> GetProductByNameAsync(string productName)
+    {
+        try
+        {
+            return await _context.Products
+                .FirstOrDefaultAsync(p => p.ProductName != null && p.ProductName.ToLower() == productName.ToLower());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting product by name: {ProductName}", productName);
+            throw;
+        }
+    }
+
     public async Task<Product?> GetProductWithDetailsAsync(int productId)
     {
         try

@@ -9,6 +9,7 @@ public interface IProductRepository
 {
     Task<Product?> GetProductByIdAsync(int productId);
     Task<Product?> GetProductByCodeAsync(string productCode);
+    Task<Product?> GetProductByNameAsync(string productName);
     Task<Product?> GetProductWithDetailsAsync(int productId);
     Task<IEnumerable<Product>> GetProductsWithDetailsAsync(int limit, int offset);
     Task<IEnumerable<Product>> GetProductsByIdsAsync(List<int> productIds);
