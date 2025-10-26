@@ -1,4 +1,5 @@
-using inzynierka.Receipts.Contracts.Models;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 using inzynierka.Receipts.Model;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Mappings;

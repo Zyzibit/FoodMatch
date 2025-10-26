@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class ProductSearchQuery
 {
@@ -7,6 +7,6 @@ public class ProductSearchQuery
     public List<string>? Allergens { get; set; }
     public List<string>? Ingredients { get; set; }
     public string? Brand { get; set; }
-    public int Limit { get; set; } = 10;
+    public int Limit { get; set; } = 50;
     public int Offset { get; set; } = 0;
 }

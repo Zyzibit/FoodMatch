@@ -1,6 +1,5 @@
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Services;
-using inzynierka.Products.Services.Models;
+using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
 using inzynierka.Products.OpenFoodFacts.Import;

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace inzynierka.Receipts.Contracts.Models;
+namespace inzynierka.Receipts.Responses;
 
 public class ReceiptDto
 {
@@ -28,18 +28,10 @@ public class ReceiptIngredientReadDto
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
     public bool IsAiGenerated { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    
     public decimal EstimatedCalories { get; set; }
     public decimal EstimatedProteins { get; set; }
     public decimal EstimatedCarbohydrates { get; set; }
     public decimal EstimatedFats { get; set; }
-    
+    public string ProductName { get; set; } = string.Empty;
 }
 
-public class ReceiptsListResult
-{
-    public bool Success { get; set; } = true;
-    public List<ReceiptDto> Receipts { get; set; } = new List<ReceiptDto>();
-    public int TotalCount { get; set; }
-}

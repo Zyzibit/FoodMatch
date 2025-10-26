@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class ProductInfo
 {
@@ -15,5 +15,5 @@ public class ProductInfo
     public string? NutritionGrade { get; set; }
     public string? EcoScoreGrade { get; set; }
     public bool IsAiGenerated { get; set; }
-
 }
+

@@ -17,6 +17,5 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
         Task BulkUpsertProductAllergenLinksAsync(List<(string Code, string TagName)> items, CancellationToken ct = default);
 
         Task BulkInsertProductsAsync(List<Product> products, CancellationToken ct = default);
-        Task BulkInsertJoinsAsync<TJoin>(List<TJoin> joins, CancellationToken ct = default) where TJoin : class;
     }
 }

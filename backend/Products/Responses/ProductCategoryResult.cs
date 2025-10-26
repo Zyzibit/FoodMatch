@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class ProductCategoryResult
 {

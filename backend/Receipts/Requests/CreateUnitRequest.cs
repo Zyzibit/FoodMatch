@@ -1,9 +1,9 @@
-namespace inzynierka.Receipts.Contracts.Models;
+﻿namespace inzynierka.Receipts.Requests;
 
-public class UnitDto
+public class CreateUnitRequest
 {
-    public int UnitId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string PromptDescription { get; set; } = string.Empty;
 }
+

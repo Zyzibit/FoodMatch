@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class ProductResult
 {
@@ -6,3 +6,4 @@ public class ProductResult
     public ProductInfo? Product { get; set; }
     public string? ErrorMessage { get; set; }
 }
+

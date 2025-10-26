@@ -22,8 +22,6 @@ using inzynierka.Users.Modules;
 using inzynierka.Users.Services;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Services;
-using inzynierka.Receipts.Modules;
-using inzynierka.Receipts.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -98,14 +96,11 @@ builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
-builder.Services.AddScoped<ReceiptService>();
 builder.Services.AddScoped<IRecipeProductService, RecipeProductService>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IReceiptService, UserReceiptService>();
-builder.Services.AddScoped<IRecipeContract, ReceiptContract>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
-builder.Services.AddScoped<IUnitContract, UnitModule>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
 builder.Services.AddScoped<IRecipePromptBuilder, RecipePromptBuilder>();
 
