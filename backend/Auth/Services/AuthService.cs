@@ -9,7 +9,8 @@ using inzynierka.Users.Services;
 
 namespace inzynierka.Auth.Services;
 
-public class AuthService : IAuthService {
+public class AuthService : IAuthService 
+{
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly SignInManager<User> _signInManager;
