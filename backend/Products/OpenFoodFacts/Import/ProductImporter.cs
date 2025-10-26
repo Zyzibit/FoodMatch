@@ -100,7 +100,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private static Product? MapToProduct(OpenFoodFactsProduct src)
         {
             var n = src.OpenFoodFactsNutriments;
-            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null && src.LanguageCode == "pl")) {
+            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null)) {
                 var product = new Product {
                     Code = Sanitizer(src.Code),
                     ProductName = Sanitizer(src.ProductName),
@@ -219,8 +219,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 return null;
             }
         }
-
-
+        
         private sealed class TagBuffers
         {
             public HashSet<string> IngredientNames { get; }

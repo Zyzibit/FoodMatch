@@ -430,7 +430,8 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         salt_100g            double precision NULL,
                         sodium_100g          double precision NULL,
                         energy_kcal_serving  double precision NULL,
-                        last_updated         timestamp        NULL
+                        last_updated         timestamp        NULL,
+                        is_ai_generated      boolean          NOT NULL DEFAULT false
                     ) ON COMMIT DROP;";
 
                 await using (var cmd = new NpgsqlCommand(createTemp, conn, tx) { CommandTimeout = 0 })
@@ -540,7 +541,8 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         ""Salt100g"",
                         ""Sodium100g"",
                         ""EnergyKcalServing"",
-                        ""LastUpdated""
+                        ""LastUpdated"",
+                        ""IsAiGenerated""
                     )
                     SELECT
                         s.code,
@@ -568,10 +570,11 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         s.salt_100g,
                         s.sodium_100g,
                         s.energy_kcal_serving,
-                        s.last_updated
+                        s.last_updated,
+                        s.is_ai_generated
                     FROM products_stage s
                     WHERE s.code IS NOT NULL AND btrim(s.code) <> ''
-                    ON CONFLICT (""CodeNorm"") DO NOTHING;";
+                    ON CONFLICT (""Code"") DO NOTHING;";
 
                 await using (var cmd2 = new NpgsqlCommand(upsert, conn, tx) { CommandTimeout = 0 })
                     await cmd2.ExecuteNonQueryAsync(ct);

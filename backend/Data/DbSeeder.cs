@@ -107,7 +107,6 @@ public class DbSeeder
                 logger.LogInformation("Units seeded successfully");
             }
 
-            // Create Admin role if it doesn't exist
             if (!await roleManager.RoleExistsAsync(Roles.Admin))
             {
                 logger.LogInformation("Admin role is creating");
@@ -158,7 +157,6 @@ public class DbSeeder
                 var createUserResult = await userManager
                     .CreateAsync(user, "Admin@123");
 
-                // Validate user creation
                 if (!createUserResult.Succeeded)
                 {
                     var errors = createUserResult.Errors.Select(e => e.Description);

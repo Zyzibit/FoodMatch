@@ -16,7 +16,6 @@ using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
 using inzynierka.AI.Modules;
 using inzynierka.Auth.Services;
-using inzynierka.EventBus;
 using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
 using inzynierka.Users.Modules;
@@ -82,8 +81,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
     }
 });
 
-builder.Services.AddSingleton<IEventBus, InMemoryEventBus>();
-
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -105,7 +102,7 @@ builder.Services.AddScoped<ReceiptService>();
 builder.Services.AddScoped<IRecipeProductService, RecipeProductService>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IReceiptService, UserReceiptService>();
-builder.Services.AddScoped<IReceiptContract, ReceiptModule>();
+builder.Services.AddScoped<IRecipeContract, ReceiptContract>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IUnitContract, UnitModule>();

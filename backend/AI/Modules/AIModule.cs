@@ -2,8 +2,6 @@ using inzynierka.AI.Contracts;
 using inzynierka.AI.Contracts.Models;
 using inzynierka.AI.OpenAI;
 using inzynierka.AI.OpenAI.Model;
-using inzynierka.EventBus;
-using inzynierka.AI.EventBus.Events;
 using System.Text.Json;
 
 namespace inzynierka.AI.Modules;
@@ -11,18 +9,15 @@ namespace inzynierka.AI.Modules;
 public class AIModule : IAIContract
 {
     private readonly IOpenAIClient _openAIClient;
-    private readonly IEventBus _eventBus;
     private readonly ILogger<AIModule> _logger;
     private readonly IRecipeGeneratorService _recipeGeneratorService;
 
     public AIModule(
         IOpenAIClient openAIClient,
-        IEventBus eventBus,
         ILogger<AIModule> logger,
         IRecipeGeneratorService recipeGeneratorService)
     {
         _openAIClient = openAIClient;
-        _eventBus = eventBus;
         _logger = logger;
         _recipeGeneratorService = recipeGeneratorService;
     }
@@ -31,7 +26,6 @@ public class AIModule : IAIContract
     {
         try
         {
-            var startTime = DateTime.UtcNow;
             var openAIMessages = messages.Select(m => new OpenAIMessage(m.Role, m.Content)).ToList();
 
             var jsonResponse = await _openAIClient.SendPromptForJsonasync(openAIMessages);
@@ -49,16 +43,6 @@ public class AIModule : IAIContract
                 }
             }
 
-            var processingTime = DateTime.UtcNow - startTime;
-
-            // Publikacja zdarzenia generowania tekstu
-            await _eventBus.PublishAsync(new AITextGeneratedEvent
-            {
-                UserId = "",
-                Model = options?.Model ?? "gpt-3.5-turbo",
-                TokensUsed = options?.MaxTokens ?? 0,
-                ProcessingTime = processingTime
-            });
 
             return new AITextResult
             {
@@ -94,14 +78,7 @@ public class AIModule : IAIContract
 
             string jsonString = response?.ToString() ?? "";
             bool isValidJson = response.HasValue;
-
-            // Publikacja zdarzenia generowania JSON
-            await _eventBus.PublishAsync(new AIJsonGeneratedEvent
-            {
-                UserId = "",
-                IsValidJson = isValidJson,
-                Schema = schema ?? ""
-            });
+            
 
             return new AIJsonResult
             {
@@ -126,14 +103,8 @@ public class AIModule : IAIContract
         try
         {
             var startTime = DateTime.UtcNow;
-
-            // Publikacja zdarzenia rozpocz�cia analizy
-            await _eventBus.PublishAsync(new AIAnalysisRequestedEvent
-            {
-                ProductId = productId,
-                AnalysisType = analysisType.ToString()
-            });
-
+            
+            
             var analysisPrompt = analysisType switch
             {
                 ProductAnalysisType.Nutritional => "Analyze the nutritional value and health benefits of this product.",
@@ -185,14 +156,6 @@ public class AIModule : IAIContract
             var processingTime = DateTime.UtcNow - startTime;
             const double confidenceScore = 0.85;
 
-            // Publikacja zdarzenia zako�czenia analizy
-            await _eventBus.PublishAsync(new AIAnalysisCompletedEvent
-            {
-                ProductId = productId,
-                AnalysisType = analysisType.ToString(),
-                ConfidenceScore = confidenceScore,
-                ProcessingTime = processingTime
-            });
 
             return new ProductAnalysisResult
             {
@@ -272,12 +235,6 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia generowania przepis�w
-            await _eventBus.PublishAsync(new RecipeGeneratedEvent
-            {
-                Ingredients = ingredients,
-                RecipeCount = recommendations.Count
-            });
 
             return new RecipeRecommendationResult
             {
@@ -329,13 +286,6 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia analizy �ywieniowej
-            await _eventBus.PublishAsync(new NutritionalAnalysisPerformedEvent
-            {
-                ProductId = productId,
-                UserId = "",
-                OverallScore = score.Overall
-            });
 
             return new NutritionalAnalysisResult
             {
@@ -394,13 +344,7 @@ public class AIModule : IAIContract
                 }
             }
 
-            // Publikacja zdarzenia detekcji alergen�w
-            await _eventBus.PublishAsync(new AllergenDetectionPerformedEvent
-            {
-                Ingredients = ingredients,
-                DetectedAllergensCount = detectedAllergens.Count,
-                UserId = ""
-            });
+
 
             return new AllergenDetectionResult
             {
@@ -454,15 +398,6 @@ public class AIModule : IAIContract
                     negativeAspects = negElement.EnumerateArray().Select(n => n.GetString() ?? "").ToList();
                 }
             }
-
-            // Publikacja zdarzenia kalkulacji health score
-            await _eventBus.PublishAsync(new HealthScoreCalculatedEvent
-            {
-                ProductId = productId,
-                Score = score,
-                Grade = grade,
-                UserId = ""
-            });
 
             return new HealthScoreResult
             {

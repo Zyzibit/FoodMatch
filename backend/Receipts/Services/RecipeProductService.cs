@@ -1,6 +1,6 @@
 using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Model;
-using inzynierka.Products.Contracts;
+using inzynierka.Products.Services;
 using inzynierka.Products.Repositories;
 
 namespace inzynierka.Receipts.Services;
@@ -8,16 +8,16 @@ namespace inzynierka.Receipts.Services;
 public class RecipeProductService : IRecipeProductService
 {
     private readonly ILogger<RecipeProductService> _logger;
-    private readonly IProductContract _productContract;
+    private readonly IProductService _productService;
     private readonly IProductRepository _productRepository;
 
     public RecipeProductService(
         ILogger<RecipeProductService> logger,
-        IProductContract productContract,
+        IProductService productService,
         IProductRepository productRepository)
     {
         _logger = logger;
-        _productContract = productContract;
+        _productService = productService;
         _productRepository = productRepository;
     }
     
@@ -30,7 +30,7 @@ public class RecipeProductService : IRecipeProductService
 
         try
         {
-            var result = await _productContract.AddAiProductAsync(ingredient);
+            var result = await _productService.AddAiProductAsync(ingredient);
             
             if (!result.Success || result.Product == null)
             {

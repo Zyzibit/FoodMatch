@@ -3,7 +3,7 @@ using inzynierka.Receipts.Model;
 using inzynierka.Receipts.Repositories;
 using inzynierka.AI.Contracts;
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Contracts;
+using inzynierka.Products.Services;
 using inzynierka.Data;
 
 namespace inzynierka.Receipts.Services;
@@ -14,7 +14,7 @@ public class UserReceiptService : IReceiptService
     private readonly IReceiptRepository _receiptRepository;
     private readonly ILogger<UserReceiptService> _logger;
     private readonly IAIContract _aiContract;
-    private readonly IProductContract _productContract;
+    private readonly IProductService _productService;
     private readonly ReceiptService _receiptService;
     private readonly IRecipeProductService _recipeProductService;
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
@@ -24,7 +24,7 @@ public class UserReceiptService : IReceiptService
         IReceiptRepository receiptRepository, 
         ILogger<UserReceiptService> logger,
         IAIContract aiContract,
-        IProductContract productContract,
+        IProductService productService,
         ReceiptService receiptService,
         IRecipeProductService recipeProductService,
         IRecipeIngredientMatcher ingredientMatcher,
@@ -33,7 +33,7 @@ public class UserReceiptService : IReceiptService
         _receiptRepository = receiptRepository;
         _logger = logger;
         _aiContract = aiContract;
-        _productContract = productContract;
+        _productService = productService;
         _receiptService = receiptService;
         _recipeProductService = recipeProductService;
         _ingredientMatcher = ingredientMatcher;
@@ -149,7 +149,7 @@ public class UserReceiptService : IReceiptService
                 };
             }
             
-            var productsInfo = await _productContract.GetProductsByIdsAsync(request.ProductIds);
+            var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
             // if (!productsList.Any())

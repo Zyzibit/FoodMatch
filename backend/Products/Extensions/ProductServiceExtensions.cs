@@ -1,6 +1,5 @@
 using inzynierka.Products.Repositories;
-using inzynierka.Products.Contracts;
-using inzynierka.Products.Modules;
+using inzynierka.Products.Services;
 using inzynierka.Products.OpenFoodFacts.Extensions;
 using inzynierka.Products.Mappings;
 
@@ -13,7 +12,7 @@ public static class ProductServiceExtensions
     {
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductMapper, ProductMapper>();
-        services.AddScoped<IProductContract, ProductModule>();
+        services.AddScoped<IProductService, ProductService>();
         
         services.AddOpenFoodFactsServices();
         

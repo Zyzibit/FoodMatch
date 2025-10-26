@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using inzynierka.Products.Contracts;
-using inzynierka.Products.Contracts.Models;
+using inzynierka.Products.Services;
+using inzynierka.Products.Services.Models;
 
 namespace inzynierka.Products.API;
 
@@ -9,10 +9,10 @@ namespace inzynierka.Products.API;
 [Route("api/v1/products")]
 public class ProductController : ControllerBase
 {
-    private readonly IProductContract _productModule;
+    private readonly IProductService _productModule;
     private readonly ILogger<ProductController> _logger;
 
-    public ProductController(IProductContract productModule, ILogger<ProductController> logger)
+    public ProductController(IProductService productModule, ILogger<ProductController> logger)
     {
         _productModule = productModule;
         _logger = logger;
