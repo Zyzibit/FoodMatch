@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace inzynierka.Receipts.Responses;
+﻿namespace inzynierka.Receipts.Responses;
 
 public class ReceiptDto
 {

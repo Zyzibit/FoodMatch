@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using inzynierka.Products.Model;
+﻿using inzynierka.Products.Model;
 
 namespace inzynierka.Receipts.Model;
 

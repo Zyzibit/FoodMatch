@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace inzynierka.Receipts.Requests;
+﻿namespace inzynierka.Receipts.Requests;
 
 public class CreateReceiptRequest
 {

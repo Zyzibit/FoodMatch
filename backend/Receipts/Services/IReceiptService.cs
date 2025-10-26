@@ -1,6 +1,5 @@
 ﻿using inzynierka.Receipts.Requests;
 using inzynierka.Receipts.Responses;
-using inzynierka.Receipts.Model;
 
 namespace inzynierka.Receipts.Services;
 

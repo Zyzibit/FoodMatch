@@ -73,4 +73,9 @@
       <_ContentIncludedByDefault Remove="Postman\Receipts.postman_environment.json" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Users\Contracts\Models\" />
+      <Folder Include="Users\Dto\" />
+    </ItemGroup>
+
 </Project>
