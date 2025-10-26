@@ -51,7 +51,8 @@ public class Product
     public double? estimatedCarbohydrates { get; set; }
     public double? estimatedFats { get; set; }
     public double? estimatedProteins { get; set; }
-    public bool? IsAiGenerated { get; set; }
+    [Required]
+    public bool IsAiGenerated { get; set; }
     
 }
 

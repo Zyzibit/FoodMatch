@@ -48,7 +48,7 @@ public class UserReceiptService : IReceiptService
                 {
                     ProductId = i.ProductId,
                     UnitId = i.UnitId,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
                 }).ToList(),
                 AdditionalProducts = request.AdditionalProducts,
                 Title = request.Title,
@@ -96,22 +96,22 @@ public class UserReceiptService : IReceiptService
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
-    public async Task<CreateReceiptResult> GenerateRecipeWithAIAsync(string userId, GenerateRecipeWithAIRequest request)
+    public async Task<CreateReceiptResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAIRequest request)
     {
         try
         {
             var productsInfo = await _productContract.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
-            if (!productsList.Any())
-            {
-                return new CreateReceiptResult 
-                { 
-                    Success = false, 
-                    ErrorMessage = "No products found with the provided IDs" 
-                };
-            }
-            
+            // if (!productsList.Any())
+            // {
+            //     return new CreateReceiptResult 
+            //     { 
+            //         Success = false, 
+            //         ErrorMessage = "No products found with the provided IDs" 
+            //     };
+            // }
+            //
             var foundProductIds = productsList
                 .Select(p => int.TryParse(p.Id, out var id) ? id : -1)
                 .Where(id => id != -1)
@@ -201,7 +201,8 @@ public class UserReceiptService : IReceiptService
                 }
 
                 var productName = _ingredientMatcher.GetProductDisplayName(product);
-                var quantity = GetQuantityForIngredient(productName, generatedRecipe.Ingredients);
+                var quantity = _receiptService.GetQuantityForIngredient(productName, generatedRecipe.Ingredients);
+
                 if (!quantity.HasValue)
                 {
                     _logger.LogWarning("Could not determine quantity for product: {ProductName}", productName);
@@ -274,8 +275,4 @@ public class UserReceiptService : IReceiptService
         }
     }
     
-    private decimal? GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
-    {
-        return _receiptService.GetQuantityForIngredient(productName, aiIngredients);
-    }
 }

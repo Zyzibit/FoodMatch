@@ -27,6 +27,7 @@ public class ReceiptIngredientReadDto
     public int ProductId { get; set; }
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
+    public bool IsAiGenerated { get; set; }
 }
 
 public class ReceiptsListResult

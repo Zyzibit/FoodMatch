@@ -72,13 +72,15 @@ public class ProductModule : IProductContract
                     Allergens = product.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                     Countries = product.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                     NutritionGrade = product.NutritionGrade,
-                    Nutrition = new NutritionInfo {
+                    Nutrition = new NutritionInfo
+                    {
                         Carbohydrates = product.Carbohydrates100g,
                         Proteins = product.Proteins100g,
                         Fat = product.Fat100g,
                         Energy = product.Energy100g
                     },
-                    EcoScoreGrade = product.EcoScoreGrade
+                    EcoScoreGrade = product.EcoScoreGrade,
+                    IsAiGenerated = product.IsAiGenerated
                 }
             };
         }
@@ -125,7 +127,8 @@ public class ProductModule : IProductContract
                 Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                 Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                 NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade
+                EcoScoreGrade = p.EcoScoreGrade,
+                IsAiGenerated = p.IsAiGenerated
             }).ToList();
 
             await _eventBus.PublishAsync(new ProductSearchedEvent
@@ -172,7 +175,8 @@ public class ProductModule : IProductContract
                 Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                 Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                 NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade
+                EcoScoreGrade = p.EcoScoreGrade,
+                IsAiGenerated = p.IsAiGenerated
             }).ToList();
 
             await _eventBus.PublishAsync(new ProductSearchedEvent
@@ -219,7 +223,8 @@ public class ProductModule : IProductContract
                 Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                 Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                 NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade
+                EcoScoreGrade = p.EcoScoreGrade,
+                IsAiGenerated = p.IsAiGenerated
             }).ToList();
 
             await _eventBus.PublishAsync(new ProductCategoryAccessedEvent
@@ -252,9 +257,9 @@ public class ProductModule : IProductContract
         try
         {
             var startTime = DateTime.UtcNow;
-            
+
             await _productImporter.ImportJsonlAsync(filePath);
-            
+
             var duration = DateTime.UtcNow - startTime;
 
             await _eventBus.PublishAsync(new ProductImportedEvent
@@ -406,7 +411,8 @@ public class ProductModule : IProductContract
                 Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
                 Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
                 NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade
+                EcoScoreGrade = p.EcoScoreGrade,
+                IsAiGenerated = p.IsAiGenerated
             }).ToList();
 
             return productInfos;
@@ -417,8 +423,8 @@ public class ProductModule : IProductContract
             return Enumerable.Empty<ProductInfo>();
         }
     }
-    
-    
+
+
     public async Task<ProductResult> AddAiProductAsync(string productName)
     {
         try
@@ -436,8 +442,17 @@ public class ProductModule : IProductContract
 
             if (existingProduct != null)
             {
-                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}", productName, existingProduct.Id);
-                
+                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
+                    productName, existingProduct.Id);
+
+                // Jeśli produkt jest używany przez AI, oznacz go jako AI-generated
+                if (!existingProduct.IsAiGenerated)
+                {
+                    existingProduct.IsAiGenerated = true;
+                    await _productRepository.SaveChangesAsync();
+                    _logger.LogInformation("Updated product '{ProductName}' to IsAiGenerated = true", productName);
+                }
+
                 return new ProductResult
                 {
                     Success = true,
@@ -453,7 +468,8 @@ public class ProductModule : IProductContract
                         Allergens = new List<string>(),
                         Countries = new List<string>(),
                         NutritionGrade = existingProduct.NutritionGrade,
-                        EcoScoreGrade = existingProduct.EcoScoreGrade
+                        EcoScoreGrade = existingProduct.EcoScoreGrade,
+                        IsAiGenerated = existingProduct.IsAiGenerated
                     }
                 };
             }
@@ -470,7 +486,8 @@ public class ProductModule : IProductContract
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
-            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", productName, createdProduct.Id);
+            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", productName,
+                createdProduct.Id);
 
             return new ProductResult
             {
@@ -487,7 +504,8 @@ public class ProductModule : IProductContract
                     Allergens = new List<string>(),
                     Countries = new List<string>(),
                     NutritionGrade = createdProduct.NutritionGrade,
-                    EcoScoreGrade = createdProduct.EcoScoreGrade
+                    EcoScoreGrade = createdProduct.EcoScoreGrade,
+                    IsAiGenerated = createdProduct.IsAiGenerated
                 }
             };
         }
