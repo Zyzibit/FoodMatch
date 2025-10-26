@@ -30,7 +30,7 @@ public class DbSeeder
                 {
                     new Unit 
                     { 
-                        Name = "gram", 
+                        Name = "g", 
                         Description = "Unit of mass in the metric system",
                         PromptDescription = "Use for solid ingredients weight (e.g., flour, sugar, meat). 1000 grams = 1 kilogram"
                     },

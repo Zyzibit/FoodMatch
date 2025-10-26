@@ -2,6 +2,7 @@ using inzynierka.Receipts.Contracts.Models;
 using inzynierka.Receipts.Model;
 using inzynierka.AI.Contracts.Models;
 using inzynierka.Receipts.Contracts;
+using inzynierka.Receipts.Mappings;
 
 namespace inzynierka.Receipts.Services;
 
@@ -9,13 +10,16 @@ public class ReceiptService
 {
     private readonly ILogger<ReceiptService> _logger;
     private readonly IUnitContract _unitContract;
+    private readonly IReceiptMapper _receiptMapper;
 
     public ReceiptService(
         ILogger<ReceiptService> logger,
-        IUnitContract unitContract)
+        IUnitContract unitContract,
+        IReceiptMapper receiptMapper)
     {
         _logger = logger;
         _unitContract = unitContract;
+        _receiptMapper = receiptMapper;
     }
 
     /// <summary>
@@ -23,31 +27,7 @@ public class ReceiptService
     /// </summary>
     public ReceiptDto MapToDto(Receipt receipt)
     {
-        return new ReceiptDto
-        {
-            Id = receipt.Id,
-            UserId = receipt.UserId,
-            IsAiGenerated = receipt.IsAiGenerated,
-            Ingredients = receipt.Ingredients.Select(i => new ReceiptIngredientReadDto
-            {
-                ProductId = i.ProductId,
-                UnitId = i.UnitId,
-                Quantity = i.Quantity,
-                IsAiGenerated = i.Product.IsAiGenerated
-            }).ToList(),
-            AdditionalProducts = receipt.AdditionalProducts,
-            Title = receipt.Title,
-            Description = receipt.Description,
-            Instructions = receipt.Instructions,
-            Servings = receipt.Servings,
-            PreparationTimeMinutes = receipt.PreparationTimeMinutes,
-            TotalWeightGrams = receipt.TotalWeightGrams,
-            CaloriesPer100G = receipt.Calories,
-            ProteinPer100G = receipt.Protein,
-            CarbohydratesPer100G = receipt.Carbohydrates,
-            FatsPer100G = receipt.Fats,
-            CreatedAt = receipt.CreatedAt
-        };
+        return _receiptMapper.MapToDto(receipt);
     }
     
     public async Task<int> GetUnitIdForIngredientAsync(string? unitName)
@@ -92,10 +72,7 @@ public class ReceiptService
             throw new InvalidOperationException($"Failed to retrieve unit '{unitName}' from database", ex);
         }
     }
-
-    /// <summary>
-    /// Finds quantity of an ingredient by matching product name with AI-generated ingredients.
-    /// </summary>
+    
     public decimal? GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
     {
         if (string.IsNullOrEmpty(productName))

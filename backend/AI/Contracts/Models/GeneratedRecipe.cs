@@ -9,10 +9,10 @@ public class GeneratedRecipe
     public int Servings { get; set; }
     public int PreparationTimeMinutes { get; set; }
     public int TotalWeightGrams { get; set; }
-    public int EstimatedCalories { get; set; }
-    public int EstimatedProtein { get; set; }
-    public int EstimatedCarbohydrates { get; set; }
-    public int EstimatedFats { get; set; }
+    public decimal EstimatedCalories { get; set; }
+    public decimal EstimatedProtein { get; set; }
+    public decimal EstimatedCarbohydrates { get; set; }
+    public decimal EstimatedFats { get; set; }
 }
 
 public class GeneratedRecipeIngredient
@@ -20,4 +20,8 @@ public class GeneratedRecipeIngredient
     public string Name { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = string.Empty;
+    public decimal EstimatedCalories { get; set; }
+    public decimal EstimatedProteins { get; set; }
+    public decimal EstimatedCarbohydrates { get; set; }
+    public decimal EstimatedFats { get; set; }
 }

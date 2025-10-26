@@ -137,15 +137,19 @@ public class RecipePromptBuilder : IRecipePromptBuilder
   ""description"": ""Krótki, zachęcający opis (1-2 zdania)"",
   ""servings"": 2,
   ""preparationTimeMinutes"": 30,
-  ""totalWeightGrams"": 800,
   ""ingredients"": [
     {
       ""name"": ""Nazwa składnika"",
       ""quantity"": 200,
-      ""unit"": ""g""
+      ""unit"": ""g"",
+      ""estimatedCalories"": 40,
+      ""estimatedProteins"": 3,
+      ""estimatedCarbohydrates"": 8,
+      ""estimatedFats"": 0
     }
   ],
   ""instructions"": ""Krok 1: ...\nKrok 2: ...\nKrok 3: ..."",
+  ""totalWeightGrams"": 800,
   ""estimatedCalories"": 150,
   ""estimatedProtein"": 12,
   ""estimatedCarbohydrates"": 20,
@@ -155,8 +159,14 @@ public class RecipePromptBuilder : IRecipePromptBuilder
         builder.AppendLine();
         builder.AppendLine("⚠️ **KLUCZOWE INFORMACJE**:");
         builder.AppendLine("• **totalWeightGrams** - Całkowita waga gotowego dania w gramach (suma wszystkich składników po przygotowaniu)");
-        builder.AppendLine("• **Wartości odżywcze** (kalorie, białko, węglowodany, tłuszcze) - ZAWSZE obliczaj **NA 100g GOTOWEGO DANIA**");
-        builder.AppendLine("• Przykład: Jeśli całe danie waży 800g i ma 1200 kcal, to na 100g przypadnie 150 kcal");
+        builder.AppendLine("• **Wartości odżywcze na poziomie przepisu** (kalorie, białko, węglowodany, tłuszcze) - oblicz **NA 100g GOTOWEGO DANIA**");
+        builder.AppendLine("• **Wartości odżywcze dla każdego składnika** - oblicz dla 100g składnika przed przygotowaniem");
+        builder.AppendLine("• **Czyli podaj wartości odżywcze na 100g składnika w jego surowej formie**");
+        builder.AppendLine();
+        builder.AppendLine("### DODATKOWE WYTYCZNE:");
+        builder.AppendLine("• Używaj tylko dozwolonych jednostek miary podanych poniżej");
+        builder.AppendLine("• Określ totalWeightGrams jako wagę wszystkich składników przed przygotowaniem ");
+        builder.AppendLine("• Suma wartości odżywczych wszystkich składników powinna być zbliżona do wartości przepisu");
         builder.AppendLine();
     
         await AppendUnitConstraints(builder);

@@ -107,16 +107,16 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         {
             var recipe = new GeneratedRecipe
             {
-                Title = jsonElement.GetProperty("title").GetString() ?? "Bez tytułu",
+                Title = jsonElement.GetProperty("title").GetString() ?? "Invalid title",
                 Description = jsonElement.GetProperty("description").GetString() ?? "",
                 Instructions = jsonElement.GetProperty("instructions").GetString() ?? "",
                 Servings = jsonElement.GetProperty("servings").GetInt32(),
                 PreparationTimeMinutes = jsonElement.GetProperty("preparationTimeMinutes").GetInt32(),
                 TotalWeightGrams = GetIntProperty(jsonElement, "totalWeightGrams"),
-                EstimatedCalories = GetIntProperty(jsonElement, "estimatedCalories"),
-                EstimatedProtein = GetIntProperty(jsonElement, "estimatedProtein"),
-                EstimatedCarbohydrates = GetIntProperty(jsonElement, "estimatedCarbohydrates"),
-                EstimatedFats = GetIntProperty(jsonElement, "estimatedFats")
+                EstimatedCalories = GetDecimalProperty(jsonElement, "estimatedCalories"),
+                EstimatedProtein = GetDecimalProperty(jsonElement, "estimatedProtein"),
+                EstimatedCarbohydrates = GetDecimalProperty(jsonElement, "estimatedCarbohydrates"),
+                EstimatedFats = GetDecimalProperty(jsonElement, "estimatedFats")
             };
 
             var ingredientsArray = jsonElement.GetProperty("ingredients");
@@ -126,7 +126,11 @@ public class RecipeGeneratorService : IRecipeGeneratorService
                 {
                     Name = ingredientElement.GetProperty("name").GetString() ?? "",
                     Quantity = GetDecimalProperty(ingredientElement, "quantity"),
-                    Unit = ingredientElement.GetProperty("unit").GetString() ?? ""
+                    Unit = ingredientElement.GetProperty("unit").GetString() ?? "",
+                    EstimatedCalories = GetDecimalProperty(ingredientElement, "estimatedCalories"),
+                    EstimatedProteins = GetDecimalProperty(ingredientElement, "estimatedProteins"),
+                    EstimatedCarbohydrates = GetDecimalProperty(ingredientElement, "estimatedCarbohydrates"),
+                    EstimatedFats = GetDecimalProperty(ingredientElement, "estimatedFats")
                 });
             }
 

@@ -13,7 +13,7 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251019222927_init")]
+    [Migration("20251026142304_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -268,6 +268,9 @@ namespace inzynierka.Migrations
                     b.Property<string>("IngredientsText")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsAiGenerated")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("IsVegan")
                         .HasColumnType("text");
 
@@ -309,6 +312,18 @@ namespace inzynierka.Migrations
 
                     b.Property<double?>("Sugars100g")
                         .HasColumnType("double precision");
+
+                    b.Property<decimal?>("estimatedCalories")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("estimatedCarbohydrates")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("estimatedFats")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("estimatedProteins")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -442,11 +457,11 @@ namespace inzynierka.Migrations
                     b.PrimitiveCollection<List<string>>("AdditionalProducts")
                         .HasColumnType("text[]");
 
-                    b.Property<int>("Calories")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Calories")
+                        .HasColumnType("numeric");
 
-                    b.Property<int>("Carbohydrates")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Carbohydrates")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -455,8 +470,8 @@ namespace inzynierka.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Fats")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Fats")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Instructions")
                         .IsRequired()
@@ -468,8 +483,8 @@ namespace inzynierka.Migrations
                     b.Property<int>("PreparationTimeMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Protein")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Protein")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("Servings")
                         .HasColumnType("integer");
@@ -477,6 +492,9 @@ namespace inzynierka.Migrations
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("TotalWeightGrams")
+                        .HasColumnType("integer");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -520,7 +538,15 @@ namespace inzynierka.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UnitId"));
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PromptDescription")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -746,7 +772,7 @@ namespace inzynierka.Migrations
                     b.HasOne("inzynierka.Users.Model.User", "User")
                         .WithMany("Receipts")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");

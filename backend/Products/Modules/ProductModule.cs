@@ -1,3 +1,4 @@
+using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Contracts;
 using inzynierka.Products.Contracts.Models;
 using inzynierka.Products.Repositories;
@@ -5,6 +6,7 @@ using inzynierka.Products.Model;
 using inzynierka.EventBus;
 using inzynierka.Products.EventBus.Events;
 using inzynierka.Products.OpenFoodFacts.Import;
+using inzynierka.Products.Mappings;
 
 namespace inzynierka.Products.Modules;
 
@@ -14,17 +16,20 @@ public class ProductModule : IProductContract
     private readonly IProductImporter _productImporter;
     private readonly IEventBus _eventBus;
     private readonly ILogger<ProductModule> _logger;
+    private readonly IProductMapper _productMapper;
 
     public ProductModule(
         IProductRepository productRepository,
         IProductImporter productImporter,
         IEventBus eventBus,
-        ILogger<ProductModule> logger)
+        ILogger<ProductModule> logger,
+        IProductMapper productMapper)
     {
         _productRepository = productRepository;
         _productImporter = productImporter;
         _eventBus = eventBus;
         _logger = logger;
+        _productMapper = productMapper;
     }
 
     public async Task<ProductResult> GetProductAsync(string productId)
@@ -60,28 +65,7 @@ public class ProductModule : IProductContract
             return new ProductResult
             {
                 Success = true,
-                Product = new ProductInfo
-                {
-                    Id = product.Id.ToString(),
-                    Name = product.ProductName ?? "",
-                    Brand = product.Brands ?? "",
-                    Barcode = product.Code,
-                    ImageUrl = product.ImageUrl ?? "",
-                    Categories = product.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
-                    Ingredients = product.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
-                    Allergens = product.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
-                    Countries = product.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
-                    NutritionGrade = product.NutritionGrade,
-                    Nutrition = new NutritionInfo
-                    {
-                        Carbohydrates = product.Carbohydrates100g,
-                        Proteins = product.Proteins100g,
-                        Fat = product.Fat100g,
-                        Energy = product.Energy100g
-                    },
-                    EcoScoreGrade = product.EcoScoreGrade,
-                    IsAiGenerated = product.IsAiGenerated
-                }
+                Product = _productMapper.MapToProductInfo(product)
             };
         }
         catch (Exception ex)
@@ -95,7 +79,8 @@ public class ProductModule : IProductContract
         }
     }
 
-    public async Task<ProductSearchResult> SearchProductsAsync(ProductSearchQuery query)
+    public async Task<ProductSearchResult> SearchProductsAsync(ProductSearchQuery query
+    )
     {
         try
         {
@@ -115,21 +100,7 @@ public class ProductModule : IProductContract
                 limit: query.Limit,
                 offset: query.Offset);
 
-            var productInfos = products.Select(p => new ProductInfo
-            {
-                Id = p.Id.ToString(),
-                Name = p.ProductName ?? "",
-                Brand = p.Brands ?? "",
-                Barcode = p.Code,
-                ImageUrl = p.ImageUrl ?? "",
-                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
-                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
-                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
-                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
-                NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade,
-                IsAiGenerated = p.IsAiGenerated
-            }).ToList();
+            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
             await _eventBus.PublishAsync(new ProductSearchedEvent
             {
@@ -163,21 +134,7 @@ public class ProductModule : IProductContract
             var totalCount = await _productRepository.GetTotalProductsCountAsync();
             var products = await _productRepository.GetProductsWithDetailsAsync(limit, offset);
 
-            var productInfos = products.Select(p => new ProductInfo
-            {
-                Id = p.Id.ToString(),
-                Name = p.ProductName ?? "",
-                Brand = p.Brands ?? "",
-                Barcode = p.Code,
-                ImageUrl = p.ImageUrl ?? "",
-                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
-                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
-                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
-                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
-                NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade,
-                IsAiGenerated = p.IsAiGenerated
-            }).ToList();
+            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
             await _eventBus.PublishAsync(new ProductSearchedEvent
             {
@@ -211,21 +168,7 @@ public class ProductModule : IProductContract
             var totalCount = await _productRepository.GetProductsCountByCategoryAsync(category);
             var products = await _productRepository.GetProductsByCategoryAsync(category, limit, offset);
 
-            var productInfos = products.Select(p => new ProductInfo
-            {
-                Id = p.Id.ToString(),
-                Name = p.ProductName ?? "",
-                Brand = p.Brands ?? "",
-                Barcode = p.Code,
-                ImageUrl = p.ImageUrl ?? "",
-                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
-                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
-                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
-                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
-                NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade,
-                IsAiGenerated = p.IsAiGenerated
-            }).ToList();
+            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
             await _eventBus.PublishAsync(new ProductCategoryAccessedEvent
             {
@@ -361,13 +304,7 @@ public class ProductModule : IProductContract
                 AccessTime = DateTime.UtcNow
             });
 
-            var nutritionInfo = new NutritionInfo
-            {
-                Energy = product.Energy100g,
-                Fat = product.Fat100g,
-                Carbohydrates = product.Carbohydrates100g,
-                Proteins = product.Proteins100g,
-            };
+            var nutritionInfo = _productMapper.MapToNutritionInfo(product);
 
             return new ProductNutritionResult
             {
@@ -399,21 +336,7 @@ public class ProductModule : IProductContract
             var products = await _productRepository.GetProductsByIdsAsync(idList);
             if (products == null) return Enumerable.Empty<ProductInfo>();
 
-            var productInfos = products.Select(p => new ProductInfo
-            {
-                Id = p.Id.ToString(),
-                Name = p.ProductName ?? string.Empty,
-                Brand = p.Brands ?? string.Empty,
-                Barcode = p.Code,
-                ImageUrl = p.ImageUrl ?? string.Empty,
-                Categories = p.ProductCategoryTags.Select(pct => pct.CategoryTag.Name).ToList(),
-                Ingredients = p.ProductIngredientTags.Select(pit => pit.IngredientTag.Name).ToList(),
-                Allergens = p.ProductAllergenTags.Select(pat => pat.AllergenTag.Name).ToList(),
-                Countries = p.ProductCountryTags.Select(pct => pct.CountryTag.Name).ToList(),
-                NutritionGrade = p.NutritionGrade,
-                EcoScoreGrade = p.EcoScoreGrade,
-                IsAiGenerated = p.IsAiGenerated
-            }).ToList();
+            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
             return productInfos;
         }
@@ -425,11 +348,11 @@ public class ProductModule : IProductContract
     }
 
 
-    public async Task<ProductResult> AddAiProductAsync(string productName)
+    public async Task<ProductResult> AddAiProductAsync(GeneratedRecipeIngredient ingredient)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(productName))
+            if (string.IsNullOrWhiteSpace(ingredient.Name))
             {
                 return new ProductResult
                 {
@@ -438,80 +361,50 @@ public class ProductModule : IProductContract
                 };
             }
 
-            var existingProduct = await _productRepository.GetProductByNameAsync(productName.Trim());
+            var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
 
+            
+            
             if (existingProduct != null)
             {
                 _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
-                    productName, existingProduct.Id);
-
-                // Jeśli produkt jest używany przez AI, oznacz go jako AI-generated
-                if (!existingProduct.IsAiGenerated)
-                {
-                    existingProduct.IsAiGenerated = true;
-                    await _productRepository.SaveChangesAsync();
-                    _logger.LogInformation("Updated product '{ProductName}' to IsAiGenerated = true", productName);
-                }
-
+                    ingredient, existingProduct.Id);
+                
                 return new ProductResult
                 {
                     Success = true,
-                    Product = new ProductInfo
-                    {
-                        Id = existingProduct.Id.ToString(),
-                        Name = existingProduct.ProductName ?? "",
-                        Brand = existingProduct.Brands ?? "",
-                        Barcode = existingProduct.Code,
-                        ImageUrl = existingProduct.ImageUrl ?? "",
-                        Categories = new List<string>(),
-                        Ingredients = new List<string>(),
-                        Allergens = new List<string>(),
-                        Countries = new List<string>(),
-                        NutritionGrade = existingProduct.NutritionGrade,
-                        EcoScoreGrade = existingProduct.EcoScoreGrade,
-                        IsAiGenerated = existingProduct.IsAiGenerated
-                    }
+                    Product = _productMapper.MapToProductInfo(existingProduct)
                 };
             }
 
             var aiProduct = new Product
             {
                 Code = $"AI-GENERATED-{Guid.NewGuid()}",
-                ProductName = productName.Trim(),
+                ProductName = ingredient.Name.Trim(),
                 IsAiGenerated = true,
-                Language = "en",
+                Language = "pl",
+                estimatedCalories = ingredient.EstimatedCalories,
+                estimatedProteins = ingredient.EstimatedProteins,
+                estimatedCarbohydrates = ingredient.EstimatedCarbohydrates,
+                estimatedFats = ingredient.EstimatedFats,
                 LastUpdated = DateTime.UtcNow
             };
 
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
-            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", productName,
+            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient,
                 createdProduct.Id);
 
             return new ProductResult
             {
                 Success = true,
-                Product = new ProductInfo
-                {
-                    Id = createdProduct.Id.ToString(),
-                    Name = createdProduct.ProductName ?? "",
-                    Brand = createdProduct.Brands ?? "",
-                    Barcode = createdProduct.Code,
-                    ImageUrl = createdProduct.ImageUrl ?? "",
-                    Categories = new List<string>(),
-                    Ingredients = new List<string>(),
-                    Allergens = new List<string>(),
-                    Countries = new List<string>(),
-                    NutritionGrade = createdProduct.NutritionGrade,
-                    EcoScoreGrade = createdProduct.EcoScoreGrade,
-                    IsAiGenerated = createdProduct.IsAiGenerated
-                }
+                Product = _productMapper.MapToProductInfo(createdProduct)
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", productName);
+            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient);
             return new ProductResult
             {
                 Success = false,

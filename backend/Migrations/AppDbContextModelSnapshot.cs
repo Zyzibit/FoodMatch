@@ -310,14 +310,17 @@ namespace inzynierka.Migrations
                     b.Property<double?>("Sugars100g")
                         .HasColumnType("double precision");
 
-                    b.Property<double?>("estimatedCarbohydrates")
-                        .HasColumnType("double precision");
+                    b.Property<decimal?>("estimatedCalories")
+                        .HasColumnType("numeric");
 
-                    b.Property<double?>("estimatedFats")
-                        .HasColumnType("double precision");
+                    b.Property<decimal?>("estimatedCarbohydrates")
+                        .HasColumnType("numeric");
 
-                    b.Property<double?>("estimatedProteins")
-                        .HasColumnType("double precision");
+                    b.Property<decimal?>("estimatedFats")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("estimatedProteins")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -451,11 +454,11 @@ namespace inzynierka.Migrations
                     b.PrimitiveCollection<List<string>>("AdditionalProducts")
                         .HasColumnType("text[]");
 
-                    b.Property<int>("Calories")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Calories")
+                        .HasColumnType("numeric");
 
-                    b.Property<int>("Carbohydrates")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Carbohydrates")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -464,8 +467,8 @@ namespace inzynierka.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Fats")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Fats")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Instructions")
                         .IsRequired()
@@ -477,8 +480,8 @@ namespace inzynierka.Migrations
                     b.Property<int>("PreparationTimeMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Protein")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Protein")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("Servings")
                         .HasColumnType("integer");
