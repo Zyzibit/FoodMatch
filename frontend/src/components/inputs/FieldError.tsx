@@ -1,4 +1,5 @@
 import { Box, Typography, Fade } from "@mui/material";
+import { colors } from "../../theme";
 
 interface FieldErrorProps {
   message?: string;
@@ -18,7 +19,7 @@ export function FieldError({ message }: FieldErrorProps) {
         <Typography
           variant="caption"
           sx={{
-            color: "#d32f2f",
+            color: colors.feedback.error,
             fontSize: "0.75rem",
           }}
         >

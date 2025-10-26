@@ -63,7 +63,7 @@ export default function AuthLayout({ title, children }: AuthLayoutProps) {
               variant="h4"
               align="center"
               sx={{
-                color: "#fff",
+                color: "common.white",
                 fontWeight: 800,
                 letterSpacing: 2,
                 mb: 2.5,
