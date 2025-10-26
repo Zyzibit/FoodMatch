@@ -30,7 +30,7 @@ public class RecipeProductService : IRecipeProductService
 
         try
         {
-            var result = await _productContract.AddAiProductAsync(ingredient.Name);
+            var result = await _productContract.AddAiProductAsync(ingredient);
             
             if (!result.Success || result.Product == null)
             {
@@ -56,4 +56,5 @@ public class RecipeProductService : IRecipeProductService
             throw new InvalidOperationException($"Failed to create product for ingredient '{ingredient.Name}'", ex);
         }
     }
+    
 }

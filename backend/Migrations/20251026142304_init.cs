@@ -147,7 +147,12 @@ namespace inzynierka.Migrations
                     Salt100g = table.Column<double>(type: "double precision", nullable: true),
                     Sodium100g = table.Column<double>(type: "double precision", nullable: true),
                     EnergyKcalServing = table.Column<double>(type: "double precision", nullable: true),
-                    LastUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    LastUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    estimatedCarbohydrates = table.Column<decimal>(type: "numeric", nullable: true),
+                    estimatedFats = table.Column<decimal>(type: "numeric", nullable: true),
+                    estimatedProteins = table.Column<decimal>(type: "numeric", nullable: true),
+                    estimatedCalories = table.Column<decimal>(type: "numeric", nullable: true),
+                    IsAiGenerated = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -160,7 +165,9 @@ namespace inzynierka.Migrations
                 {
                     UnitId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false)
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    PromptDescription = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -287,10 +294,11 @@ namespace inzynierka.Migrations
                     Instructions = table.Column<string>(type: "text", nullable: false),
                     Servings = table.Column<int>(type: "integer", nullable: false),
                     PreparationTimeMinutes = table.Column<int>(type: "integer", nullable: false),
-                    Calories = table.Column<int>(type: "integer", nullable: false),
-                    Protein = table.Column<int>(type: "integer", nullable: false),
-                    Carbohydrates = table.Column<int>(type: "integer", nullable: false),
-                    Fats = table.Column<int>(type: "integer", nullable: false),
+                    TotalWeightGrams = table.Column<int>(type: "integer", nullable: false),
+                    Calories = table.Column<decimal>(type: "numeric", nullable: false),
+                    Protein = table.Column<decimal>(type: "numeric", nullable: false),
+                    Carbohydrates = table.Column<decimal>(type: "numeric", nullable: false),
+                    Fats = table.Column<decimal>(type: "numeric", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -301,7 +309,7 @@ namespace inzynierka.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(

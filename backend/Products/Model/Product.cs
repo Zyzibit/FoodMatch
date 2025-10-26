@@ -48,11 +48,11 @@ public class Product
     public double? EnergyKcalServing { get; set; }
     public DateTime? LastUpdated { get; set; }
 
-    public double? estimatedCarbohydrates { get; set; }
-    public double? estimatedFats { get; set; }
-    public double? estimatedProteins { get; set; }
+    public decimal? estimatedCarbohydrates { get; set; }
+    public decimal? estimatedFats { get; set; }
+    public decimal? estimatedProteins { get; set; }
+    public decimal? estimatedCalories { get; set; }
     [Required]
     public bool IsAiGenerated { get; set; }
     
 }
-

@@ -6,6 +6,8 @@ namespace inzynierka.Receipts.Model;
 
 public class Receipt {
     public int Id { get; set; }
+    
+    [Required]
     public string UserId { get; set; }
     public User User { get; set; }
     
@@ -31,13 +33,13 @@ public class Receipt {
     public int TotalWeightGrams { get; set; }
     
     [Required]
-    public int Calories { get; set; }
+    public decimal Calories { get; set; }
     [Required]
-    public int Protein { get; set; }
+    public decimal Protein { get; set; }
     [Required]
-    public int Carbohydrates { get; set; }
+    public decimal Carbohydrates { get; set; }
     [Required]
-    public int Fats { get; set; }
+    public decimal Fats { get; set; }
     
     public DateTime CreatedAt { get; set; }
 }

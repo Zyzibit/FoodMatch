@@ -4,6 +4,7 @@ using inzynierka.Receipts.Repositories;
 using inzynierka.AI.Contracts;
 using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Contracts;
+using inzynierka.Data;
 
 namespace inzynierka.Receipts.Services;
 
@@ -17,6 +18,7 @@ public class UserReceiptService : IReceiptService
     private readonly ReceiptService _receiptService;
     private readonly IRecipeProductService _recipeProductService;
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
+    private readonly AppDbContext _dbContext;
 
     public UserReceiptService(
         IReceiptRepository receiptRepository, 
@@ -25,7 +27,8 @@ public class UserReceiptService : IReceiptService
         IProductContract productContract,
         ReceiptService receiptService,
         IRecipeProductService recipeProductService,
-        IRecipeIngredientMatcher ingredientMatcher)
+        IRecipeIngredientMatcher ingredientMatcher,
+        AppDbContext dbContext)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
@@ -34,12 +37,35 @@ public class UserReceiptService : IReceiptService
         _receiptService = receiptService;
         _recipeProductService = recipeProductService;
         _ingredientMatcher = ingredientMatcher;
+        _dbContext = dbContext;
     }
 
     public async Task<CreateReceiptResult> CreateReceiptAsync(string userId, CreateReceiptRequest request)
     {
         try
         {
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogError("CreateReceiptAsync called with empty or null userId");
+                return new CreateReceiptResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User ID is required to create a receipt" 
+                };
+            }
+
+            // Validate that user exists in database
+            var userExists = await _dbContext.Users.FindAsync(userId);
+            if (userExists == null)
+            {
+                _logger.LogError("User with ID {UserId} does not exist in the database", userId);
+                return new CreateReceiptResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User not found in the database" 
+                };
+            }
+            
             var receipt = new Receipt
             {
                 UserId = userId,
@@ -100,6 +126,29 @@ public class UserReceiptService : IReceiptService
     {
         try
         {
+            // Validate userId
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogError("GenerateRecipeWithAiAsync called with empty or null userId");
+                return new CreateReceiptResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User ID is required to generate a recipe" 
+                };
+            }
+
+            // Validate that user exists in database
+            var userExists = await _dbContext.Users.FindAsync(userId);
+            if (userExists == null)
+            {
+                _logger.LogError("User with ID {UserId} does not exist in the database", userId);
+                return new CreateReceiptResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User not found in the database" 
+                };
+            }
+            
             var productsInfo = await _productContract.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
@@ -254,6 +303,7 @@ public class UserReceiptService : IReceiptService
             }
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
+            
             
             _logger.LogInformation("AI-generated recipe created with ID: {ReceiptId}, with {Count} ingredients and {AdditionalCount} AI-generated products", 
                 added.Id, receipt.Ingredients.Count, additionalIngredientsData.Count);

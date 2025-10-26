@@ -1,19 +1,21 @@
 using inzynierka.Receipts.Contracts.Models;
 using inzynierka.Receipts.Model;
 using inzynierka.Receipts.Repositories;
+using inzynierka.Receipts.Mappings;
 
 namespace inzynierka.Receipts.Services;
 
 public class UnitService : IUnitService
 {
     private readonly IUnitRepository _unitRepository;
-    
     private readonly ILogger<UnitService> _logger;
+    private readonly IUnitMapper _unitMapper;
 
-    public UnitService(IUnitRepository unitRepository, ILogger<UnitService> logger)
+    public UnitService(IUnitRepository unitRepository, ILogger<UnitService> logger, IUnitMapper unitMapper)
     {
         _unitRepository = unitRepository;
         _logger = logger;
+        _unitMapper = unitMapper;
     }
 
     public async Task<UnitOperationResult> CreateUnitAsync(CreateUnitRequest request)
@@ -181,14 +183,8 @@ public class UnitService : IUnitService
         }
     }
 
-    private static UnitDto MapToDto(Unit unit)
+    private UnitDto MapToDto(Unit unit)
     {
-        return new UnitDto
-        {
-            UnitId = unit.UnitId,
-            Name = unit.Name,
-            Description = unit.Description,
-            PromptDescription = unit.PromptDescription
-        };
+        return _unitMapper.MapToDto(unit);
     }
 }

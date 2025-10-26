@@ -7,4 +7,3 @@ public interface IRecipeProductService
 {
     Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient);
 }
-
