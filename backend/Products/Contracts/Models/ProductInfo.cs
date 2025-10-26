@@ -14,4 +14,5 @@ public class ProductInfo
     public NutritionInfo? Nutrition { get; set; }
     public string? NutritionGrade { get; set; }
     public string? EcoScoreGrade { get; set; }
+    public bool IsAiGenerated { get; set; }
 }

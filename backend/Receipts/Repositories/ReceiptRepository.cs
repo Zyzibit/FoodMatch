@@ -36,6 +36,8 @@ public class ReceiptRepository : IReceiptRepository
         var receipts = await _db.Receipts
             .Include(r => r.Ingredients)
                 .ThenInclude(ri => ri.Unit)
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Product)
             .OrderByDescending(r => r.CreatedAt)
             .Skip(offset)
             .Take(limit)
@@ -51,6 +53,8 @@ public class ReceiptRepository : IReceiptRepository
         var receipts = await query
             .Include(r => r.Ingredients)
                 .ThenInclude(ri => ri.Unit)
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Product)
             .OrderByDescending(r => r.CreatedAt)
             .Skip(offset)
             .Take(limit)
@@ -59,4 +63,3 @@ public class ReceiptRepository : IReceiptRepository
         return (receipts, total);
     }
 }
-

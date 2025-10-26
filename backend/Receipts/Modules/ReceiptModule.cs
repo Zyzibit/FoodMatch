@@ -71,7 +71,7 @@ public class ReceiptModule : IReceiptContract
     {
         try
         {
-            return await _receiptService.GenerateRecipeWithAIAsync(userId, request);
+            return await _receiptService.GenerateRecipeWithAiAsync(userId, request);
         }
         catch (Exception ex)
         {

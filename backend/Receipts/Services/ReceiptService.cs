@@ -32,7 +32,8 @@ public class ReceiptService
             {
                 ProductId = i.ProductId,
                 UnitId = i.UnitId,
-                Quantity = i.Quantity
+                Quantity = i.Quantity,
+                IsAiGenerated = i.Product.IsAiGenerated
             }).ToList(),
             AdditionalProducts = receipt.AdditionalProducts,
             Title = receipt.Title,

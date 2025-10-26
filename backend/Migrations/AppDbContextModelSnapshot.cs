@@ -265,7 +265,7 @@ namespace inzynierka.Migrations
                     b.Property<string>("IngredientsText")
                         .HasColumnType("text");
 
-                    b.Property<bool?>("IsAiGenerated")
+                    b.Property<bool>("IsAiGenerated")
                         .HasColumnType("boolean");
 
                     b.Property<string>("IsVegan")
