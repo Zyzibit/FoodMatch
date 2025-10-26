@@ -2,7 +2,7 @@
 
 namespace inzynierka.Receipts.Contracts;
 
-public interface IReceiptContract
+public interface IRecipeContract
 {
     Task<CreateReceiptResult> CreateReceiptAsync(string userId, CreateReceiptRequest request);
     Task<ReceiptDto?> GetReceiptAsync(int id);

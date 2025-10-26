@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Contracts.Models;
+namespace inzynierka.Products.Services.Models;
 
 public class ProductInfo
 {

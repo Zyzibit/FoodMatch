@@ -21,7 +21,6 @@ public static class DeviceInfoHelper
         var userAgent = request.Headers["User-Agent"].FirstOrDefault();
         var ipAddress = GetRealIpAddress(request);
 
-        // If no explicit device ID is provided, create a consistent fingerprint
         if (string.IsNullOrEmpty(deviceId))
         {
             deviceId = CreateDeviceFingerprint(request);

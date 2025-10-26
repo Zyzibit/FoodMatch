@@ -1,4 +1,4 @@
-﻿using inzynierka.Products.Contracts.Models;
+﻿using inzynierka.Products.Services.Models;
 using inzynierka.Products.Model;
 
 namespace inzynierka.Products.Mappings;

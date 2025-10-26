@@ -10,12 +10,12 @@ namespace inzynierka.Receipts.API;
 [Route("api/v1/receipts")]
 public class ReceiptsController : ControllerBase
 {
-    private readonly IReceiptContract _receiptContract;
+    private readonly IRecipeContract _recipeContract;
     private readonly ILogger<ReceiptsController> _logger;
 
-    public ReceiptsController(IReceiptContract receiptContract, ILogger<ReceiptsController> logger)
+    public ReceiptsController(IRecipeContract recipeContract, ILogger<ReceiptsController> logger)
     {
-        _receiptContract = receiptContract;
+        _recipeContract = recipeContract;
         _logger = logger;
     }
 
@@ -31,7 +31,7 @@ public class ReceiptsController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _receiptContract.CreateReceiptAsync(userId, request);
+            var result = await _recipeContract.CreateReceiptAsync(userId, request);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.ErrorMessage });
@@ -51,7 +51,7 @@ public class ReceiptsController : ControllerBase
     {
         try
         {
-            var receipt = await _receiptContract.GetReceiptAsync(id);
+            var receipt = await _recipeContract.GetReceiptAsync(id);
             if (receipt == null)
             {
                 return NotFound(new { message = "Receipt not found" });
@@ -71,7 +71,7 @@ public class ReceiptsController : ControllerBase
     {
         try
         {
-            var result = await _receiptContract.GetAllReceiptsAsync(limit, offset);
+            var result = await _recipeContract.GetAllReceiptsAsync(limit, offset);
             if (!result.Success)
             {
                 return BadRequest(new { message = "Failed to get receipts" });
@@ -104,7 +104,7 @@ public class ReceiptsController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _receiptContract.GetUserReceiptsAsync(userId, limit, offset);
+            var result = await _recipeContract.GetUserReceiptsAsync(userId, limit, offset);
             if (!result.Success)
             {
                 return BadRequest(new { message = "Failed to get user receipts" });
@@ -137,7 +137,7 @@ public class ReceiptsController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _receiptContract.GenerateRecipeWithAIAsync(userId, request);
+            var result = await _recipeContract.GenerateRecipeWithAIAsync(userId, request);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.ErrorMessage });

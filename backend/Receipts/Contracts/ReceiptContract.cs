@@ -5,12 +5,12 @@ using inzynierka.Receipts.Services;
 
 namespace inzynierka.Receipts.Modules;
 
-public class ReceiptModule : IReceiptContract
+public class ReceiptContract : IRecipeContract
 {
     private readonly IReceiptService _receiptService;
-    private readonly ILogger<ReceiptModule> _logger;
+    private readonly ILogger<ReceiptContract> _logger;
 
-    public ReceiptModule(IReceiptService receiptService, ILogger<ReceiptModule> logger)
+    public ReceiptContract(IReceiptService receiptService, ILogger<ReceiptContract> logger)
     {
         _receiptService = receiptService;
         _logger = logger;
@@ -23,7 +23,7 @@ public class ReceiptModule : IReceiptContract
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in ReceiptModule.CreateReceiptAsync");
+            _logger.LogError(ex, "Error in ReceiptContract.CreateReceiptAsync");
             return new CreateReceiptResult { Success = false, ErrorMessage = ex.Message };
         }
     }
@@ -36,7 +36,7 @@ public class ReceiptModule : IReceiptContract
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in ReceiptModule.GetReceiptAsync");
+            _logger.LogError(ex, "Error in ReceiptContract.GetReceiptAsync");
             return Task.FromResult<ReceiptDto?>(null);
         }
     }
@@ -49,7 +49,7 @@ public class ReceiptModule : IReceiptContract
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in ReceiptModule.GetAllReceiptsAsync");
+            _logger.LogError(ex, "Error in ReceiptContract.GetAllReceiptsAsync");
             return Task.FromResult(new ReceiptsListResult { Success = false, Receipts = new List<ReceiptDto>(), TotalCount = 0 });
         }
     }
@@ -62,7 +62,7 @@ public class ReceiptModule : IReceiptContract
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in ReceiptModule.GetUserReceiptsAsync");
+            _logger.LogError(ex, "Error in ReceiptContract.GetUserReceiptsAsync");
             return Task.FromResult(new ReceiptsListResult { Success = false, Receipts = new List<ReceiptDto>(), TotalCount = 0 });
         }
     }
@@ -75,7 +75,7 @@ public class ReceiptModule : IReceiptContract
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in ReceiptModule.GenerateRecipeWithAIAsync");
+            _logger.LogError(ex, "Error in ReceiptContract.GenerateRecipeWithAIAsync");
             return new CreateReceiptResult { Success = false, ErrorMessage = ex.Message };
         }
     }

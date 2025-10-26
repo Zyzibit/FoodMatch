@@ -1,9 +1,9 @@
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Contracts.Models;
+using inzynierka.Products.Services.Models;
 
-namespace inzynierka.Products.Contracts;
+namespace inzynierka.Products.Services;
 
-public interface IProductContract
+public interface IProductService
 {
     Task<ProductResult> GetProductAsync(string productId);
     Task<ProductSearchResult> SearchProductsAsync(ProductSearchQuery query);

@@ -1,6 +1,6 @@
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Contracts;
-using inzynierka.Products.Contracts.Models;
+using inzynierka.Products.Services;
+using inzynierka.Products.Services.Models;
 
 namespace inzynierka.Receipts.Services;
 

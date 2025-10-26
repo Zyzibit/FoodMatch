@@ -1,33 +1,28 @@
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Contracts;
-using inzynierka.Products.Contracts.Models;
+using inzynierka.Products.Services;
+using inzynierka.Products.Services.Models;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
-using inzynierka.EventBus;
-using inzynierka.Products.EventBus.Events;
 using inzynierka.Products.OpenFoodFacts.Import;
 using inzynierka.Products.Mappings;
 
-namespace inzynierka.Products.Modules;
+namespace inzynierka.Products.Services;
 
-public class ProductModule : IProductContract
+public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IProductImporter _productImporter;
-    private readonly IEventBus _eventBus;
-    private readonly ILogger<ProductModule> _logger;
+    private readonly ILogger<ProductService> _logger;
     private readonly IProductMapper _productMapper;
 
-    public ProductModule(
+    public ProductService(
         IProductRepository productRepository,
         IProductImporter productImporter,
-        IEventBus eventBus,
-        ILogger<ProductModule> logger,
+        ILogger<ProductService> logger,
         IProductMapper productMapper)
     {
         _productRepository = productRepository;
         _productImporter = productImporter;
-        _eventBus = eventBus;
         _logger = logger;
         _productMapper = productMapper;
     }
@@ -56,11 +51,6 @@ public class ProductModule : IProductContract
                 };
             }
 
-            await _eventBus.PublishAsync(new ProductViewedEvent
-            {
-                ProductId = productId,
-                ViewTime = DateTime.UtcNow
-            });
 
             return new ProductResult
             {
@@ -102,12 +92,7 @@ public class ProductModule : IProductContract
 
             var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
-            await _eventBus.PublishAsync(new ProductSearchedEvent
-            {
-                UserId = "",
-                Query = query.Query ?? "",
-                ResultsCount = totalCount
-            });
+
 
             return new ProductSearchResult
             {
@@ -136,13 +121,6 @@ public class ProductModule : IProductContract
 
             var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
-            await _eventBus.PublishAsync(new ProductSearchedEvent
-            {
-                UserId = "",
-                Query = "all_products",
-                ResultsCount = totalCount
-            });
-
             return new ProductSearchResult
             {
                 Success = true,
@@ -170,13 +148,6 @@ public class ProductModule : IProductContract
 
             var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
-            await _eventBus.PublishAsync(new ProductCategoryAccessedEvent
-            {
-                CategoryName = category,
-                ProductCount = totalCount,
-                UserId = ""
-            });
-
             return new ProductCategoryResult
             {
                 Success = true,
@@ -199,17 +170,7 @@ public class ProductModule : IProductContract
     {
         try
         {
-            var startTime = DateTime.UtcNow;
-
             await _productImporter.ImportJsonlAsync(filePath);
-
-            var duration = DateTime.UtcNow - startTime;
-
-            await _eventBus.PublishAsync(new ProductImportedEvent
-            {
-                FilePath = filePath,
-                Duration = duration
-            });
 
             return new ProductImportResult
             {
@@ -296,13 +257,7 @@ public class ProductModule : IProductContract
                     ErrorMessage = "Product not found"
                 };
             }
-
-            await _eventBus.PublishAsync(new NutritionInfoAccessedEvent
-            {
-                ProductId = productId,
-                UserId = "",
-                AccessTime = DateTime.UtcNow
-            });
+            
 
             var nutritionInfo = _productMapper.MapToNutritionInfo(product);
 

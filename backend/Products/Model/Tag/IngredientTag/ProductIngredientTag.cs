@@ -1,6 +1,4 @@
-﻿
-using inzynierka.Products.Model;
-using inzynierka.Products.Model.Tag.IngredientTag;
+﻿namespace inzynierka.Products.Model.Tag.IngredientTag;
 
 public class ProductIngredientTag
 {
