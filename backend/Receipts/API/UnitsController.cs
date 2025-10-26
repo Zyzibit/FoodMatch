@@ -54,6 +54,7 @@ public class UnitsController : ControllerBase
 
 
     [HttpPost]
+    [Authorize (Roles = "Admin")]
     public async Task<IActionResult> CreateUnit([FromBody] CreateUnitRequest request)
     {
         try
@@ -74,6 +75,7 @@ public class UnitsController : ControllerBase
     }
     
     [HttpPut("{id}")]
+    [Authorize (Roles = "Admin")]
     public async Task<IActionResult> UpdateUnit(int id, [FromBody] UpdateUnitRequest request)
     {
         try
