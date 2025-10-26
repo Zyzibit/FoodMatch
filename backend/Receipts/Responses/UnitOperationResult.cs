@@ -1,5 +1,4 @@
-
-namespace inzynierka.Receipts.Contracts.Models;
+﻿namespace inzynierka.Receipts.Responses;
 
 public class UnitOperationResult
 {
@@ -7,3 +6,5 @@ public class UnitOperationResult
     public string? ErrorMessage { get; set; }
     public UnitDto? Unit { get; set; }
 }
+
+

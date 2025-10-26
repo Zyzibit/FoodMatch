@@ -592,23 +592,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 if (mustClose) await conn.CloseAsync();
             }
         }
-
-        public async Task BulkInsertJoinsAsync<TJoin>(List<TJoin> joins, CancellationToken ct = default)
-            where TJoin : class
-        {
-            if (joins.Count == 0) return;
-
-            await _context.BulkInsertAsync(joins, new BulkConfig
-            {
-                BatchSize           = 50_000,
-                UseTempDB           = true,
-                PreserveInsertOrder = false,
-                SetOutputIdentity   = false,
-                IncludeGraph        = false,
-                BulkCopyTimeout     = 0
-            }, cancellationToken: ct);
-        }
-
+        
         #endregion
     }
 }

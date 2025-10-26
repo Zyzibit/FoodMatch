@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Receipts.Contracts.Models;
+﻿namespace inzynierka.Receipts.Responses;
 
 public class CreateReceiptResult
 {

@@ -1,6 +1,6 @@
 ﻿using inzynierka.AI.Contracts.Models;
 
-namespace inzynierka.Receipts.Contracts.Models;
+namespace inzynierka.Receipts.Requests;
 
 public class GenerateRecipeWithAIRequest
 {
@@ -12,3 +12,4 @@ public class GenerateRecipeWithAIRequest
     public int? MaxPreparationTimeMinutes { get; set; }
     public string? AdditionalInstructions { get; set; }
 }
+

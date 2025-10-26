@@ -1,4 +1,4 @@
-﻿using inzynierka.Products.Services.Models;
+﻿using inzynierka.Products.Responses;
 using inzynierka.Products.Model;
 
 namespace inzynierka.Products.Mappings;
@@ -33,7 +33,7 @@ public class ProductMapper : IProductMapper
             Carbohydrates = product.Carbohydrates100g,
             Proteins = product.Proteins100g,
             Fat = product.Fat100g,
-            Energy = product.Energy100g,
+            Calories = product.EnergyKcal100g,
             EstimatedCalories = product.estimatedCalories,
             EstimatedProteins = product.estimatedProteins,
             EstimatedCarbohydrates = product.estimatedCarbohydrates,
@@ -46,4 +46,3 @@ public class ProductMapper : IProductMapper
         return products.Select(MapToProductInfo);
     }
 }
-

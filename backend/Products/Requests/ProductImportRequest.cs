@@ -1,6 +1,7 @@
-﻿namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Requests;
 
 public class ProductImportRequest
 {
     public string FilePath { get; set; } = string.Empty;
 }
+

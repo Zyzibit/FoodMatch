@@ -1,8 +1,8 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class NutritionInfo
 {
-    public double? Energy { get; set; }
+    public double? Calories { get; set; }
     public double? Fat { get; set; }
     public double? Carbohydrates { get; set; }
     public double? Proteins { get; set; }
@@ -11,3 +11,4 @@ public class NutritionInfo
     public decimal? EstimatedCarbohydrates { get; set; }
     public decimal? EstimatedFats { get; set; }
 }
+

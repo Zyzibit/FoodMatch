@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services.Models;
+﻿namespace inzynierka.Products.Responses;
 
 public class ProductSearchResult
 {
@@ -7,3 +7,4 @@ public class ProductSearchResult
     public int TotalCount { get; set; }
     public string? ErrorMessage { get; set; }
 }
+

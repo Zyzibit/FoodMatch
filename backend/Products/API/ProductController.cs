@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using inzynierka.Products.Services;
-using inzynierka.Products.Services.Models;
+using inzynierka.Products.Requests;
+using inzynierka.Products.Responses;
 
 namespace inzynierka.Products.API;
 

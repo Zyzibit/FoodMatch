@@ -1,6 +1,6 @@
 using System.Text;
 using inzynierka.AI.Contracts.Models;
-using inzynierka.Receipts.Contracts;
+using inzynierka.Receipts.Services;
 
 namespace inzynierka.AI.OpenAI.PromptBuilders;
 
@@ -11,11 +11,11 @@ public interface IRecipePromptBuilder
 
 public class RecipePromptBuilder : IRecipePromptBuilder
 {
-    private readonly IUnitContract _unitContract;
+    private readonly IUnitService _unitService;
 
-    public RecipePromptBuilder(IUnitContract unitContract)
+    public RecipePromptBuilder(IUnitService unitService)
     {
-        _unitContract = unitContract;
+        _unitService = unitService;
     }
 
     public async Task<string> BuildPromptAsync(GenerateRecipeRequest request)
@@ -175,7 +175,7 @@ public class RecipePromptBuilder : IRecipePromptBuilder
 
     private async Task AppendUnitConstraints(StringBuilder builder)
     {
-        var units = await _unitContract.GetAllUnitsAsync();
+        var units = await _unitService.GetAllUnitsAsync();
         
         if (!units.Any()) return;
 

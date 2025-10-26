@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using inzynierka.Receipts.Contracts;
-using inzynierka.Receipts.Contracts.Models;
+using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
 namespace inzynierka.Receipts.API;
 
@@ -9,42 +10,34 @@ namespace inzynierka.Receipts.API;
 [Route("api/v1/units")]
 public class UnitsController : ControllerBase
 {
-    private readonly IUnitContract _unitContract;
+    private readonly IUnitService _unitService;
     private readonly ILogger<UnitsController> _logger;
 
-    public UnitsController(IUnitContract unitContract, ILogger<UnitsController> logger)
+    public UnitsController(IUnitService unitService, ILogger<UnitsController> logger)
     {
-        _unitContract = unitContract;
+        _unitService = unitService;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Gets all units of measure
-    /// </summary>
+
     [HttpGet]
-    public async Task<IActionResult> GetAllUnits()
-    {
-        try
-        {
-            var units = await _unitContract.GetAllUnitsAsync();
+    public async Task<IActionResult> GetAllUnits() {
+        try {
+            var units = await _unitService.GetAllUnitsAsync();
             return Ok(units);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             _logger.LogError(ex, "Error getting all units");
             return StatusCode(500, new { message = "An error occurred while getting units" });
         }
     }
 
-    /// <summary>
-    /// Gets a unit by ID
-    /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUnit(int id)
     {
         try
         {
-            var unit = await _unitContract.GetUnitAsync(id);
+            var unit = await _unitService.GetUnitAsync(id);
             if (unit == null)
             {
                 return NotFound(new { message = "Unit not found" });
@@ -58,29 +51,21 @@ public class UnitsController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while getting the unit" });
         }
     }
-    
+
+
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize (Roles = "Admin")]
     public async Task<IActionResult> CreateUnit([FromBody] CreateUnitRequest request)
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _unitContract.CreateUnitAsync(request);
+            var result = await _unitService.CreateUnitAsync(request);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.ErrorMessage });
             }
 
-            return CreatedAtAction(
-                nameof(GetUnit),
-                new { id = result.Unit!.UnitId },
-                result.Unit
-            );
+            return CreatedAtAction(nameof(GetUnit), new { id = result.Unit?.UnitId }, result.Unit);
         }
         catch (Exception ex)
         {
@@ -88,28 +73,16 @@ public class UnitsController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while creating the unit" });
         }
     }
-
-    /// <summary>
-    /// Updates an existing unit of measure
-    /// </summary>
+    
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize (Roles = "Admin")]
     public async Task<IActionResult> UpdateUnit(int id, [FromBody] UpdateUnitRequest request)
     {
         try
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _unitContract.UpdateUnitAsync(id, request);
+            var result = await _unitService.UpdateUnitAsync(id, request);
             if (!result.Success)
             {
-                if (result.ErrorMessage?.Contains("not found") == true)
-                {
-                    return NotFound(new { message = result.ErrorMessage });
-                }
                 return BadRequest(new { message = result.ErrorMessage });
             }
 
@@ -122,22 +95,15 @@ public class UnitsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Deletes a unit of measure
-    /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize (Roles = "Admin")]
     public async Task<IActionResult> DeleteUnit(int id)
     {
         try
         {
-            var result = await _unitContract.DeleteUnitAsync(id);
+            var result = await _unitService.DeleteUnitAsync(id);
             if (!result.Success)
             {
-                if (result.ErrorMessage?.Contains("not found") == true)
-                {
-                    return NotFound(new { message = result.ErrorMessage });
-                }
                 return BadRequest(new { message = result.ErrorMessage });
             }
 

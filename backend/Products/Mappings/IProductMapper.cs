@@ -1,4 +1,4 @@
-﻿using inzynierka.Products.Services.Models;
+﻿using inzynierka.Products.Responses;
 using inzynierka.Products.Model;
 
 namespace inzynierka.Products.Mappings;
@@ -9,4 +9,3 @@ public interface IProductMapper
     NutritionInfo MapToNutritionInfo(Product product);
     IEnumerable<ProductInfo> MapToProductInfoList(IEnumerable<Product> products);
 }
-
