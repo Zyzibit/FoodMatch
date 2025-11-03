@@ -75,7 +75,12 @@
 
     <ItemGroup>
       <Folder Include="Users\Contracts\Models\" />
-      <Folder Include="Users\Dto\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Receipts\Config\*.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

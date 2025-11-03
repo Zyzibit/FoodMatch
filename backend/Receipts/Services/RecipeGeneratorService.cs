@@ -1,20 +1,16 @@
-﻿using System.Text.Json;
-using inzynierka.AI.Contracts.Models;
-using inzynierka.AI.OpenAI.Model;
-using inzynierka.AI.OpenAI.PromptBuilders;
+using System.Text.Json;
+using inzynierka.AI.OpenAI;
+using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
-namespace inzynierka.AI.OpenAI;
-
-public interface IRecipeGeneratorService
-{
-    Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request);
-}
+namespace inzynierka.Receipts.Services;
 
 public class RecipeGeneratorService : IRecipeGeneratorService
 {
+    private readonly IRecipePromptBuilder _promptBuilder;
     private readonly IOpenAIClient _openAIClient;
     private readonly ILogger<RecipeGeneratorService> _logger;
-    private readonly IRecipePromptBuilder _promptBuilder;
 
     public RecipeGeneratorService(
         IOpenAIClient openAiClient, 
@@ -26,28 +22,18 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         _promptBuilder = promptBuilder;
     }
 
-    public async Task<GenerateRecipeResult> GenerateRecipeAsync(GenerateRecipeRequest request)
+    public async Task<GenerateRecipeResponse> GenerateRecipeAsync(GenerateRecipeRequest request)
     {
         try
         {
-            var prompt = await _promptBuilder.BuildPromptAsync(request);
-            var messages = new List<OpenAIMessage>
-            {
-                new OpenAIMessage(
-                    "system",
-                    "Jesteś ekspertem kulinarnym specjalizującym się w tworzeniu praktycznych, " +
-                    "smacznych i zdrowych przepisów. Tworzysz przepisy w formacie JSON zgodnie z instrukcjami. " +
-                    "Zwracasz WYŁĄCZNIE poprawny JSON bez dodatkowych komentarzy, wyjaśnień czy formatowania markdown."
-                ),
-                new OpenAIMessage("user", prompt)
-            };
+            var messages = await _promptBuilder.BuildMessagesAsync(request);
 
             var result = await _openAIClient.SendPromptForJsonasync(messages);
             
             if (result == null)
             {
                 _logger.LogError("Failed to parse AI response - received null");
-                return new GenerateRecipeResult
+                return new GenerateRecipeResponse
                 {
                     Success = false,
                     ErrorMessage = "Nie udało się przetworzyć odpowiedzi AI"
@@ -56,7 +42,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
 
             var recipe = ParseRecipeFromJson(result.Value);
             
-            return new GenerateRecipeResult
+            return new GenerateRecipeResponse
             {
                 Success = true,
                 Recipe = recipe
@@ -65,7 +51,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
             _logger.LogError(ex, "OpenAI rate limit exceeded");
-            return new GenerateRecipeResult
+            return new GenerateRecipeResponse
             {
                 Success = false,
                 ErrorMessage = "Przekroczono limit zapytań do OpenAI API. " +
@@ -75,7 +61,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "HTTP error while generating recipe with AI");
-            return new GenerateRecipeResult
+            return new GenerateRecipeResponse
             {
                 Success = false,
                 ErrorMessage = $"Błąd połączenia z OpenAI API: {ex.Message}"
@@ -84,7 +70,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         catch (JsonException ex)
         {
             _logger.LogError(ex, "JSON parsing error in recipe generation");
-            return new GenerateRecipeResult
+            return new GenerateRecipeResponse
             {
                 Success = false,
                 ErrorMessage = "Błąd w formacie odpowiedzi AI. Spróbuj ponownie."
@@ -93,7 +79,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error generating recipe with AI");
-            return new GenerateRecipeResult
+            return new GenerateRecipeResponse
             {
                 Success = false,
                 ErrorMessage = $"Nieoczekiwany błąd podczas generowania przepisu: {ex.Message}"
@@ -169,3 +155,4 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         };
     }
 }
+

@@ -1,4 +1,6 @@
-﻿namespace inzynierka.AI.Contracts.Models;
+using inzynierka.Receipts.Model.Recipe;
+
+namespace inzynierka.Receipts.Requests;
 
 public class GenerateRecipeRequest
 {
@@ -9,3 +11,4 @@ public class GenerateRecipeRequest
     public int? MaxPreparationTimeMinutes { get; set; }
     public string? AdditionalInstructions { get; set; }
 }
+

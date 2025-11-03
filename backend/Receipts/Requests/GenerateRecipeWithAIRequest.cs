@@ -1,11 +1,11 @@
-﻿using inzynierka.AI.Contracts.Models;
+
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Receipts.Requests;
 
 public class GenerateRecipeWithAIRequest
 {
     public List<int> ProductIds { get; set; } = new();
-    
     public DietaryPreferences? Preferences { get; set; }
     public string? CuisineType { get; set; }
     public int? DesiredServings { get; set; }

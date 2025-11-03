@@ -1,9 +1,9 @@
-using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
 using inzynierka.Products.OpenFoodFacts.Import;
 using inzynierka.Products.Mappings;
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Products.Services;
 
@@ -316,13 +316,11 @@ public class ProductService : IProductService
             }
 
             var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
-
-            
             
             if (existingProduct != null)
             {
                 _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
-                    ingredient, existingProduct.Id);
+                    ingredient.Name, existingProduct.Id);
                 
                 return new ProductResult
                 {
@@ -347,7 +345,7 @@ public class ProductService : IProductService
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
-            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient,
+            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient.Name,
                 createdProduct.Id);
 
             return new ProductResult
@@ -358,7 +356,7 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient);
+            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient.Name);
             return new ProductResult
             {
                 Success = false,
