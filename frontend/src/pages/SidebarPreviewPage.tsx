@@ -4,6 +4,7 @@ import SidebarPanel from "../components/panels/SidebarPanel";
 import TopPanel from "../components/panels/TopPanel";
 import SettingsPage from "./SettingsPage";
 import UserProfilePage from "./UserProfilePage";
+import Footer from "../components/panels/Footer";
 
 export default function SidebarPreviewPage() {
   // aktywna STRONA (lewy panel) i aktywna ZAKŁADKA (górny panel)
@@ -66,21 +67,12 @@ export default function SidebarPreviewPage() {
           }}
         >
           {activePage === "ustawienia" ? (
-            // Brak topbara - pokaż duży napis "Ustawienia" na tle
+            // Brak topbara - pokaż sam napis "Ustawienia" bez tła
             <Box sx={{ width: "100%" }}>
-              <Box
-                sx={(t) => ({
-                  bgcolor: t.palette.background.paper,
-                  p: 6,
-                  borderRadius: 2,
-                  mb: 3,
-                })}
-              >
-                <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                  Ustawienia
-                </Typography>
-              </Box>
-              {/* pod spodem zostawiamy obecny komponent ustawień (opcjonalnie) */}
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 3 }}>
+                Ustawienia
+              </Typography>
+              {/* pod spodem zostawiamy obecny komponent ustawień */}
               <SettingsPage />
             </Box>
           ) : activePage === "user" ? (
@@ -107,6 +99,9 @@ export default function SidebarPreviewPage() {
             </Paper>
           )}
         </Box>
+
+        {/* Footer */}
+        <Footer />
       </Box>
     </Box>
   );
