@@ -95,7 +95,11 @@ export default function SidebarPanel({
         justifyContent="space-between"
         sx={{ width: "80%" }}
       >
-        <UserButton name={userName} avatarUrl={userAvatar} />
+        <UserButton
+          name={userName}
+          avatarUrl={userAvatar}
+          onClick={() => onItemClick?.("user")}
+        />
         <Button
           onClick={onLogoutClick}
           disableElevation

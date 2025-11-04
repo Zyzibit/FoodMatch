@@ -44,6 +44,14 @@ const topPanelConfigs: Record<string, PageConfig> = {
     ],
     defaultTab: "profil",
   },
+  user: {
+    tabs: [
+      { key: "pomiary", label: "Pomiary" },
+      { key: "zapotrzebowanie", label: "Zapotrzebowanie" },
+      { key: "alergeny", label: "Alergeny" },
+    ],
+    defaultTab: "pomiary",
+  },
 };
 
 export default function TopPanel({
