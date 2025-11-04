@@ -10,6 +10,8 @@ export interface TileProps {
   active?: boolean;
   disabled?: boolean;
   size?: TileSize;
+  square?: boolean; // if true, remove border radius (useful for date strip)
+  bordered?: boolean; // optional border (handled usually by parent)
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
 }
@@ -28,6 +30,8 @@ export default function Tile({
   active = false,
   disabled = false,
   size = "md",
+  square = false,
+  bordered = false,
   onClick,
   className,
 }: TileProps) {
@@ -44,7 +48,7 @@ export default function Tile({
 
         return {
           justifyContent: "center",
-          borderRadius: 9999,
+          borderRadius: square ? 0 : 9999,
           py: paddings[size],
           px: 2,
           textTransform: "none",
@@ -60,6 +64,12 @@ export default function Tile({
             backgroundColor: t.palette.grey[200],
             color: t.palette.grey[500],
           },
+          ...(bordered
+            ? {
+                border: `1px solid ${t.palette.grey[300]}`,
+                boxSizing: "border-box",
+              }
+            : {}),
         };
       }}
     >

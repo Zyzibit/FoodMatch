@@ -3,11 +3,10 @@ import type { ReactNode } from "react";
 import dietLogo from "../assets/diet-logo.png";
 
 type AuthLayoutProps = {
-  title: string;
+  title?: string;
   children: ReactNode;
 };
-
-export default function AuthLayout({ title, children }: AuthLayoutProps) {
+export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <Box
       sx={{

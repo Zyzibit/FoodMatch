@@ -1,6 +1,7 @@
-import { Box, Button } from "@mui/material";
+import { Box } from "@mui/material";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
+import Tile from "../buttons/Tile";
 
 export type TopPanelItem = {
   key: string;
@@ -51,17 +52,47 @@ export default function TopPanel({
   onChange,
   sticky = false,
 }: {
-  activePage: string; // ← wybór strony determinuje, jakie są zakładki
-  activeKey?: string; // ← kontrola aktywnej zakładki z page
-  onChange?: (key: string) => void; // ← informujemy page o kliknięciu
-  sticky?: boolean; // ← opcjonalnie „przyklej” na górę
+  activePage: string;
+  activeKey?: string;
+  onChange?: (key: string) => void;
+  sticky?: boolean;
 }) {
+  // date strip: always create 9 days from -2..+6 relative to today
+  const dateTiles = useMemo(() => {
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - 2);
+    const days: { key: string; label: string }[] = [];
+    const total = 9; // -2..+6
+    for (let i = 0; i < total; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      const weekday = d
+        .toLocaleDateString("pl-PL", { weekday: "short" })
+        .replace(".", "");
+      const day = d.getDate().toString().padStart(2, "0");
+      days.push({ key: `date-${iso}`, label: `${weekday} ${day}` });
+    }
+    return days;
+  }, []);
+
   const items = useMemo(
     () => topPanelConfigs[activePage]?.tabs ?? [],
     [activePage]
   );
 
   useEffect(() => {
+    // when switching to plan, set today's date as default active if none set
+    if (activePage === "plan") {
+      const today = new Date();
+      const iso = today.toISOString().slice(0, 10);
+      const todayKey = `date-${iso}`;
+      const exists = dateTiles.some((t) => t.key === activeKey);
+      if (!exists) onChange?.(todayKey);
+      return;
+    }
+
     const conf = topPanelConfigs[activePage];
     if (!conf) return;
     const exists = items.some((t) => t.key === activeKey);
@@ -69,7 +100,11 @@ export default function TopPanel({
       const fallback = conf.defaultTab ?? conf.tabs[0]?.key;
       if (fallback) onChange?.(fallback);
     }
-  }, [activePage, activeKey, items, onChange]);
+  }, [activePage, activeKey, items, onChange, dateTiles]);
+
+  const renderArray = activePage === "plan" ? dateTiles : items;
+  const count = renderArray.length;
+
   return (
     <Box
       sx={(t) => ({
@@ -86,46 +121,38 @@ export default function TopPanel({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: `repeat(${items.length}, 1fr)`, // równe kolumny
-          gap: 8,
+          gridTemplateColumns: `repeat(${count}, 1fr)`,
+          gap: 0,
           maxWidth: 1100,
           mx: "auto",
         }}
       >
-        {items.map(({ key, label, icon, disabled }) => {
+        {renderArray.map((it, i) => {
+          const key = (it as any).key as string;
+          const label = (it as any).label as string;
+          const icon = (it as any).icon as ReactNode | undefined;
+          const disabled = (it as any).disabled as boolean | undefined;
           const active = key === activeKey;
+
           return (
-            <Button
+            <Box
               key={key}
-              onClick={() => onChange?.(key)}
-              disabled={disabled}
-              fullWidth
-              disableElevation
               sx={(t) => ({
-                borderRadius: 9999,
-                py: 1,
-                textTransform: "none",
-                fontWeight: 700,
-                justifyContent: "center",
-                gap: 0.6,
-                backgroundColor: active
-                  ? t.palette.secondary.main
-                  : t.palette.grey[300],
-                color: active ? t.palette.common.white : t.palette.text.primary,
-                "&:hover": {
-                  backgroundColor: active
-                    ? t.palette.secondary.dark
-                    : t.palette.grey[400],
-                },
-                "&.Mui-disabled": {
-                  backgroundColor: t.palette.grey[200],
-                  color: t.palette.grey[500],
-                },
+                width: "100%",
+                borderRight:
+                  i < count - 1 ? `1px solid ${t.palette.grey[300]}` : "none",
               })}
             >
-              {icon}
-              {label}
-            </Button>
+              <Tile
+                title={label}
+                icon={icon}
+                size={activePage === "plan" ? "sm" : "md"}
+                square
+                active={active}
+                disabled={disabled}
+                onClick={() => onChange?.(key)}
+              />
+            </Box>
           );
         })}
       </Box>
