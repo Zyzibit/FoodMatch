@@ -57,6 +57,7 @@ export default function TopPanel({
   onChange?: (key: string) => void;
   sticky?: boolean;
 }) {
+  const TOP_PANEL_HEIGHT = 56; // px - fixed height for the strip so tiles always same height
   // date strip: always create 9 days from -2..+6 relative to today
   const dateTiles = useMemo(() => {
     const today = new Date();
@@ -111,8 +112,8 @@ export default function TopPanel({
         width: "100%",
         bgcolor: t.palette.grey[200],
         borderBottom: `1px solid ${t.palette.grey[300]}`,
-        px: 2,
-        py: 1,
+        px: 0,
+        py: 0, // no vertical padding so inner strip can control exact height
         position: sticky ? "sticky" : "static",
         top: sticky ? 0 : "auto",
         zIndex: sticky ? 10 : "auto",
@@ -123,8 +124,9 @@ export default function TopPanel({
           display: "grid",
           gridTemplateColumns: `repeat(${count}, 1fr)`,
           gap: 0,
-          maxWidth: 1100,
-          mx: "auto",
+          width: "100%",
+          height: TOP_PANEL_HEIGHT,
+          alignItems: "stretch",
         }}
       >
         {renderArray.map((it, i) => {
@@ -139,6 +141,7 @@ export default function TopPanel({
               key={key}
               sx={(t) => ({
                 width: "100%",
+                height: "100%",
                 borderRight:
                   i < count - 1 ? `1px solid ${t.palette.grey[300]}` : "none",
               })}
@@ -148,6 +151,7 @@ export default function TopPanel({
                 icon={icon}
                 size={activePage === "plan" ? "sm" : "md"}
                 square
+                fullHeight
                 active={active}
                 disabled={disabled}
                 onClick={() => onChange?.(key)}
