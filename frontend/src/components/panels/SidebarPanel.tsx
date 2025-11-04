@@ -4,147 +4,104 @@ import UserButton from "../buttons/UserButton";
 import dietLogo from "../../assets/diet-logo.png";
 import { colors } from "../../theme";
 
-export type SidebarPanelItem = "plan" | "list" | "recipes" | "settings";
-
-interface SidebarPanelProps {
-  onPlanClick?: () => void;
-  onListClick?: () => void;
-  onRecipesClick?: () => void;
-  onSettingsClick?: () => void;
+export default function SidebarPanel({
+  activeKey,
+  onItemClick,
+  onLogoutClick,
+  userName = "User",
+  userAvatar,
+}: {
+  activeKey?: string;
+  onItemClick?: (key: string) => void;
   onLogoutClick?: () => void;
   userName?: string;
   userAvatar?: string;
-  activeItem?: SidebarPanelItem;
-}
-
-export function SidebarPanel({
-  onPlanClick,
-  onListClick,
-  onRecipesClick,
-  onSettingsClick,
-  onLogoutClick,
-  userName = "User",
-  userAvatar = "/assets/user-avatar.png",
-  activeItem,
-}: SidebarPanelProps) {
+}) {
+  const sidebarItems = [
+    { key: "plan", title: "Plan" },
+    { key: "lista", title: "Lista" },
+    { key: "przepisy", title: "Przepisy" },
+    { key: "ustawienia", title: "Ustawienia" },
+  ];
   return (
     <Box
       sx={{
-        width: 460,
+        width: 420,
         height: "100vh",
-        bgcolor: colors.layout.sidebar,
+        bgcolor: "#d8d8d8",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
-        pt: 6, // było 4 → większy odstęp od góry
-        pb: 6, // było 5.5
-        px: 5,
+        py: 3,
       }}
     >
-      {/* Logo */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="center"
-        spacing={2.5}
-        sx={{ width: "100%", mb: 4 }} // dodany większy margines poniżej logo
-      >
+      {/* logo + tytuł */}
+      <Stack direction="row" alignItems="center" spacing={1.5}>
         <Box
           component="img"
           src={dietLogo}
           alt="Logo"
-          sx={{ width: 110, height: "auto", borderRadius: 2 }}
+          sx={{ width: 112, height: 112 }}
         />
         <Typography
           variant="h4"
           sx={{
-            fontWeight: 800,
             color: "secondary.main",
             lineHeight: 1.05,
-            letterSpacing: 1,
             textAlign: "left",
           }}
         >
-          DIET
-          <br />
-          ZYNZI
+          <Box component="div" sx={{ fontWeight: 900, ml: 2 }}>DIET</Box>
+          <Box component="div" sx={{ fontWeight: 900 }}>ZYNZI</Box>
         </Typography>
       </Stack>
 
-      {/* Kafelki */}
+      {/* sekcja kafelków */}
       <Stack
-        spacing={3} // było 1.6 → większy odstęp między sekcjami
-        sx={{
-          width: "100%",
-          flexGrow: 1,
-          justifyContent: "flex-start",
-        }}
+        spacing={1.2}
+        alignItems="center"
+        sx={{ width: "100%", flexGrow: 1, justifyContent: "flex-start", pt: 4 }}
       >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 800,
-            mb: 2, // było 0.5 → większy odstęp pod napisem „Zdrowie”
-            color: "text.primary",
-          }}
-        >
-          Zdrowie
-        </Typography>
+        <Box sx={{ width: "80%" }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, mb: 1.5, textAlign: "left" }}>
+            Zdrowie
+          </Typography>
+        </Box>
 
-        <Stack spacing={2.25} sx={{ width: "100%" }}>
-          {/* spacing między kafelkami zwiększony z 1.75 → 2.25 */}
-          <Tile
-            title="Plan dietetyczny"
-            onClick={onPlanClick}
-            active={activeItem === "plan"}
-            size="md"
-          />
-          <Tile
-            title="Lista zakupów"
-            onClick={onListClick}
-            active={activeItem === "list"}
-            size="md"
-          />
-          <Tile
-            title="Przepisy"
-            onClick={onRecipesClick}
-            active={activeItem === "recipes"}
-            size="md"
-          />
-          <Tile
-            title="Ustawienia"
-            onClick={onSettingsClick}
-            active={activeItem === "settings"}
-            size="md"
-          />
+        <Stack spacing={2} sx={{ width: "80%" }}>
+          {sidebarItems.map(({ key, title }) => (
+            <Tile
+              key={key}
+              title={title}
+              active={key === activeKey}
+              onClick={() => onItemClick?.(key)}
+            />
+          ))}
         </Stack>
       </Stack>
 
-      {/* Dolna sekcja: user + wylogowanie */}
+      {/* dolna sekcja */}
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        sx={{
-          width: "100%",
-          mt: 5, // było 3 → większy odstęp od kafelków
-          gap: 1.5,
-        }}
+        sx={{ width: "80%" }}
       >
         <UserButton name={userName} avatarUrl={userAvatar} />
         <Button
-          variant="contained"
           onClick={onLogoutClick}
+          disableElevation
           sx={{
-            borderRadius: 999,
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 20,
             textTransform: "none",
             fontWeight: 600,
-            bgcolor: colors.elements.logoutButton,
+            backgroundColor: colors.elements.logoutButton,
             color: "text.primary",
             boxShadow: "none",
-            px: 3,
-            "&:hover": { bgcolor: colors.elements.logoutButtonHover, boxShadow: "none" },
+            "&:hover": { backgroundColor: colors.elements.logoutButtonHover },
           }}
         >
           Wyloguj
@@ -153,5 +110,3 @@ export function SidebarPanel({
     </Box>
   );
 }
-
-export default SidebarPanel;

@@ -51,7 +51,7 @@ export default function Tile({
           boxShadow: "none",
           height: heights[size],
           backgroundColor: active ? t.palette.secondary.main : neutralBg,
-          color: active ? t.palette.common.white : t.palette.text.primary,
+          color: active ? t.palette.common.white : t.palette.text.secondary,
           overflow: "hidden",
           "&:hover": {
             backgroundColor: active ? t.palette.secondary.dark : neutralHover,
