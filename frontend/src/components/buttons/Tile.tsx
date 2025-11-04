@@ -12,6 +12,7 @@ export interface TileProps {
   size?: TileSize;
   square?: boolean; // if true, remove border radius (useful for date strip)
   bordered?: boolean; // optional border (handled usually by parent)
+  fullHeight?: boolean; // when true, tile stretches to parent's height
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
 }
@@ -32,6 +33,7 @@ export default function Tile({
   size = "md",
   square = false,
   bordered = false,
+  fullHeight = false,
   onClick,
   className,
 }: TileProps) {
@@ -49,11 +51,12 @@ export default function Tile({
         return {
           justifyContent: "center",
           borderRadius: square ? 0 : 9999,
-          py: paddings[size],
+          // when fullHeight is requested, let parent control height and remove vertical padding
+          py: fullHeight ? 0 : paddings[size],
           px: 2,
           textTransform: "none",
           boxShadow: "none",
-          height: heights[size],
+          height: fullHeight ? "100%" : heights[size],
           backgroundColor: active ? t.palette.secondary.main : neutralBg,
           color: active ? t.palette.common.white : t.palette.text.secondary,
           overflow: "hidden",
