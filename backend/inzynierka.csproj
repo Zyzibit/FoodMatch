@@ -78,9 +78,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Receipts\Config\*.json">
+      <None Update="Receipts\Config\prompt_config.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+      </None>
     </ItemGroup>
 
 </Project>

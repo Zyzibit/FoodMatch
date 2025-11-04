@@ -64,16 +64,64 @@ public class OpenAIClient : IOpenAIClient {
         }
         
         var responseString = await response.Content.ReadAsStringAsync();
+        
+        _logger.LogDebug("OpenAI API raw response: {Response}", responseString);
+        
         using var doc = JsonDocument.Parse(responseString);
         var jsonText = doc.RootElement
             .GetProperty("choices")[0]
             .GetProperty("message").GetProperty("content")
             .GetString();
-        try {
-            var resultDoc = JsonDocument.Parse(jsonText);
+        
+        if (string.IsNullOrWhiteSpace(jsonText))
+        {
+            _logger.LogError("OpenAI returned empty content in response");
+            return null;
+        }
+        
+        _logger.LogInformation("OpenAI content before cleanup: {Content}", jsonText);
+        
+        // Clean up markdown code blocks if present
+        var cleanedJson = jsonText.Trim();
+        if (cleanedJson.StartsWith("```json"))
+        {
+            cleanedJson = cleanedJson.Substring(7); // Remove ```json
+            var endIndex = cleanedJson.LastIndexOf("```");
+            if (endIndex > 0)
+            {
+                cleanedJson = cleanedJson.Substring(0, endIndex);
+            }
+        }
+        else if (cleanedJson.StartsWith("```"))
+        {
+            cleanedJson = cleanedJson.Substring(3); // Remove ```
+            var endIndex = cleanedJson.LastIndexOf("```");
+            if (endIndex > 0)
+            {
+                cleanedJson = cleanedJson.Substring(0, endIndex);
+            }
+        }
+        
+        cleanedJson = cleanedJson.Trim();
+        
+        // Remove trailing commas before closing braces/brackets (common AI mistake)
+        cleanedJson = System.Text.RegularExpressions.Regex.Replace(cleanedJson, @",(\s*[}\]])", "$1");
+        
+        _logger.LogInformation("OpenAI content after cleanup: {Content}", cleanedJson);
+        
+        try 
+        {
+            var resultDoc = JsonDocument.Parse(cleanedJson);
             return resultDoc.RootElement.Clone();
         }
-        catch {
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to parse OpenAI response as JSON. Content: {Content}", cleanedJson);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error parsing OpenAI response");
             return null;
         }
     }
