@@ -88,7 +88,13 @@ export const theme = createTheme(
     },
 
     typography: {
-      fontFamily: ["Inter", "Roboto", "Helvetica", "Arial", "sans-serif"].join(","), // Spójna czcionka w UI
+      fontFamily: ["Lora", "Georgia", "Times New Roman", "serif"].join(","),
+      h1: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 900 },
+      h2: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 900 },
+      h3: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 900 },
+      h4: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 800 },
+      h5: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 800 },
+      h6: { fontFamily: ["Playfair Display", "Georgia", "serif"].join(","), fontWeight: 700 },
     },
 
     components: {
