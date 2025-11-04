@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import SidebarPanel from "../components/panels/SidebarPanel";
 import TopPanel from "../components/panels/TopPanel";
+import SettingsPage from "./SettingsPage";
+import UserProfilePage from "./UserProfilePage";
 
 export default function SidebarPreviewPage() {
   // aktywna STRONA (lewy panel) i aktywna ZAKŁADKA (górny panel)
@@ -42,15 +44,17 @@ export default function SidebarPreviewPage() {
 
       {/* Prawa część: górny pasek + kontent */}
       <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        {/* Górny navbar – dynamicznie zdefiniowane zakładki */}
-        <TopPanel
-          activePage={activePage}
-          activeKey={activeTab}
-          onChange={handleTopChange}
-          sticky
-        />
+        {/* Górny navbar – nie pokazujemy go na stronie ustawień; dla strony 'user' pokażemy specjalne zakładki */}
+        {activePage !== "ustawienia" && (
+          <TopPanel
+            activePage={activePage}
+            activeKey={activeTab}
+            onChange={handleTopChange}
+            sticky
+          />
+        )}
 
-        {/* Kontent – tu wyrenderujesz podstrony; na razie placeholder */}
+        {/* Kontent – render zależny od wybranej strony */}
         <Box
           component="main"
           sx={{
@@ -61,14 +65,47 @@ export default function SidebarPreviewPage() {
             justifyContent: "flex-start",
           }}
         >
-          <Paper elevation={1} sx={{ p: 3, minWidth: 320 }}>
-            <Typography variant="h6" gutterBottom>
-              Kontent strony (placeholder)
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {infoText}
-            </Typography>
-          </Paper>
+          {activePage === "ustawienia" ? (
+            // Brak topbara - pokaż duży napis "Ustawienia" na tle
+            <Box sx={{ width: "100%" }}>
+              <Box
+                sx={(t) => ({
+                  bgcolor: t.palette.background.paper,
+                  p: 6,
+                  borderRadius: 2,
+                  mb: 3,
+                })}
+              >
+                <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                  Ustawienia
+                </Typography>
+              </Box>
+              {/* pod spodem zostawiamy obecny komponent ustawień (opcjonalnie) */}
+              <SettingsPage />
+            </Box>
+          ) : activePage === "user" ? (
+            <Paper elevation={1} sx={{ p: 3, minWidth: 320, width: "100%" }}>
+              {/* Render sekcji user zgodnie z activeTab */}
+              {activeTab === "pomiary" && <UserProfilePage />}
+              {activeTab === "zapotrzebowanie" && (
+                <Typography variant="h6">
+                  Zapotrzebowanie (placeholder)
+                </Typography>
+              )}
+              {activeTab === "alergeny" && (
+                <Typography variant="h6">Alergeny (placeholder)</Typography>
+              )}
+            </Paper>
+          ) : (
+            <Paper elevation={1} sx={{ p: 3, minWidth: 320 }}>
+              <Typography variant="h6" gutterBottom>
+                Kontent strony (placeholder)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {infoText}
+              </Typography>
+            </Paper>
+          )}
         </Box>
       </Box>
     </Box>
