@@ -52,8 +52,12 @@ export default function SidebarPanel({
             textAlign: "left",
           }}
         >
-          <Box component="div" sx={{ fontWeight: 900, ml: 2 }}>DIET</Box>
-          <Box component="div" sx={{ fontWeight: 900 }}>ZYNZI</Box>
+          <Box component="div" sx={{ fontWeight: 900, ml: 2 }}>
+            DIET
+          </Box>
+          <Box component="div" sx={{ fontWeight: 900 }}>
+            ZYNZI
+          </Box>
         </Typography>
       </Stack>
 
@@ -64,7 +68,10 @@ export default function SidebarPanel({
         sx={{ width: "100%", flexGrow: 1, justifyContent: "flex-start", pt: 4 }}
       >
         <Box sx={{ width: "80%" }}>
-          <Typography variant="h5" sx={{ fontWeight: 900, mb: 1.5, textAlign: "left" }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 900, mb: 1.5, textAlign: "left" }}
+          >
             Zdrowie
           </Typography>
         </Box>
