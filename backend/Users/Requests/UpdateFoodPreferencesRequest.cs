@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Users.Contracts.Models;
+﻿namespace inzynierka.Users.Requests;
 
 public class UpdateFoodPreferencesRequest {
     public bool IsVegan { get; set; }

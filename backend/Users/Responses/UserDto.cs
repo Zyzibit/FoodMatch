@@ -1,4 +1,4 @@
-namespace inzynierka.Users.Contracts.Models;
+namespace inzynierka.Users.Responses;
 
 public class UserDto
 {

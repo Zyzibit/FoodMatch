@@ -14,9 +14,7 @@ using StackExchange.Redis;
 using inzynierka.Auth.Contracts;
 using inzynierka.Auth.Modules;
 using inzynierka.Auth.Services;
-using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
-using inzynierka.Users.Modules;
 using inzynierka.Users.Services;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Services;
@@ -89,7 +87,6 @@ builder.Services.AddProductsServices();
 builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IAuthContract, AuthModule>();
-builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
