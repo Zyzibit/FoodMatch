@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.Users.Contracts;
-using inzynierka.Users.Contracts.Models;
+using inzynierka.Users.Services;
+using inzynierka.Users.Requests;
 
 namespace inzynierka.Users.API;
 
@@ -10,12 +10,12 @@ namespace inzynierka.Users.API;
 [Route("api/v1/users")]
 public class UserController : ControllerBase
 {
-    private readonly IUserContract _userContract;
+    private readonly IUserService _userService;
     private readonly ILogger<UserController> _logger;
 
-    public UserController(IUserContract userContract, ILogger<UserController> logger)
+    public UserController(IUserService userService, ILogger<UserController> logger)
     {
-        _userContract = userContract;
+        _userService = userService;
         _logger = logger;
     }
     
@@ -31,7 +31,7 @@ public class UserController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var user = await _userContract.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
@@ -58,7 +58,7 @@ public class UserController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _userContract.UpdateUserProfileAsync(userId, request);
+            var result = await _userService.UpdateUserProfileAsync(userId, request);
             if (!result)
             {
                 return BadRequest(new { message = "Failed to update user profile" });
@@ -77,7 +77,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUser(string userId)
     {
-        var user = await _userContract.GetUserByIdAsync(userId);
+        var user = await _userService.GetUserByIdAsync(userId);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -90,7 +90,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserByUsername(string username)
     {
-        var user = await _userContract.GetUserByUsernameAsync(username);
+        var user = await _userService.GetUserByUsernameAsync(username);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -103,7 +103,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserByEmail(string email)
     {
-        var user = await _userContract.GetUserByEmailAsync(email);
+        var user = await _userService.GetUserByEmailAsync(email);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -116,8 +116,8 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _userContract.GetUsersAsync(pageNumber, pageSize);
-        var totalCount = await _userContract.GetTotalUsersCountAsync();
+        var users = await _userService.GetUsersAsync(pageNumber, pageSize);
+        var totalCount = await _userService.GetTotalUsersCountAsync();
 
         return Ok(new
         {
@@ -133,7 +133,7 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserProfileRequest request)
     {
-        var result = await _userContract.UpdateUserProfileAsync(userId, request);
+        var result = await _userService.UpdateUserProfileAsync(userId, request);
         if (!result)
         {
             return BadRequest(new { message = "Failed to update user profile" });
@@ -146,7 +146,7 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(string userId)
     {
-        var result = await _userContract.DeleteUserAsync(userId);
+        var result = await _userService.DeleteUserAsync(userId);
         if (!result)
         {
             return BadRequest(new { message = "Failed to delete user" });
@@ -164,7 +164,7 @@ public class UserController : ControllerBase
             if (string.IsNullOrEmpty(userId)) {
                 return Unauthorized(new { message = "Invalid token" });
             }
-            var preferences = await _userContract.GetUserFoodPreferencesAsync(userId);
+            var preferences = await _userService.GetUserFoodPreferencesAsync(userId);
             return Ok(preferences);
         }
         catch (Exception ex) {
@@ -183,7 +183,7 @@ public class UserController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _userContract.UpdateUserFoodPreferencesAsync(userId, request);
+            var result = await _userService.UpdateUserFoodPreferencesAsync(userId, request);
             if (!result) {
                 return BadRequest(new { message = "Failed to update food preferences" });
             }
