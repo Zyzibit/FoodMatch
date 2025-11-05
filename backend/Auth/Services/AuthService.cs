@@ -1,4 +1,4 @@
-using inzynierka.Auth.Contracts.Models;
+using inzynierka.Auth.Responses;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using Microsoft.AspNetCore.Identity;

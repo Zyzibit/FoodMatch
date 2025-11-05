@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Auth.Contracts.Models;
+namespace inzynierka.Auth.Requests;
 
 public class RefreshTokenRequest
 {
