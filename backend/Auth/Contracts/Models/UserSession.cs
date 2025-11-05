@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Responses;
+namespace inzynierka.Auth.Contracts.Models;
 
 public class UserSession
 {
@@ -10,4 +10,3 @@ public class UserSession
     public bool IsActive { get; set; }
     public bool IsCurrent { get; set; }
 }
-

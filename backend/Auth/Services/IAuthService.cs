@@ -1,4 +1,4 @@
-using inzynierka.Auth.Responses;
+using inzynierka.Auth.Contracts.Models;
 
 namespace inzynierka.Auth.Services;
 

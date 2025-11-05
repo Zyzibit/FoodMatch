@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Requests;
+﻿namespace inzynierka.Auth.Contracts.Models;
 
 public class LoginRequest
 {

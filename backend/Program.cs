@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+
+// New modular imports
+using inzynierka.Auth.Contracts;
+using inzynierka.Auth.Modules;
 using inzynierka.Auth.Services;
 using inzynierka.Users.Model;
 using inzynierka.Users.Services;
@@ -82,6 +86,7 @@ builder.Services.AddProductsServices();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
+builder.Services.AddScoped<IAuthContract, AuthModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();

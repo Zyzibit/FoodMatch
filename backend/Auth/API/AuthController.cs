@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using inzynierka.Auth.Contracts;
 using inzynierka.Auth.Services;
 using inzynierka.Auth.Utilities;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using inzynierka.Auth.Requests;
-using inzynierka.Auth.Responses;
+using inzynierka.Auth.Model;
+using inzynierka.Auth.Contracts.Models;
 using inzynierka.Users.Model;
 
 namespace inzynierka.Auth.API;
@@ -14,7 +15,7 @@ namespace inzynierka.Auth.API;
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IAuthContract _authModule;
     private readonly ITokenService _tokenService;
     private readonly ILogger<AuthController> _logger;
     private readonly IConfiguration _configuration;
@@ -22,12 +23,12 @@ public class AuthController : ControllerBase
 
     public AuthController(
         IConfiguration configuration,
-        IAuthService authService, 
+        IAuthContract authModule, 
         ITokenService tokenService,
         UserManager<User> userManager,
         ILogger<AuthController> logger)
     {
-        _authService = authService;
+        _authModule = authModule;
         _tokenService = tokenService;
         _configuration = configuration;
         _userManager = userManager;
@@ -49,7 +50,7 @@ public class AuthController : ControllerBase
             _logger.LogInformation("Login attempt for user {Username} from device {DeviceId} (IP: {IpAddress})",
                 request.Username, deviceId, ipAddress);
 
-            var result = await _authService.AuthenticateAsync(request.Username, request.Password, deviceId, userAgent, ipAddress);
+            var result = await _authModule.AuthenticateAsync(request.Username, request.Password, deviceId, userAgent, ipAddress);
 
             if (!result.Success)
             {
@@ -93,7 +94,7 @@ public class AuthController : ControllerBase
             _logger.LogInformation("Registration attempt for user {Username} from device {DeviceId} (IP: {IpAddress})",
                 request.Username, deviceId, ipAddress);
 
-            var result = await _authService.RegisterAsync(request.Username, request.Email, request.Password, deviceId, userAgent, ipAddress);
+            var result = await _authModule.RegisterAsync(request.Username, request.Email, request.Password, deviceId, userAgent, ipAddress);
 
             if (!result.Success)
             {
@@ -134,7 +135,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var result = await _authService.RefreshTokenAsync(refreshToken);
+            var result = await _authModule.RefreshTokenAsync(refreshToken);
 
             if (!result.Success)
             {
@@ -175,7 +176,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var result = await _authService.ValidateTokenAsync(token);
+            var result = await _authModule.ValidateTokenAsync(token);
             return Ok(result);
         }
         catch (Exception ex)
@@ -287,11 +288,11 @@ public class AuthController : ControllerBase
 
             if (!string.IsNullOrEmpty(refreshToken))
             {
-                success = await _authService.RevokeTokenAsync(refreshToken);
+                success = await _authModule.RevokeTokenAsync(refreshToken);
             }
             else
             {
-                success = await _authService.RevokeAllTokensAsync(userId);
+                success = await _authModule.RevokeAllTokensAsync(userId);
             }
 
             _tokenService.RemoveAccessTokenCookie(Response);
@@ -324,7 +325,7 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var success = await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+            var success = await _authModule.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
 
             if (!success)
             {
@@ -357,7 +358,7 @@ public class AuthController : ControllerBase
 
             var currentRefreshToken = Request.Cookies["RefreshToken"];
 
-            var sessions = await _authService.GetUserSessionsAsync(userId, currentRefreshToken);
+            var sessions = await _authModule.GetUserSessionsAsync(userId, currentRefreshToken);
             return Ok(sessions);
         }
         catch (Exception ex)
@@ -379,7 +380,7 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var success = await _authService.RevokeAllTokensAsync(userId);
+            var success = await _authModule.RevokeAllTokensAsync(userId);
 
             _tokenService.RemoveAccessTokenCookie(Response);
             _tokenService.RemoveRefreshTokenCookie(Response);
@@ -392,4 +393,7 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
+    
+    
 }
