@@ -26,7 +26,7 @@ public class ReceiptIngredientReadDto
     public int ProductId { get; set; }
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
-    public decimal? NormalizedQuantityInGrams { get; set; } = 0m;
+    public decimal? NormalizedQuantityInGrams { get; set; }
     public bool IsAiGenerated { get; set; }
     public decimal EstimatedCalories { get; set; }
     public decimal EstimatedProteins { get; set; }

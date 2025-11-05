@@ -9,20 +9,16 @@ public class DbSeeder
 {
     public static async Task SeedData(IApplicationBuilder app)
     {
-        // Create a scoped service provider to resolve dependencies
         using var scope = app.ApplicationServices.CreateScope();
 
-        // resolve the logger service
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbSeeder>>();
 
         try
         {
-            // resolve other dependencies
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // Seed Units
             if (!await dbContext.Units.AnyAsync())
             {
                 logger.LogInformation("Seeding units...");
@@ -68,7 +64,7 @@ public class DbSeeder
                     { 
                         Name = "łyżka", 
                         Description = "Tablespoon - approximately 15ml",
-                        PromptDescription = "Use for small amounts of ingredients (e.g., 2 tablespoons of oil, 1 tablespoon of honey)",
+                        PromptDescription = "Use for small amounts of ingredients (e.g., 2 tablespoons of oil, 1 tablespoon of honey)"
                     },
                         new Unit 
                     { 

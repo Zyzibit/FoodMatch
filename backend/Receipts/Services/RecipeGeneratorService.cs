@@ -28,11 +28,12 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         _promptConfigService = promptConfigService;
         _unitService = unitService;
         _configPath = configuration["Receipts:PromptConfigPath"] ?? 
-                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Receipts/Config/prompt_config.json");
+                      Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Receipts", "Config", "prompt_config.json");
     }
 
     public async Task<GenerateRecipeResponse> GenerateRecipeAsync(GenerateRecipeRequest request)
     {
+        
         try
         {
             var config = await _promptConfigService.LoadConfigAsync(_configPath);
@@ -48,21 +49,17 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             
             _logger.LogDebug("Sending prompt to OpenAI with {MessageCount} messages", messages.Count);
 
-            var result = await _openAiClient.SendPromptForJsonasync(messages);
+            var result = await _openAiClient.SendPromptForJsonAsync(messages);
             
             if (result == null)
             {
-                _logger.LogError("Failed to parse AI response - received null");
                 return new GenerateRecipeResponse
                 {
                     Success = false,
-                    ErrorMessage = "Nie udało się przetworzyć odpowiedzi AI"
+                    ErrorMessage = "Unable to get a valid response from AI service."
                 };
             }
-
-            // Logowanie surowej odpowiedzi AI dla debugowania
-            _logger.LogDebug("AI Response JSON: {JsonResponse}", result.Value.ToString());
-
+            
             var recipe = ParseRecipeFromJson(result.Value);
             
             return new GenerateRecipeResponse
@@ -71,41 +68,21 @@ public class RecipeGeneratorService : IRecipeGeneratorService
                 Recipe = recipe
             };
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-        {
-            _logger.LogError(ex, "OpenAI rate limit exceeded");
-            return new GenerateRecipeResponse
-            {
-                Success = false,
-                ErrorMessage = "Przekroczono limit zapytań do OpenAI API. " +
-                              "Proszę spróbować ponownie za chwilę."
-            };
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "HTTP error while generating recipe with AI");
-            return new GenerateRecipeResponse
-            {
-                Success = false,
-                ErrorMessage = $"Błąd połączenia z OpenAI API: {ex.Message}"
-            };
-        }
         catch (JsonException ex)
         {
             _logger.LogError(ex, "JSON parsing error in recipe generation");
             return new GenerateRecipeResponse
             {
                 Success = false,
-                ErrorMessage = "Błąd w formacie odpowiedzi AI. Spróbuj ponownie."
+                ErrorMessage = "Error while parsing AI response: " + ex.Message
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error generating recipe with AI");
             return new GenerateRecipeResponse
             {
                 Success = false,
-                ErrorMessage = $"Nieoczekiwany błąd podczas generowania przepisu: {ex.Message}"
+                ErrorMessage = $"Unexpected error while generating recipe: {ex.Message}"
             };
         }
     }
@@ -155,21 +132,20 @@ public class RecipeGeneratorService : IRecipeGeneratorService
                 });
             }
 
-            // Backend sumuje rzeczywiste wartości ze składników
-            var actualTotalWeight = recipe.Ingredients
-                .Where(i => i.NormalizedQuantityInGrams.HasValue)
-                .Sum(i => i.NormalizedQuantityInGrams.Value);
-            
+            decimal actualTotalWeight = 0;
+            foreach (var i in recipe.Ingredients)
+            {
+                if (i.NormalizedQuantityInGrams.HasValue) actualTotalWeight += i.NormalizedQuantityInGrams.Value;
+            }
+
             var actualTotalCalories = recipe.Ingredients.Sum(i => i.EstimatedCalories);
             var actualTotalProtein = recipe.Ingredients.Sum(i => i.EstimatedProteins);
             var actualTotalCarbs = recipe.Ingredients.Sum(i => i.EstimatedCarbohydrates);
             var actualTotalFats = recipe.Ingredients.Sum(i => i.EstimatedFats);
             
-            // Logujemy rozbieżności jeśli AI podało błędne wartości
             var aiTotalWeight = GetIntProperty(jsonElement, "totalWeightGrams");
             var aiTotalCalories = GetDecimalProperty(jsonElement, "estimatedCalories");
-            
-            if (aiTotalWeight > 0 && Math.Abs((decimal)aiTotalWeight - actualTotalWeight) > 1m)
+            if (aiTotalWeight > 0 && Math.Abs(aiTotalWeight - actualTotalWeight) > 1m)
             {
                 _logger.LogWarning(
                     "AI provided totalWeightGrams ({AIWeight}g) differs from actual sum ({ActualWeight}g). Using actual weight.",
@@ -183,10 +159,8 @@ public class RecipeGeneratorService : IRecipeGeneratorService
                     aiTotalCalories, actualTotalCalories);
             }
             
-            // Używamy rzeczywistych wartości z sumy składników
             recipe.TotalWeightGrams = (int)Math.Round(actualTotalWeight);
             
-            // Przeliczamy wartości odżywcze na 100g używając rzeczywistych sum
             var weightFactor = actualTotalWeight > 0 ? 100m / actualTotalWeight : 0m;
             recipe.EstimatedCalories = actualTotalCalories * weightFactor;
             recipe.EstimatedProtein = actualTotalProtein * weightFactor;
@@ -243,7 +217,6 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             ["additionalInstructions"] = request.AdditionalInstructions
         };
 
-        // Add dietary preferences if provided
         if (request.Preferences != null)
         {
             data["isVegan"] = request.Preferences.IsVegan;
@@ -254,7 +227,6 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             data["allergies"] = string.Join(", ", request.Preferences.Allergies);
             data["dislikedIngredients"] = string.Join(", ", request.Preferences.DislikedIngredients);
         }
-        
         return data;
     }
 }

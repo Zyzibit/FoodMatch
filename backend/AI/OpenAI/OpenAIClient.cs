@@ -16,7 +16,7 @@ public class OpenAIClient : IOpenAIClient {
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_configuration["AI:ApiKey"]}");
     }
 
-    public async Task<JsonElement?> SendPromptForJsonasync(List<OpenAIMessage> messages) {
+    public async Task<JsonElement?> SendPromptForJsonAsync(List<OpenAIMessage> messages) {
         OpenAIChatRequest request = new ();
         
         var modelFromConfig = _configuration["AI:Model"];

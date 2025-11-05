@@ -4,5 +4,5 @@ using inzynierka.AI.OpenAI.Model;
 namespace inzynierka.AI.OpenAI;
 
 public interface IOpenAIClient {
-    Task<JsonElement?> SendPromptForJsonasync(List<OpenAIMessage> messages);
+    Task<JsonElement?> SendPromptForJsonAsync(List<OpenAIMessage> messages);
 }
