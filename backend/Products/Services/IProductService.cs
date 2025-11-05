@@ -1,6 +1,6 @@
-using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Requests;
+using inzynierka.Products.Model;
 using inzynierka.Products.Responses;
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Products.Services;
 
@@ -17,4 +17,5 @@ public interface IProductService
     Task<ProductNutritionResult> GetNutritionInfoAsync(string productId);
     Task<IEnumerable<ProductInfo>> GetProductsByIdsAsync(IEnumerable<int> ids);
     Task<ProductResult> AddAiProductAsync(GeneratedRecipeIngredient ingredient);
+    Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient);
 }

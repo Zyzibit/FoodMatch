@@ -1,6 +1,6 @@
 using System.Text;
 using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.PromptBuilders;
+using inzynierka.AI.OpenAI.Services;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
@@ -12,9 +12,7 @@ using StackExchange.Redis;
 
 // New modular imports
 using inzynierka.Auth.Contracts;
-using inzynierka.AI.Contracts;
 using inzynierka.Auth.Modules;
-using inzynierka.AI.Modules;
 using inzynierka.Auth.Services;
 using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
@@ -91,18 +89,16 @@ builder.Services.AddProductsServices();
 builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IAuthContract, AuthModule>();
-builder.Services.AddScoped<IAIContract, AIModule>();
 builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
-builder.Services.AddScoped<IRecipeProductService, RecipeProductService>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IReceiptService, UserReceiptService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
+builder.Services.AddScoped<IPromptConfigService, PromptConfigService>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
-builder.Services.AddScoped<IRecipePromptBuilder, RecipePromptBuilder>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();

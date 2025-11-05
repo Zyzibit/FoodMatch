@@ -1,4 +1,4 @@
-namespace inzynierka.AI.Contracts.Models;
+namespace inzynierka.Receipts.Model.Recipe;
 
 public class DietaryPreferences
 {
@@ -11,3 +11,4 @@ public class DietaryPreferences
     public string? CuisineType { get; set; }
     public int? MaxCalories { get; set; }
 }
+

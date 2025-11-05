@@ -75,7 +75,12 @@
 
     <ItemGroup>
       <Folder Include="Users\Contracts\Models\" />
-      <Folder Include="Users\Dto\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Receipts\Config\prompt_config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

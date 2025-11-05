@@ -1,12 +1,13 @@
 ﻿using inzynierka.Receipts.Requests;
 using inzynierka.Receipts.Responses;
 using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Model.Recipe;
 using inzynierka.Receipts.Repositories;
-using inzynierka.AI.Contracts;
-using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Services;
 using inzynierka.Data;
 using inzynierka.Receipts.Mappings;
+using inzynierka.Users.Model;
+using inzynierka.Users.Services;
 
 namespace inzynierka.Receipts.Services;
 
@@ -15,32 +16,29 @@ public class UserReceiptService : IReceiptService
 {
     private readonly IReceiptRepository _receiptRepository;
     private readonly ILogger<UserReceiptService> _logger;
-    private readonly IAIContract _aiContract;
+    private readonly IRecipeGeneratorService _recipeGeneratorService;
     private readonly IProductService _productService;
-    private readonly IRecipeProductService _recipeProductService;
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
-    private readonly AppDbContext _dbContext;
     private readonly IUnitService _unitService;
+    private readonly IUserService _userService;
     private readonly IReceiptMapper _receiptMapper;
 
     public UserReceiptService(
         IReceiptRepository receiptRepository, 
         ILogger<UserReceiptService> logger,
-        IAIContract aiContract,
+        IUserService userService,
+        IRecipeGeneratorService recipeGeneratorService,
         IProductService productService,
-        IRecipeProductService recipeProductService,
         IRecipeIngredientMatcher ingredientMatcher,
-        AppDbContext dbContext,
         IUnitService unitService,
         IReceiptMapper receiptMapper)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
-        _aiContract = aiContract;
+        _userService = userService;
+        _recipeGeneratorService = recipeGeneratorService;
         _productService = productService;
-        _recipeProductService = recipeProductService;
         _ingredientMatcher = ingredientMatcher;
-        _dbContext = dbContext;
         _unitService = unitService;
         _receiptMapper = receiptMapper;
     }
@@ -67,14 +65,15 @@ public class UserReceiptService : IReceiptService
             }
             
             var unit = units.FirstOrDefault(u => 
-                u.Name.Equals(unitName, StringComparison.OrdinalIgnoreCase));
+                u.Name.Equals(unitName.Trim(), StringComparison.OrdinalIgnoreCase));
             
             if (unit != null)
             {
                 return unit.UnitId;
             }
             
-            _logger.LogWarning("Unit '{UnitName}' not found in database, trying default unit", unitName);
+            _logger.LogWarning("Unit '{UnitName}' not found, using default 'g'. Available units: {Units}", 
+                unitName, string.Join(", ", units.Select(u => u.Name)));
             
             var defaultUnit = units.FirstOrDefault(u => 
                 u.Name.Equals("gram", StringComparison.OrdinalIgnoreCase));
@@ -84,7 +83,7 @@ public class UserReceiptService : IReceiptService
                 return defaultUnit.UnitId;
             }
             
-            throw new InvalidOperationException($"Unit '{unitName}' not found in database and default unit 'gram' is also missing. Available units: {string.Join(", ", units.Select(u => u.Name))}");
+            throw new InvalidOperationException($"Unit '{unitName}' not found and default unit 'gram' is missing. Available: {string.Join(", ", units.Select(u => u.Name))}");
         }
         catch (Exception ex) when (ex is not InvalidOperationException && ex is not ArgumentException)
         {
@@ -128,8 +127,7 @@ public class UserReceiptService : IReceiptService
                 };
             }
 
-            // Validate that user exists in database
-            var userExists = await _dbContext.Users.FindAsync(userId);
+            var userExists = await _userService.GetUserByIdAsync(userId);
             if (userExists == null)
             {
                 _logger.LogError("User with ID {UserId} does not exist in the database", userId);
@@ -149,6 +147,7 @@ public class UserReceiptService : IReceiptService
                     ProductId = i.ProductId,
                     UnitId = i.UnitId,
                     Quantity = i.Quantity,
+                    NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
                 }).ToList(),
                 AdditionalProducts = request.AdditionalProducts,
                 Title = request.Title,
@@ -200,7 +199,6 @@ public class UserReceiptService : IReceiptService
     {
         try
         {
-            // Validate userId
             if (string.IsNullOrEmpty(userId))
             {
                 _logger.LogError("GenerateRecipeWithAiAsync called with empty or null userId");
@@ -211,8 +209,7 @@ public class UserReceiptService : IReceiptService
                 };
             }
 
-            // Validate that user exists in database
-            var userExists = await _dbContext.Users.FindAsync(userId);
+            var userExists = await _userService.GetUserByIdAsync(userId);
             if (userExists == null)
             {
                 _logger.LogError("User with ID {UserId} does not exist in the database", userId);
@@ -263,7 +260,7 @@ public class UserReceiptService : IReceiptService
                 AdditionalInstructions = request.AdditionalInstructions
             };
 
-            var aiResult = await _aiContract.GenerateRecipeAsync(aiRequest);
+            var aiResult = await _recipeGeneratorService.GenerateRecipeAsync(aiRequest);
 
             if (!aiResult.Success || aiResult.Recipe == null)
             {
@@ -341,10 +338,14 @@ public class UserReceiptService : IReceiptService
                     }
 
                     var unitId = await GetUnitIdForIngredientAsync(aiIngredient.Unit);
+                    
+                    var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams;
+                    
                     receipt.Ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = productId,
                         UnitId = unitId,
+                        NormalizedQuantityInGrams = normalizedQuantityInGrams,
                         Quantity = quantity.Value
                     });
                 }
@@ -359,13 +360,14 @@ public class UserReceiptService : IReceiptService
             {
                 try
                 {
-                    var aiGeneratedProduct = await _recipeProductService.CreateAiGeneratedProductAsync(additionalIngredient);
+                    var aiGeneratedProduct = await _productService.CreateAiGeneratedProductAsync(additionalIngredient);
                     var unitId = await GetUnitIdForIngredientAsync(additionalIngredient.Unit);
                     
                     receipt.Ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = aiGeneratedProduct.Id,
                         UnitId = unitId,
+                        NormalizedQuantityInGrams = additionalIngredient.NormalizedQuantityInGrams,
                         Quantity = additionalIngredient.Quantity
                     });
                 }

@@ -6,6 +6,7 @@ public class ReceiptDto
     public string UserId { get; set; } = string.Empty;
     public bool IsAiGenerated { get; set; }
     public List<ReceiptIngredientReadDto> Ingredients { get; set; } = new List<ReceiptIngredientReadDto>();
+    
     public List<string>? AdditionalProducts { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -25,6 +26,7 @@ public class ReceiptIngredientReadDto
     public int ProductId { get; set; }
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
+    public decimal? NormalizedQuantityInGrams { get; set; }
     public bool IsAiGenerated { get; set; }
     public decimal EstimatedCalories { get; set; }
     public decimal EstimatedProteins { get; set; }

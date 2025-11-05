@@ -1,10 +1,11 @@
-﻿
+using inzynierka.Receipts.Model.Recipe;
 
-namespace inzynierka.AI.Contracts.Models;
+namespace inzynierka.Receipts.Responses;
 
-public class GenerateRecipeResult
+public class GenerateRecipeResponse
 {
     public bool Success { get; set; }
     public GeneratedRecipe? Recipe { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
