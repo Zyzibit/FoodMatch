@@ -23,7 +23,6 @@ public class UserService : IUserService
         _roleService = roleService;
     }
 
-    // Public API methods - return DTOs
     public async Task<UserDto?> GetUserByIdAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
@@ -34,8 +33,9 @@ public class UserService : IUserService
     {
         var user = await _userManager.FindByNameAsync(username);
         return user?.ToDto();
+        
     }
-
+    
     public async Task<UserDto?> GetUserByEmailAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);

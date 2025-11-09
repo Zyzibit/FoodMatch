@@ -12,10 +12,10 @@ using inzynierka.Users.Services;
 namespace inzynierka.Receipts.Services;
 
 
-public class UserReceiptService : IReceiptService
+public class ReceiptService : IReceiptService
 {
     private readonly IReceiptRepository _receiptRepository;
-    private readonly ILogger<UserReceiptService> _logger;
+    private readonly ILogger<ReceiptService> _logger;
     private readonly IRecipeGeneratorService _recipeGeneratorService;
     private readonly IProductService _productService;
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
@@ -23,9 +23,9 @@ public class UserReceiptService : IReceiptService
     private readonly IUserService _userService;
     private readonly IReceiptMapper _receiptMapper;
 
-    public UserReceiptService(
+    public ReceiptService(
         IReceiptRepository receiptRepository, 
-        ILogger<UserReceiptService> logger,
+        ILogger<ReceiptService> logger,
         IUserService userService,
         IRecipeGeneratorService recipeGeneratorService,
         IProductService productService,
