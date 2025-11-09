@@ -1,4 +1,5 @@
-﻿using inzynierka.Receipts.Model;
+﻿using inzynierka.MealPlans.Model;
+using inzynierka.Receipts.Model;
 using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Users.Model;
@@ -13,7 +14,7 @@ public class User : IdentityUser {
     public FoodPreferences FoodPreferences { get; set; } = new FoodPreferences();
     
     public ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
-
+    public IEnumerable<MealPlan>? MealPlans { get; set; }
 }
 public class FoodPreferences {
     public bool IsVegan { get; set; } = false;
