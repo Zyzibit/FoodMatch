@@ -86,11 +86,14 @@ builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
 builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
-builder.Services.AddScoped<IReceiptService, UserReceiptService>();
+builder.Services.AddScoped<IReceiptService, ReceiptService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IPromptConfigService, PromptConfigService>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
+
+builder.Services.AddScoped<inzynierka.MealPlans.Services.IMealPlanService, inzynierka.MealPlans.Services.MealPlanService>();
+builder.Services.AddScoped<inzynierka.MealPlans.Repositories.IMealPlanRepository, inzynierka.MealPlans.Repositories.MealPlanRepository>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
