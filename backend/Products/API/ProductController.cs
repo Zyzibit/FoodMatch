@@ -46,7 +46,7 @@ public class ProductController : ControllerBase
     {
         try
         {
-            var query = new ProductSearchQuery
+            var productSearchDto = new ProductSearchDto
             {
                 Query = request.Query,
                 Categories = request.Categories?.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
@@ -57,7 +57,7 @@ public class ProductController : ControllerBase
                 Offset = request.Offset
             };
 
-            var result = await _productModule.SearchProductsAsync(query);
+            var result = await _productModule.SearchProductsAsync(productSearchDto);
             
             if (!result.Success)
             {
@@ -68,7 +68,7 @@ public class ProductController : ControllerBase
             {
                 products = result.Products,
                 totalCount = result.TotalCount,
-                hasMore = result.TotalCount > (query.Offset + query.Limit)
+                hasMore = result.TotalCount > (productSearchDto.Offset + productSearchDto.Limit)
             });
         }
         catch (Exception ex)

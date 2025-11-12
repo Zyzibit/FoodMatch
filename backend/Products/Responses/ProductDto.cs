@@ -1,6 +1,6 @@
 ﻿namespace inzynierka.Products.Responses;
 
-public class ProductInfo
+public class ProductDto
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -11,7 +11,7 @@ public class ProductInfo
     public List<string> Ingredients { get; set; } = new();
     public List<string> Allergens { get; set; } = new();
     public List<string> Countries { get; set; } = new();
-    public NutritionInfo? Nutrition { get; set; }
+    public NutritionInfoDto? Nutrition { get; set; }
     public string? NutritionGrade { get; set; }
     public string? EcoScoreGrade { get; set; }
     public bool IsAiGenerated { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace inzynierka.Products.Responses;
 
-public class ProductSearchQuery
+public class ProductSearchDto
 {
     public string? Query { get; set; }
     public List<string>? Categories { get; set; }
