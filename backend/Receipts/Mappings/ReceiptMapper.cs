@@ -23,7 +23,6 @@ public class ReceiptMapper : IReceiptMapper
                     UnitId = i.UnitId,
                     Quantity = i.Quantity,
                     NormalizedQuantityInGrams = i.NormalizedQuantityInGrams,
-                    IsAiGenerated = i.Product.IsAiGenerated,
                     ProductName = i.Product.ProductName ?? "",
                     EstimatedCalories = (i.Product.estimatedCalories ?? 0) * scaleFactor,
                     EstimatedProteins = (i.Product.estimatedProteins ?? 0) * scaleFactor,
