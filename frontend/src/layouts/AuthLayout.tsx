@@ -71,7 +71,11 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
               }}
             >
               {"DIET\nZYNZI".split("\n").map((line, i) => (
-                <Box component="span" key={i} sx={{ display: "block" }}>
+                <Box
+                  component="span"
+                  key={i}
+                  sx={{ display: "block", textAlign: "center" }}
+                >
                   {line}
                 </Box>
               ))}
