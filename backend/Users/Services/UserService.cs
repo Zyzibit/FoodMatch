@@ -273,15 +273,45 @@ public class UserService : IUserService
                 return false;
             }
 
-            user.FoodPreferences.IsVegan = request.IsVegan;
-            user.FoodPreferences.IsVegetarian = request.IsVegetarian;
-            user.FoodPreferences.HasGlutenIntolerance = request.HasGlutenIntolerance;
-            user.FoodPreferences.HasLactoseIntolerance = request.HasLactoseIntolerance;
-            user.FoodPreferences.HasNutAllergy = request.HasNutAllergy;
-            user.FoodPreferences.DailyProteinGoal = request.DailyProteinGoal;
-            user.FoodPreferences.DailyCarbohydrateGoal = request.DailyCarbohydrateGoal;
-            user.FoodPreferences.DailyFatGoal = request.DailyFatGoal;
-            user.FoodPreferences.DailyCalorieGoal = request.DailyCalorieGoal;
+            if (request.IsVegan.HasValue)
+                user.FoodPreferences.IsVegan = request.IsVegan.Value;
+            if (request.IsVegetarian.HasValue)
+                user.FoodPreferences.IsVegetarian = request.IsVegetarian.Value;
+            if (request.HasGlutenIntolerance.HasValue)
+                user.FoodPreferences.HasGlutenIntolerance = request.HasGlutenIntolerance.Value;
+            if (request.HasLactoseIntolerance.HasValue)
+                user.FoodPreferences.HasLactoseIntolerance = request.HasLactoseIntolerance.Value;
+            if (request.HasNutAllergy.HasValue)
+                user.FoodPreferences.HasNutAllergy = request.HasNutAllergy.Value;
+            
+            if (request.Age.HasValue)
+                user.FoodPreferences.Age = request.Age.Value;
+            if (request.Gender.HasValue)
+                user.FoodPreferences.Gender = request.Gender.Value;
+            if (request.Weight.HasValue)
+                user.FoodPreferences.Weight = request.Weight.Value;
+            if (request.Height.HasValue)
+                user.FoodPreferences.Height = request.Height.Value;
+            if (request.ActivityLevel.HasValue)
+                user.FoodPreferences.ActivityLevel = request.ActivityLevel.Value;
+            
+            if (request.DailyProteinGoal.HasValue)
+                user.FoodPreferences.DailyProteinGoal = request.DailyProteinGoal.Value;
+            if (request.DailyCarbohydrateGoal.HasValue)
+                user.FoodPreferences.DailyCarbohydrateGoal = request.DailyCarbohydrateGoal.Value;
+            if (request.DailyFatGoal.HasValue)
+                user.FoodPreferences.DailyFatGoal = request.DailyFatGoal.Value;
+            if (request.DailyCalorieGoal.HasValue)
+                user.FoodPreferences.DailyCalorieGoal = request.DailyCalorieGoal.Value;
+            
+            if (request.BreakfastCaloriePercentage.HasValue)
+                user.FoodPreferences.BreakfastCaloriePercentage = request.BreakfastCaloriePercentage.Value;
+            if (request.LunchCaloriePercentage.HasValue)
+                user.FoodPreferences.LunchCaloriePercentage = request.LunchCaloriePercentage.Value;
+            if (request.DinnerCaloriePercentage.HasValue)
+                user.FoodPreferences.DinnerCaloriePercentage = request.DinnerCaloriePercentage.Value;
+            if (request.SnackCaloriePercentage.HasValue)
+                user.FoodPreferences.SnackCaloriePercentage = request.SnackCaloriePercentage.Value;
 
             user.UpdatedAt = DateTime.UtcNow;
             var result = await _userManager.UpdateAsync(user);

@@ -23,8 +23,34 @@ public class FoodPreferences {
     public bool HasLactoseIntolerance { get; set; } = false;
     public bool HasNutAllergy { get; set; } = false;
 
+    public int? Age { get; set; }
+    public Gender? Gender { get; set; }
+    public decimal? Weight { get; set; } // kg
+    public decimal? Height { get; set; } // cm
+    public PhysicalActivityLevel? ActivityLevel { get; set; }
+    
     public int DailyProteinGoal { get; set; }
     public int DailyCarbohydrateGoal { get; set; }
     public int DailyFatGoal { get; set; }
     public int DailyCalorieGoal { get; set; }
+    
+    public int BreakfastCaloriePercentage { get; set; } = 30;
+    public int LunchCaloriePercentage { get; set; } = 40;
+    public int DinnerCaloriePercentage { get; set; } = 25;
+    public int SnackCaloriePercentage { get; set; } = 5;
+}
+
+public enum Gender
+{
+    Male,
+    Female
+}
+
+public enum PhysicalActivityLevel
+{
+    Sedentary,      
+    LightlyActive, 
+    ModeratelyActive,
+    VeryActive,
+    ExtraActive
 }

@@ -173,7 +173,7 @@ public class UserController : ControllerBase
         }
     }
     
-    [HttpPost("preferences")]
+    [HttpPut("preferences")]
     [Authorize]
     public async Task<IActionResult> UpdateUserFoodPreferences([FromBody] UpdateFoodPreferencesRequest request)
     {

@@ -220,6 +220,8 @@ public class ReceiptService : IReceiptService
                 };
             }
             
+            var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
@@ -250,10 +252,12 @@ public class ReceiptService : IReceiptService
                     : p.Name)
                 .ToList();
             
+            var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
+            
             var aiRequest = new GenerateRecipeRequest
             {
                 AvailableIngredients = ingredientNames,
-                Preferences = request.Preferences,
+                Preferences = preferences,
                 CuisineType = request.CuisineType,
                 DesiredServings = request.DesiredServings,
                 MaxPreparationTimeMinutes = request.MaxPreparationTimeMinutes,
@@ -399,6 +403,31 @@ public class ReceiptService : IReceiptService
                 ErrorMessage = ex.Message 
             };
         }
+    }
+    
+    private DietaryPreferences? CreatePreferencesFromUser(Users.Responses.FoodPreferencesDto? userPreferences)
+    {
+        if (userPreferences == null)
+        {
+            return null;
+        }
+        
+        var allergies = new List<string>();
+        if (userPreferences.HasNutAllergy == true)
+        {
+            allergies.Add("nuts");
+        }
+        
+        return new DietaryPreferences
+        {
+            IsVegan = userPreferences.IsVegan ?? false,
+            IsVegetarian = userPreferences.IsVegetarian ?? false,
+            IsGlutenFree = userPreferences.HasGlutenIntolerance ?? false,
+            IsLactoseFree = userPreferences.HasLactoseIntolerance ?? false,
+            Allergies = allergies,
+            DislikedIngredients = new List<string>(),
+            MaxCalories = userPreferences.DailyCalorieGoal
+        };
     }
     
 }
