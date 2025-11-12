@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Responses;
+﻿namespace inzynierka.Products.Dto;
 
 public class NutritionInfoDto
 {
