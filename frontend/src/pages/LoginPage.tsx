@@ -21,11 +21,16 @@ export default function LoginPage() {
     navigate("/register");
   }, [navigate]);
 
+  const handleForgotPasswordRedirect = useCallback(() => {
+    navigate("/forgot-password");
+  }, [navigate]);
+
   return (
     <AuthLayout title="DIET ZYNZI">
       <LoginForm
         onSubmitForm={handleLogin}
         onRegisterClick={handleRegisterRedirect}
+        onForgotPasswordClick={handleForgotPasswordRedirect}
       />
     </AuthLayout>
   );
