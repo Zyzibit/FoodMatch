@@ -187,8 +187,8 @@ export default function TopPanel({
     <Box
       sx={(t) => ({
         width: "100%",
-        bgcolor: t.palette.grey[200],
-        borderBottom: `1px solid ${t.palette.grey[300]}`,
+        bgcolor: t.palette.background.paper,
+        borderBottom: `1px solid ${t.palette.divider}`,
         px: 0,
         py: 0, // no vertical padding so inner strip can control exact height
         position: sticky ? "sticky" : "static",
@@ -202,6 +202,7 @@ export default function TopPanel({
           width: "100%",
           height: TOP_PANEL_HEIGHT,
           overflow: "hidden",
+          px: 0,
         }}
       >
         <Box
@@ -229,7 +230,7 @@ export default function TopPanel({
                   height: "100%",
                   borderRight:
                     i < count - 1
-                      ? `1px solid ${t.palette.grey[300]}`
+                      ? `1px solid ${t.palette.divider}`
                       : "none",
                 })}
               >
@@ -267,20 +268,20 @@ export default function TopPanel({
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "flex-start",
+                justifyContent: "center",
                 backgroundColor: "transparent",
                 color: t.palette.text.secondary,
                 zIndex: 2,
                 transition: "color 0.2s ease, background-color 0.2s ease",
                 "&:hover": {
-                  color: t.palette.text.primary,
-                  backgroundColor: t.palette.action.hover,
+                  color: t.palette.secondary.contrastText,
+                  backgroundColor: t.palette.secondary.main,
                 },
                 "&:focus-visible": {
                   outline: `2px solid ${t.palette.secondary.main}`,
                   outlineOffset: -2,
                 },
-                "& > svg": { fontSize: 24, marginLeft: 2 },
+                "& > svg": { fontSize: 22 },
               })}
             >
               <ChevronLeft />
@@ -303,20 +304,20 @@ export default function TopPanel({
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "flex-end",
+                justifyContent: "center",
                 backgroundColor: "transparent",
                 color: t.palette.text.secondary,
                 zIndex: 2,
                 transition: "color 0.2s ease, background-color 0.2s ease",
                 "&:hover": {
-                  color: t.palette.text.primary,
-                  backgroundColor: t.palette.action.hover,
+                  color: t.palette.secondary.contrastText,
+                  backgroundColor: t.palette.secondary.main,
                 },
                 "&:focus-visible": {
                   outline: `2px solid ${t.palette.secondary.main}`,
                   outlineOffset: -2,
                 },
-                "& > svg": { fontSize: 24, marginRight: 2 },
+                "& > svg": { fontSize: 22 },
               })}
             >
               <ChevronRight />

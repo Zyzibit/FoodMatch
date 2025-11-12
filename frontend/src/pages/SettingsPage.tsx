@@ -9,9 +9,11 @@ import {
   MenuItem,
   Button,
 } from "@mui/material";
+import { useAppTheme } from "../contexts/AppThemeContext";
+import type { ThemeName } from "../theme";
 
 export default function SettingsPage() {
-  const [theme, setTheme] = useState<string>("light");
+  const { themeName, setThemeName } = useAppTheme();
   const [textSize, setTextSize] = useState<string>("md");
   const [language, setLanguage] = useState<string>("pl");
 
@@ -20,25 +22,38 @@ export default function SettingsPage() {
       const raw = localStorage.getItem("app_settings");
       if (!raw) return;
       const parsed = JSON.parse(raw);
-      if (parsed.theme) setTheme(parsed.theme);
+      if (parsed.theme) {
+        setThemeName(parsed.theme as ThemeName);
+      }
       if (parsed.textSize) setTextSize(parsed.textSize);
       if (parsed.language) setLanguage(parsed.language);
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [setThemeName]);
 
   const handleSave = () => {
     localStorage.setItem(
       "app_settings",
-      JSON.stringify({ theme, textSize, language })
+      JSON.stringify({ theme: themeName, textSize, language })
     );
     alert("Ustawienia aplikacji zapisane");
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Paper elevation={1} sx={{ p: 3, maxWidth: 720 }}>
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Typography variant="h4" sx={{ fontWeight: 800, mb: 3, width: "100%", maxWidth: 720 }}>
+        Ustawienia
+      </Typography>
+
+      <Paper elevation={1} sx={{ p: 3, width: "100%", maxWidth: 720 }}>
         <Typography variant="h6" gutterBottom>
           Ustawienia aplikacji
         </Typography>
@@ -49,11 +64,18 @@ export default function SettingsPage() {
             <Select
               labelId="theme-label"
               label="Motyw"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value as string)}
+              value={themeName}
+              onChange={(e) => setThemeName(e.target.value as ThemeName)}
             >
               <MenuItem value="light">Jasny</MenuItem>
               <MenuItem value="dark">Ciemny</MenuItem>
+              <MenuItem value="halloween">Halloween</MenuItem>
+              <MenuItem value="winter">Zima</MenuItem>
+              <MenuItem value="spring">Wiosna</MenuItem>
+              <MenuItem value="summer">Lato</MenuItem>
+              <MenuItem value="forest">Leśny</MenuItem>
+              <MenuItem value="sunset">Zachód słońca</MenuItem>
+              <MenuItem value="ocean">Ocean</MenuItem>
             </Select>
           </FormControl>
 
