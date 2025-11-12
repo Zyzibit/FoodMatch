@@ -72,20 +72,20 @@ export default function Tile({
             ? `1px solid ${t.palette.divider}`
             : `1px solid ${
                 active
-                  ? alpha(activeColor, 0.15)
+                  ? alpha(activeBg, 0.6)
                   : alpha(t.palette.common.black, isLight ? 0.08 : 0.2)
               }`,
-          transition: "background-color 0.2s ease, color 0.2s ease",
+          transition:
+            "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s",
           boxShadow: active
-            ? `0 6px 16px ${alpha(activeBg, 0.35)}`
+            ? `0 6px 16px ${alpha(activeBg, 0.45)}`
             : `0 3px 8px ${alpha(
                 isLight ? "#000" : t.palette.common.black,
                 isLight ? 0.12 : 0.4
               )}`,
           "&:hover": {
-            backgroundColor: active
-              ? t.palette.secondary.dark
-              : neutralHover,
+            backgroundColor: active ? activeBg : neutralHover,
+            color: active ? activeColor : t.palette.text.primary,
           },
           "&.Mui-disabled": {
             backgroundColor:

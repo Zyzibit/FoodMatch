@@ -61,7 +61,7 @@ export default function DashboardLayout() {
     [activePage]
   );
 
-  const showTopPanel = activePage !== "ustawienia";
+  const showTopPanel = !["ustawienia", "lista"].includes(activePage);
 
   // Guard against unsupported direct navigation
   if (!SUPPORTED_PAGES.has(activePage)) {

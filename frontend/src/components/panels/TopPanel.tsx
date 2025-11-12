@@ -27,7 +27,6 @@ const topPanelConfigs: Record<string, PageConfig> = {
   lista: {
     tabs: [
       { key: "do-kupienia", label: "Do kupienia" },
-      { key: "kupione", label: "Kupione" },
     ],
     defaultTab: "do-kupienia",
   },

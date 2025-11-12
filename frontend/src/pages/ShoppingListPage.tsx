@@ -125,12 +125,23 @@ export default function ShoppingListPage() {
   );
 
   return (
-    <Paper sx={{ width: "100%", maxWidth: 900, p: 3 }}>
-      <Typography variant="h5" fontWeight={800} gutterBottom>
-        Lista zakupów
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 800, mb: 3, width: "100%", maxWidth: 900 }}
+      >
+        Do kupienia
       </Typography>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={3}>
+      <Paper sx={{ width: "100%", maxWidth: 900, p: 3 }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={3}>
         <Autocomplete
           freeSolo
           options={suggestedProducts}
@@ -172,7 +183,7 @@ export default function ShoppingListPage() {
         </Button>
       </Stack>
 
-      <Paper variant="outlined" sx={{ maxHeight: 420, overflowY: "auto" }}>
+        <Paper variant="outlined" sx={{ maxHeight: 420, overflowY: "auto" }}>
         {items.length === 0 ? (
           <Box sx={{ p: 3, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
@@ -184,12 +195,12 @@ export default function ShoppingListPage() {
         )}
       </Paper>
 
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        justifyContent="flex-end"
-        mt={3}
-      >
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          justifyContent="flex-end"
+          mt={3}
+        >
         <Button
           variant="outlined"
           startIcon={<Clear />}
@@ -199,7 +210,8 @@ export default function ShoppingListPage() {
         >
           Wyczyść listę zakupów
         </Button>
-      </Stack>
-    </Paper>
+        </Stack>
+      </Paper>
+    </Box>
   );
 }
