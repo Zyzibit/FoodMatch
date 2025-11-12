@@ -3,13 +3,14 @@ using EFCore.BulkExtensions;
 using inzynierka.Data;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag;
+using inzynierka.Products.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace inzynierka.Products.OpenFoodFacts.Repositories
 {
-    public class OpenFoodFactsRepository : IOpenFoodFactsRepository
+    public class OpenFoodFactsRepository : IOpenFoodFactsRepository, IProductBulkRepository
     {
         private readonly AppDbContext _context;
         private readonly ILogger<OpenFoodFactsRepository> _logger;
