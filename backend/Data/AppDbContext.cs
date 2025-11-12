@@ -6,6 +6,7 @@ using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
+using inzynierka.MealPlans.Model;
 using inzynierka.Receipts.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,8 @@ public class AppDbContext : IdentityDbContext<User> {
     public DbSet<Receipt> Receipts { get; set; }
     public DbSet<ReceiptIngredient> ReceiptIngredients { get; set; }
     public DbSet<Unit> Units { get; set; }
+    
+    public DbSet<MealPlan> MealPlans { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -35,10 +38,7 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.OwnsOne(u => u.FoodPreferences);
-        });;
+        modelBuilder.ApplyConfiguration(new MealPlanConfiguration());
         
         modelBuilder.Entity<Receipt>()
             .HasKey(r => r.Id);
@@ -72,5 +72,15 @@ public class AppDbContext : IdentityDbContext<User> {
             .IsRequired()                   
             .OnDelete(DeleteBehavior.Cascade); 
         
+        
+        modelBuilder.Entity<MealPlan>()
+            .HasOne(mp => mp.User)
+            .WithMany(u => u.MealPlans)
+            .HasForeignKey(mp => mp.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<User>()
+            .OwnsOne(u => u.FoodPreferences);
     }
 }

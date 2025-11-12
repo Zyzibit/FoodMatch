@@ -1,27 +1,26 @@
-using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
-using inzynierka.Products.OpenFoodFacts.Import;
 using inzynierka.Products.Mappings;
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Products.Services;
 
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
-    private readonly IProductImporter _productImporter;
+    private readonly IProductImportService _productImportService;
     private readonly ILogger<ProductService> _logger;
     private readonly IProductMapper _productMapper;
 
     public ProductService(
         IProductRepository productRepository,
-        IProductImporter productImporter,
+        IProductImportService productImportService,
         ILogger<ProductService> logger,
         IProductMapper productMapper)
     {
         _productRepository = productRepository;
-        _productImporter = productImporter;
+        _productImportService = productImportService;
         _logger = logger;
         _productMapper = productMapper;
     }
@@ -169,7 +168,7 @@ public class ProductService : IProductService
     {
         try
         {
-            await _productImporter.ImportJsonlAsync(filePath);
+            await _productImportService.ImportProductsAsync(filePath);
 
             return new ProductImportResult
             {
@@ -316,13 +315,11 @@ public class ProductService : IProductService
             }
 
             var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
-
-            
             
             if (existingProduct != null)
             {
                 _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
-                    ingredient, existingProduct.Id);
+                    ingredient.Name, existingProduct.Id);
                 
                 return new ProductResult
                 {
@@ -347,7 +344,7 @@ public class ProductService : IProductService
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
-            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient,
+            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient.Name,
                 createdProduct.Id);
 
             return new ProductResult
@@ -358,12 +355,81 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient);
+            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient.Name);
             return new ProductResult
             {
                 Success = false,
                 ErrorMessage = ex.Message
             };
+        }
+    }
+    
+    public async Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient)
+    {
+        if (string.IsNullOrWhiteSpace(ingredient.Name))
+        {
+            throw new ArgumentException("Ingredient name cannot be null or empty", nameof(ingredient));
+        }
+
+        try
+        {
+            // Check if product already exists
+            var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
+            
+            if (existingProduct != null)
+            {
+                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
+                    ingredient.Name, existingProduct.Id);
+                return existingProduct;
+            }
+
+            decimal normalizedQuantity = 100m; 
+            if (ingredient.NormalizedQuantityInGrams.HasValue && ingredient.NormalizedQuantityInGrams.Value > 0)
+            {
+                normalizedQuantity = ingredient.NormalizedQuantityInGrams.Value;
+            }
+            else if (ingredient.Unit.ToLowerInvariant() == "g" && ingredient.Quantity > 0)
+            {
+                normalizedQuantity = ingredient.Quantity;
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Ingredient '{IngredientName}' does not have a valid normalized quantity. " +
+                    "Using default of 100g for nutritional calculations.", 
+                    ingredient.Name);
+            }
+            // Calculate nutritional values per 100g
+            var scaleFactor = 100m / normalizedQuantity;
+            
+            // Create new AI-generated product with normalized values
+            var aiProduct = new Product
+            {
+                Code = $"AI-GENERATED-{Guid.NewGuid()}",
+                ProductName = ingredient.Name.Trim(),
+                IsAiGenerated = true,
+                Language = "pl",
+                estimatedCalories = ingredient.EstimatedCalories * scaleFactor,
+                estimatedProteins = ingredient.EstimatedProteins * scaleFactor,
+                estimatedCarbohydrates = ingredient.EstimatedCarbohydrates * scaleFactor,
+                estimatedFats = ingredient.EstimatedFats * scaleFactor,
+                LastUpdated = DateTime.UtcNow
+            };
+
+            var createdProduct = await _productRepository.AddProductAsync(aiProduct);
+            await _productRepository.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Created new AI-generated product: {ProductName} with ID: {ProductId}. " +
+                "Normalized from {OriginalGrams}g (Calories: {OriginalCalories}) to 100g (Calories: {NormalizedCalories})", 
+                ingredient.Name, createdProduct.Id, normalizedQuantity, ingredient.EstimatedCalories, aiProduct.estimatedCalories);
+
+            return createdProduct;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient.Name);
+            throw new InvalidOperationException($"Failed to create product for ingredient '{ingredient.Name}'", ex);
         }
     }
 }

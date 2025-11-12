@@ -12,17 +12,24 @@ public class ReceiptMapper : IReceiptMapper
             Id = receipt.Id,
             UserId = receipt.UserId,
             IsAiGenerated = receipt.IsAiGenerated,
-            Ingredients = receipt.Ingredients.Select(i => new ReceiptIngredientReadDto
+            Ingredients = receipt.Ingredients.Select(i =>
             {
-                ProductId = i.ProductId,
-                UnitId = i.UnitId,
-                Quantity = i.Quantity,
-                IsAiGenerated = i.Product.IsAiGenerated,
-                ProductName = i.Product.ProductName ?? "",
-                EstimatedCalories = i.Product.estimatedCalories ?? 0,
-                EstimatedProteins = i.Product.estimatedProteins?? 0,
-                EstimatedCarbohydrates = i.Product.estimatedCarbohydrates ?? 0,
-                EstimatedFats = i.Product.estimatedFats ?? 0
+                var quantityInGrams = i.NormalizedQuantityInGrams ?? 100m;
+                var scaleFactor = quantityInGrams / 100m;
+                
+                return new ReceiptIngredientReadDto
+                {
+                    ProductId = i.ProductId,
+                    UnitId = i.UnitId,
+                    Quantity = i.Quantity,
+                    NormalizedQuantityInGrams = i.NormalizedQuantityInGrams,
+                    IsAiGenerated = i.Product.IsAiGenerated,
+                    ProductName = i.Product.ProductName ?? "",
+                    EstimatedCalories = (i.Product.estimatedCalories ?? 0) * scaleFactor,
+                    EstimatedProteins = (i.Product.estimatedProteins ?? 0) * scaleFactor,
+                    EstimatedCarbohydrates = (i.Product.estimatedCarbohydrates ?? 0) * scaleFactor,
+                    EstimatedFats = (i.Product.estimatedFats ?? 0) * scaleFactor
+                };
             }).ToList(),
             AdditionalProducts = receipt.AdditionalProducts,
             Title = receipt.Title,
@@ -43,5 +50,5 @@ public class ReceiptMapper : IReceiptMapper
     {
         return receipts.Select(MapToDto);
     }
-    
 }
+

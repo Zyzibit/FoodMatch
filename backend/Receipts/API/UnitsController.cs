@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using inzynierka.Receipts.Services;
 using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
 
 namespace inzynierka.Receipts.API;
 

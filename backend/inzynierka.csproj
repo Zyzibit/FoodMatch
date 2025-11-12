@@ -73,4 +73,9 @@
       <_ContentIncludedByDefault Remove="Postman\Receipts.postman_environment.json" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Receipts\Config\prompt_config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 </Project>
