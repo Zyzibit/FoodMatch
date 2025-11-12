@@ -29,9 +29,9 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
     }
 
 
-    public List<ProductInfo> GetMatchingProducts(
+    public List<ProductDto> GetMatchingProducts(
         
-        List<ProductInfo> availableProducts,
+        List<ProductDto> availableProducts,
         List<GeneratedRecipeIngredient> recipeIngredients)
     {
         var matchingProducts = availableProducts
@@ -52,7 +52,7 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
     }
     
     public GeneratedRecipeIngredient? FindMatchingRecipeIngredient(
-        ProductInfo product,
+        ProductDto product,
         List<GeneratedRecipeIngredient> recipeIngredients)
     {
         var matchingIngredient = recipeIngredients.FirstOrDefault(ai =>
@@ -67,7 +67,7 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
         return matchingIngredient;
     }
     
-    public string GetProductDisplayName(ProductInfo product)
+    public string GetProductDisplayName(ProductDto product)
     {
         return !string.IsNullOrWhiteSpace(product.Name)
             ? product.Name
@@ -76,7 +76,7 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
                 : $"Product {product.Id}");
     }
     
-    private bool IsProductMatchingIngredient(ProductInfo product, GeneratedRecipeIngredient ingredient)
+    private bool IsProductMatchingIngredient(ProductDto product, GeneratedRecipeIngredient ingredient)
     {
         var ingredientNameLower = ingredient.Name.ToLowerInvariant();
 

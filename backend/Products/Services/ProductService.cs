@@ -67,26 +67,26 @@ public class ProductService : IProductService
         }
     }
 
-    public async Task<ProductSearchResult> SearchProductsAsync(ProductSearchQuery query
+    public async Task<ProductSearchResult> SearchProductsAsync(ProductSearchDto dto
     )
     {
         try
         {
             var totalCount = await _productRepository.GetSearchResultsCountAsync(
-                searchQuery: query.Query,
-                brand: query.Brand,
-                categories: query.Categories,
-                allergens: query.Allergens,
-                ingredients: query.Ingredients);
+                searchQuery: dto.Query,
+                brand: dto.Brand,
+                categories: dto.Categories,
+                allergens: dto.Allergens,
+                ingredients: dto.Ingredients);
 
             var products = await _productRepository.SearchProductsAsync(
-                searchQuery: query.Query,
-                brand: query.Brand,
-                categories: query.Categories,
-                allergens: query.Allergens,
-                ingredients: query.Ingredients,
-                limit: query.Limit,
-                offset: query.Offset);
+                searchQuery: dto.Query,
+                brand: dto.Brand,
+                categories: dto.Categories,
+                allergens: dto.Allergens,
+                ingredients: dto.Ingredients,
+                limit: dto.Limit,
+                offset: dto.Offset);
 
             var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
@@ -101,7 +101,7 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching products with query: {Query}", query.Query);
+            _logger.LogError(ex, "Error searching products with query: {Query}", dto.Query);
             return new ProductSearchResult
             {
                 Success = false,
@@ -277,17 +277,17 @@ public class ProductService : IProductService
     }
 
 
-    public async Task<IEnumerable<ProductInfo>> GetProductsByIdsAsync(IEnumerable<int> ids)
+    public async Task<IEnumerable<ProductDto>> GetProductsByIdsAsync(IEnumerable<int> ids)
     {
-        if (ids == null) return Enumerable.Empty<ProductInfo>();
+        if (ids == null) return Enumerable.Empty<ProductDto>();
 
         var idList = ids.Where(id => id > 0).Distinct().ToList();
-        if (!idList.Any()) return Enumerable.Empty<ProductInfo>();
+        if (!idList.Any()) return Enumerable.Empty<ProductDto>();
 
         try
         {
             var products = await _productRepository.GetProductsByIdsAsync(idList);
-            if (products == null) return Enumerable.Empty<ProductInfo>();
+            if (products == null) return Enumerable.Empty<ProductDto>();
 
             var productInfos = _productMapper.MapToProductInfoList(products).ToList();
 
@@ -296,7 +296,7 @@ public class ProductService : IProductService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Błąd podczas pobierania produktów po Id: {Ids}", string.Join(", ", idList));
-            return Enumerable.Empty<ProductInfo>();
+            return Enumerable.Empty<ProductDto>();
         }
     }
 
@@ -407,15 +407,14 @@ public class ProductService : IProductService
             {
                 Code = $"AI-GENERATED-{Guid.NewGuid()}",
                 ProductName = ingredient.Name.Trim(),
-                IsAiGenerated = true,
                 Language = "pl",
                 estimatedCalories = ingredient.EstimatedCalories * scaleFactor,
                 estimatedProteins = ingredient.EstimatedProteins * scaleFactor,
                 estimatedCarbohydrates = ingredient.EstimatedCarbohydrates * scaleFactor,
                 estimatedFats = ingredient.EstimatedFats * scaleFactor,
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = DateTime.UtcNow,
+                Source = ProductSource.AI
             };
-
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
