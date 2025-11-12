@@ -1,5 +1,5 @@
-using inzynierka.AI.Contracts.Models;
 using inzynierka.Products.Responses;
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Receipts.Services;
 

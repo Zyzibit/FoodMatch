@@ -1,4 +1,4 @@
-using inzynierka.Auth.Contracts.Models;
+using inzynierka.Auth.Responses;
 using inzynierka.Auth.Model;
 using inzynierka.Auth.Repositories;
 using Microsoft.AspNetCore.Identity;
@@ -50,7 +50,7 @@ public class AuthService : IAuthService
         string? userAgent = null,
         string? ipAddress = null) {
         try {
-            var user = await _userService.GetUserByUsernameAsync(username);
+            var user = await _userService.GetUserEntityByUsernameAsync(username);
             if (user == null) {
                 return AuthenticationResult.Failed("Invalid username or password");
             }
@@ -164,7 +164,7 @@ public class AuthService : IAuthService
                 return TokenValidationResult.Failed("Invalid token: no username found");
             }
 
-            var user = await _userService.GetUserByUsernameAsync(tokenClaims.Username);
+            var user = await _userService.GetUserEntityByUsernameAsync(tokenClaims.Username);
             if (user == null) {
                 return TokenValidationResult.Failed("User not found");
             }
@@ -186,7 +186,7 @@ public class AuthService : IAuthService
 
     public async Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword) {
         try {
-            var user = await _userService.GetUserByIdAsync(userId);
+            var user = await _userService.GetUserEntityByIdAsync(userId);
             if (user == null) {
                 return false;
             }
