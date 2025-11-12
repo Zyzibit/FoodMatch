@@ -46,6 +46,7 @@ const topPanelConfigs: Record<string, PageConfig> = {
   },
   user: {
     tabs: [
+      { key: "profil", label: "Profil" },
       { key: "pomiary", label: "Pomiary" },
       { key: "zapotrzebowanie", label: "Zapotrzebowanie" },
       { key: "alergeny", label: "Alergeny" },
