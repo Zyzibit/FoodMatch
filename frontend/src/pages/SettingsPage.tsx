@@ -11,10 +11,12 @@ import {
 } from "@mui/material";
 import { useAppTheme } from "../contexts/AppThemeContext";
 import type { ThemeName } from "../theme";
+import { useTextSize } from "../contexts/TextSizeContext";
+import type { TextSize } from "../contexts/TextSizeContext";
 
 export default function SettingsPage() {
   const { themeName, setThemeName } = useAppTheme();
-  const [textSize, setTextSize] = useState<string>("md");
+  const { textSize, setTextSize } = useTextSize();
   const [language, setLanguage] = useState<string>("pl");
 
   useEffect(() => {
@@ -25,12 +27,12 @@ export default function SettingsPage() {
       if (parsed.theme) {
         setThemeName(parsed.theme as ThemeName);
       }
-      if (parsed.textSize) setTextSize(parsed.textSize);
+      if (parsed.textSize) setTextSize(parsed.textSize as TextSize);
       if (parsed.language) setLanguage(parsed.language);
     } catch (e) {
       // ignore
     }
-  }, [setThemeName]);
+  }, [setThemeName, setTextSize]);
 
   const handleSave = () => {
     localStorage.setItem(
@@ -85,7 +87,7 @@ export default function SettingsPage() {
               labelId="textsize-label"
               label="Rozmiar tekstu"
               value={textSize}
-              onChange={(e) => setTextSize(e.target.value as string)}
+              onChange={(e) => setTextSize(e.target.value as TextSize)}
             >
               <MenuItem value="sm">Mały</MenuItem>
               <MenuItem value="md">Średni</MenuItem>

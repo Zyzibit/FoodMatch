@@ -77,12 +77,7 @@ export default function Tile({
               }`,
           transition:
             "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s",
-          boxShadow: active
-            ? `0 6px 16px ${alpha(activeBg, 0.45)}`
-            : `0 3px 8px ${alpha(
-                isLight ? "#000" : t.palette.common.black,
-                isLight ? 0.12 : 0.4
-              )}`,
+
           "&:hover": {
             backgroundColor: active ? activeBg : neutralHover,
             color: active ? activeColor : t.palette.text.primary,

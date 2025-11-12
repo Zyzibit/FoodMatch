@@ -4,6 +4,8 @@ export type PlanMeal = {
   type: string;
   title: string;
   calories: number;
+  description?: string;
+  products?: string[];
   macros: { protein: number; fat: number; carbs: number };
 };
 

@@ -1,7 +1,7 @@
 import { Box, Divider, Paper, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
-import type { MealPlanDay, PlanMeal, MacroEntry } from "../types/plan";
+import type { MealPlanDay, MacroEntry } from "../types/plan";
 import PlanDayHeader from "../components/plan/PlanDayHeader";
 import PlanMealList from "../components/plan/PlanMealList";
 import PlanMacroSummary from "../components/plan/PlanMacroSummary";
@@ -36,6 +36,16 @@ const buildMockPlan = (isoDate: string): MealPlanDay => ({
       time: "08:00",
       type: "Śniadanie",
       title: "Płatki owsiane z owocami",
+      description:
+        "Owsianka na napoju roślinnym z malinami, borówkami i łyżką masła orzechowego, posypana orzechami włoskimi.",
+      products: [
+        "Płatki owsiane",
+        "Napój migdałowy",
+        "Maliny",
+        "Borówki",
+        "Masło orzechowe",
+        "Orzechy włoskie",
+      ],
       calories: 365,
       macros: { protein: 10, fat: 6, carbs: 60 },
     },
@@ -44,6 +54,15 @@ const buildMockPlan = (isoDate: string): MealPlanDay => ({
       time: "11:30",
       type: "Drugie śniadanie",
       title: "Jogurt z granolą",
+      description:
+        "Grecki jogurt z domową granolą, pestkami dyni oraz plasterkami banana dla szybkiej energii.",
+      products: [
+        "Jogurt grecki",
+        "Granola",
+        "Pestki dyni",
+        "Banan",
+        "Miód",
+      ],
       calories: 320,
       macros: { protein: 14, fat: 8, carbs: 45 },
     },
@@ -52,6 +71,16 @@ const buildMockPlan = (isoDate: string): MealPlanDay => ({
       time: "14:30",
       type: "Obiad",
       title: "Pierś z kurczaka z warzywami",
+      description:
+        "Soczysta pierś z kurczaka pieczona z ziołami prowansalskimi, podana z pieczonymi warzywami korzeniowymi i komosą ryżową.",
+      products: [
+        "Pierś z kurczaka",
+        "Marchew",
+        "Pietruszka",
+        "Cukinia",
+        "Komosa ryżowa",
+        "Zioła prowansalskie",
+      ],
       calories: 520,
       macros: { protein: 42, fat: 18, carbs: 48 },
     },
@@ -60,6 +89,16 @@ const buildMockPlan = (isoDate: string): MealPlanDay => ({
       time: "19:00",
       type: "Kolacja",
       title: "Sałatka z halloumi",
+      description:
+        "Sałatka z grillowanym serem halloumi, miksem sałat, ogórkiem, pomidorkami koktajlowymi oraz sosem z oliwy i miodu.",
+      products: [
+        "Ser halloumi",
+        "Miks sałat",
+        "Ogórek",
+        "Pomidorki koktajlowe",
+        "Oliwa z oliwek",
+        "Miód",
+      ],
       calories: 595,
       macros: { protein: 22, fat: 30, carbs: 35 },
     },
@@ -78,6 +117,7 @@ const macroLabels: Record<
 export default function PlanPage() {
   const { activeTab } = useDashboardContext();
   const [plan, setPlan] = useState<MealPlanDay | null>(null);
+  const [expandedMealId, setExpandedMealId] = useState<string | null>(null);
 
   const selectedDate = useMemo(
     () => parseDateKey(activeTab) ?? new Date().toISOString().slice(0, 10),
@@ -87,6 +127,10 @@ export default function PlanPage() {
   useEffect(() => {
     // TODO: zastąpić mock wywołaniem GET /api/v1/meal-plans/{selectedDate}
     setPlan(buildMockPlan(selectedDate));
+  }, [selectedDate]);
+
+  useEffect(() => {
+    setExpandedMealId(null);
   }, [selectedDate]);
 
   if (!plan) {
@@ -135,7 +179,15 @@ export default function PlanPage() {
 
         <Divider sx={{ mb: 2 }} />
 
-        <PlanMealList meals={plan.meals} />
+        <PlanMealList
+          meals={plan.meals}
+          expandedMealId={expandedMealId}
+          onExpandMeal={(meal) =>
+            setExpandedMealId((current) =>
+              current === meal.id ? null : meal.id
+            )
+          }
+        />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3 }}>

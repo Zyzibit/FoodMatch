@@ -6,12 +6,14 @@ type PlanMealListProps = {
   meals: PlanMeal[];
   onEditMeal?: (meal: PlanMeal) => void;
   onExpandMeal?: (meal: PlanMeal) => void;
+  expandedMealId?: string | null;
 };
 
 export default function PlanMealList({
   meals,
   onEditMeal,
   onExpandMeal,
+  expandedMealId,
 }: PlanMealListProps) {
   return (
     <Stack spacing={2}>
@@ -21,6 +23,7 @@ export default function PlanMealList({
           meal={meal}
           onEdit={onEditMeal}
           onExpand={onExpandMeal}
+          isExpanded={meal.id === expandedMealId}
         />
       ))}
     </Stack>
