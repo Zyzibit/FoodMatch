@@ -1,7 +1,6 @@
 using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
-using inzynierka.Products.OpenFoodFacts.Import;
 using inzynierka.Products.Mappings;
 using inzynierka.Receipts.Model.Recipe;
 
@@ -10,18 +9,18 @@ namespace inzynierka.Products.Services;
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
-    private readonly IProductImporter _productImporter;
+    private readonly IProductImportService _productImportService;
     private readonly ILogger<ProductService> _logger;
     private readonly IProductMapper _productMapper;
 
     public ProductService(
         IProductRepository productRepository,
-        IProductImporter productImporter,
+        IProductImportService productImportService,
         ILogger<ProductService> logger,
         IProductMapper productMapper)
     {
         _productRepository = productRepository;
-        _productImporter = productImporter;
+        _productImportService = productImportService;
         _logger = logger;
         _productMapper = productMapper;
     }
@@ -169,7 +168,7 @@ public class ProductService : IProductService
     {
         try
         {
-            await _productImporter.ImportJsonlAsync(filePath);
+            await _productImportService.ImportProductsAsync(filePath);
 
             return new ProductImportResult
             {
