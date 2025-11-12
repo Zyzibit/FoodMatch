@@ -1,6 +1,6 @@
 ﻿namespace inzynierka.Products.Responses;
 
-public class NutritionInfo
+public class NutritionInfoDto
 {
     public double? Calories { get; set; }
     public double? Fat { get; set; }

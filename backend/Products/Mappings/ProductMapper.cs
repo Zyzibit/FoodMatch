@@ -5,9 +5,9 @@ namespace inzynierka.Products.Mappings;
 
 public class ProductMapper : IProductMapper
 {
-    public ProductInfo MapToProductInfo(Product product)
+    public ProductDto MapToProductInfo(Product product)
     {
-        return new ProductInfo
+        return new ProductDto
         {
             Id = product.Id.ToString(),
             Name = product.ProductName ?? "",
@@ -26,9 +26,9 @@ public class ProductMapper : IProductMapper
         };
     }
 
-    public NutritionInfo MapToNutritionInfo(Product product)
+    public NutritionInfoDto MapToNutritionInfo(Product product)
     {
-        return new NutritionInfo
+        return new NutritionInfoDto
         {
             Carbohydrates = product.Carbohydrates100g,
             Proteins = product.Proteins100g,
@@ -41,7 +41,7 @@ public class ProductMapper : IProductMapper
         };
     }
 
-    public IEnumerable<ProductInfo> MapToProductInfoList(IEnumerable<Product> products)
+    public IEnumerable<ProductDto> MapToProductInfoList(IEnumerable<Product> products)
     {
         return products.Select(MapToProductInfo);
     }
