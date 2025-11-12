@@ -53,6 +53,6 @@ public class Product
     public decimal? estimatedProteins { get; set; }
     public decimal? estimatedCalories { get; set; }
     [Required]
-    public bool IsAiGenerated { get; set; }
+    public ProductSource Source { get; set; } = ProductSource.OpenFoodFacts;
     
 }

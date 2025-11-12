@@ -14,6 +14,6 @@ public class ProductDto
     public NutritionInfoDto? Nutrition { get; set; }
     public string? NutritionGrade { get; set; }
     public string? EcoScoreGrade { get; set; }
-    public bool IsAiGenerated { get; set; }
+    public string Source { get; set; } = string.Empty;
 }
 

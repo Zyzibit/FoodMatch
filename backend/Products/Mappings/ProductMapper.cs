@@ -21,7 +21,7 @@ public class ProductMapper : IProductMapper
             NutritionGrade = product.NutritionGrade,
             Nutrition = MapToNutritionInfo(product),
             EcoScoreGrade = product.EcoScoreGrade,
-            IsAiGenerated = product.IsAiGenerated,
+            Source = product.Source.ToString()
 
         };
     }
