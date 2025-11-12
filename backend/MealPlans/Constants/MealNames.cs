@@ -1,6 +1,6 @@
 namespace inzynierka.MealPlans.Constants;
 
-public static class MealPlanConstants
+public static class MealNames
 {
     public const string Breakfast = "Śniadanie";
     public const string Lunch = "Obiad";

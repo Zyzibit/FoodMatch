@@ -79,6 +79,12 @@ public class AppDbContext : IdentityDbContext<User> {
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<MealPlan>()
+            .HasOne(mp => mp.Receipt)
+            .WithMany()
+            .HasForeignKey(mp => mp.ReceiptId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<User>()
             .OwnsOne(u => u.FoodPreferences);
     }

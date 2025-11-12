@@ -3,6 +3,7 @@ using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
+using inzynierka.Receipts.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.MealPlans.Services;
@@ -10,23 +11,38 @@ namespace inzynierka.MealPlans.Services;
 public class MealPlanService: IMealPlanService
 {
     private readonly IMealPlanRepository _mealPlanRepository;
+    private readonly IReceiptService _receiptService;
         
-    public MealPlanService(IMealPlanRepository mealPlanRepository)
+    public MealPlanService(IMealPlanRepository mealPlanRepository, IReceiptService receiptService)
     {
         _mealPlanRepository = mealPlanRepository;
+        _receiptService = receiptService;
     }
 
     public async Task<AddMealPlanResponse> AddMealPlanAsync(string userId, CreateMealPlanRequest request)
     {
         try
         {
-            if (!MealPlanConstants.IsValidMealName(request.Name))
+            if (!MealNames.IsValidMealName(request.MealName))
             {
                 return new AddMealPlanResponse
                 {
                     Success = false,
-                    Message = $"Invalid meal name. Allowed values: {string.Join(", ", MealPlanConstants.AllowedMealNames)}"
+                    Message = $"Invalid meal name. Allowed values: {string.Join(", ", MealNames.AllowedMealNames)}"
                 };
+            }
+            
+            if (request.ReceiptId.HasValue)
+            {
+                var receipt = await _receiptService.GetReceiptAsync(request.ReceiptId.Value);
+                if (receipt == null)
+                {
+                    return new AddMealPlanResponse
+                    {
+                        Success = false,
+                        Message = $"Receipt with ID {request.ReceiptId} not found"
+                    };
+                }
             }
             
             var dateUtc = request.Date.Kind == DateTimeKind.Unspecified 
@@ -37,7 +53,7 @@ public class MealPlanService: IMealPlanService
             var dayEnd = dayStart.AddDays(1).AddTicks(-1);
             var plansForDay = await _mealPlanRepository.GetMealPlansForUserAsync(userId, dayStart, dayEnd);
             
-            var existingPlan = plansForDay.FirstOrDefault(p => p.Name == request.Name);
+            var existingPlan = plansForDay.FirstOrDefault(p => p.Name == request.MealName);
             
             if (existingPlan != null)
             {
@@ -55,7 +71,7 @@ public class MealPlanService: IMealPlanService
             
             var mealPlan = new MealPlan
             {
-                Name = request.Name,
+                Name = request.MealName,
                 Date = dateUtc,
                 ReceiptId = request.ReceiptId,
                 UserId = userId

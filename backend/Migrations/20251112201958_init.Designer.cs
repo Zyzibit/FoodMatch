@@ -13,8 +13,8 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251112195928_AddProductSourceField")]
-    partial class AddProductSourceField
+    [Migration("20251112201958_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -283,9 +283,6 @@ namespace inzynierka.Migrations
 
                     b.Property<string>("IngredientsText")
                         .HasColumnType("text");
-
-                    b.Property<bool>("IsAiGenerated")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("IsVegan")
                         .HasColumnType("text");

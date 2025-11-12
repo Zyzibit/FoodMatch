@@ -41,9 +41,9 @@ public static class MealPlanExtensions
         var normalized = char.ToUpperInvariant(name[0]) + (name.Length > 1 ? name.Substring(1).ToLowerInvariant() : string.Empty);
 
         // Jeśli lista dozwolonych nazw jest dostępna, zwróć tę z listy (dokładne dopasowanie ignorujące wielkość liter)
-        if (MealPlanConstants.AllowedMealNames != null)
+        if (MealNames.AllowedMealNames != null)
         {
-            foreach (var allowed in MealPlanConstants.AllowedMealNames)
+            foreach (var allowed in MealNames.AllowedMealNames)
             {
                 if (string.Equals(allowed, name, StringComparison.OrdinalIgnoreCase))
                     return allowed; // zachowaj oryginalną wersję z constants (np. "śniadanie")
