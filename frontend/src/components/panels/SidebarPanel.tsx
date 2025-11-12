@@ -54,10 +54,10 @@ export default function SidebarPanel({
           sx={{
             color: "secondary.main",
             lineHeight: 1.05,
-            textAlign: "left",
+            textAlign: "center",
           }}
         >
-          <Box component="div" sx={{ fontWeight: 900, ml: 2 }}>
+          <Box component="div" sx={{ fontWeight: 900 }}>
             DIET
           </Box>
           <Box component="div" sx={{ fontWeight: 900 }}>
