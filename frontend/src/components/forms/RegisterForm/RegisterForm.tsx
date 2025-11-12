@@ -1,4 +1,5 @@
 import { Box, Stack, Button, Link, Divider, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,12 +79,20 @@ export function RegisterForm({
           Zarejestruj się
         </Button>
 
-        <Divider sx={{ my: 1, borderColor: colors.elements.dividerOnAccent }} />
+        <Divider
+          sx={{
+            my: 1,
+            borderColor: (theme) => alpha(theme.palette.common.white, 0.15),
+          }}
+        />
 
         <Typography
           variant="body2"
           align="center"
-          sx={{ color: colors.text.onAccentSoft, fontSize: "0.85rem" }}
+          sx={{
+            color: (theme) => alpha(theme.palette.common.white, 0.85),
+            fontSize: "0.85rem",
+          }}
         >
           Masz już konto?{" "}
           <Link
@@ -91,7 +100,10 @@ export function RegisterForm({
             type="button"
             underline="hover"
             onClick={onLoginClick}
-            sx={{ color: colors.text.onAccentStrong, fontWeight: 600 }}
+            sx={{
+              color: (theme) => alpha(theme.palette.common.white, 0.95),
+              fontWeight: 600,
+            }}
           >
             Zaloguj się
           </Link>

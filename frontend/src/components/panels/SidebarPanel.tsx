@@ -2,7 +2,6 @@ import { Box, Stack, Typography, Button } from "@mui/material";
 import Tile from "../buttons/Tile";
 import UserButton from "../buttons/UserButton";
 import dietLogo from "../../assets/diet-logo.png";
-import { colors } from "../../theme";
 
 export default function SidebarPanel({
   activeKey,
@@ -25,16 +24,22 @@ export default function SidebarPanel({
   ];
   return (
     <Box
-      sx={{
+      sx={(t) => ({
         width: 420,
         height: "100vh",
-        bgcolor: "#d8d8d8",
+        bgcolor: t.palette.background.paper,
+        color: t.palette.text.primary,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
         py: 3,
-      }}
+        borderRight: `1px solid ${t.palette.divider}`,
+        backgroundImage:
+          t.palette.mode === "dark"
+            ? "linear-gradient(180deg, rgba(77,182,172,0.1), transparent 70%)"
+            : "linear-gradient(180deg, rgba(44,140,124,0.08), transparent 65%)",
+      })}
     >
       {/* logo + tytuł */}
       <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -103,17 +108,25 @@ export default function SidebarPanel({
         <Button
           onClick={onLogoutClick}
           disableElevation
-          sx={{
+          sx={(t) => ({
             px: 1.5,
             py: 0.5,
             borderRadius: 20,
             textTransform: "none",
             fontWeight: 600,
-            backgroundColor: colors.elements.logoutButton,
-            color: "text.primary",
+            backgroundColor:
+              t.palette.mode === "dark"
+                ? "rgba(255,255,255,0.1)"
+                : t.palette.background.default,
+            color: t.palette.text.primary,
             boxShadow: "none",
-            "&:hover": { backgroundColor: colors.elements.logoutButtonHover },
-          }}
+            "&:hover": {
+              backgroundColor:
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.2)"
+                  : t.palette.action.hover,
+            },
+          })}
         >
           Wyloguj
         </Button>

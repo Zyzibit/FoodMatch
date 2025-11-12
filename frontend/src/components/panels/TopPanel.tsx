@@ -1,6 +1,7 @@
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { Box } from "@mui/material";
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Tile from "../buttons/Tile";
 
 export type TopPanelItem = {
@@ -26,7 +27,6 @@ const topPanelConfigs: Record<string, PageConfig> = {
   lista: {
     tabs: [
       { key: "do-kupienia", label: "Do kupienia" },
-      { key: "kupione", label: "Kupione" },
     ],
     defaultTab: "do-kupienia",
   },
@@ -46,12 +46,68 @@ const topPanelConfigs: Record<string, PageConfig> = {
   },
   user: {
     tabs: [
+      { key: "profil", label: "Profil" },
       { key: "pomiary", label: "Pomiary" },
       { key: "zapotrzebowanie", label: "Zapotrzebowanie" },
       { key: "alergeny", label: "Alergeny" },
     ],
     defaultTab: "pomiary",
   },
+};
+
+const DATE_KEY_PREFIX = "date-";
+const DATE_WINDOW_LENGTH = 9;
+const DATE_WINDOW_PADDING = 2;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const NAV_OVERLAY_WIDTH = 28;
+
+const getToday = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const addDays = (date: Date, amount: number) => {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + amount);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+};
+
+const formatDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${DATE_KEY_PREFIX}${year}-${month}-${day}`;
+};
+
+const parseDateKey = (key?: string) => {
+  if (!key?.startsWith(DATE_KEY_PREFIX)) return null;
+  const iso = key.slice(DATE_KEY_PREFIX.length);
+  const [yearStr, monthStr, dayStr] = iso.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (!year || !month || !day) return null;
+  const parsed = new Date(year, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const differenceInDays = (from: Date, to: Date) =>
+  Math.round((to.getTime() - from.getTime()) / DAY_IN_MS);
+
+const ensureDateWithinWindow = (windowStart: Date, targetDate: Date) => {
+  const minIndex = DATE_WINDOW_PADDING;
+  const maxIndex = DATE_WINDOW_LENGTH - 1 - DATE_WINDOW_PADDING;
+  const diff = differenceInDays(windowStart, targetDate);
+
+  if (diff < minIndex) {
+    return addDays(targetDate, -minIndex);
+  }
+  if (diff > maxIndex) {
+    return addDays(targetDate, -maxIndex);
+  }
+  return windowStart;
 };
 
 export default function TopPanel({
@@ -66,25 +122,24 @@ export default function TopPanel({
   sticky?: boolean;
 }) {
   const TOP_PANEL_HEIGHT = 56; // px - fixed height for the strip so tiles always same height
-  // date strip: always create 9 days from -2..+6 relative to today
+  const isPlanPage = activePage === "plan";
+  const [dateWindowStart, setDateWindowStart] = useState<Date>(() =>
+    addDays(getToday(), -DATE_WINDOW_PADDING)
+  );
+  // date strip: create sliding window that can extend infinitely
   const dateTiles = useMemo(() => {
-    const today = new Date();
-    const start = new Date(today);
-    start.setDate(today.getDate() - 2);
-    const days: { key: string; label: string }[] = [];
-    const total = 9; // -2..+6
-    for (let i = 0; i < total; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const iso = d.toISOString().slice(0, 10);
+    if (!isPlanPage) return [];
+
+    return Array.from({ length: DATE_WINDOW_LENGTH }, (_, index) => {
+      const d = addDays(dateWindowStart, index);
       const weekday = d
         .toLocaleDateString("pl-PL", { weekday: "short" })
         .replace(".", "");
       const day = d.getDate().toString().padStart(2, "0");
-      days.push({ key: `date-${iso}`, label: `${weekday} ${day}` });
-    }
-    return days;
-  }, []);
+
+      return { key: formatDateKey(d), label: `${weekday} ${day}` };
+    });
+  }, [dateWindowStart, isPlanPage]);
 
   const items = useMemo(
     () => topPanelConfigs[activePage]?.tabs ?? [],
@@ -93,12 +148,12 @@ export default function TopPanel({
 
   useEffect(() => {
     // when switching to plan, set today's date as default active if none set
-    if (activePage === "plan") {
-      const today = new Date();
-      const iso = today.toISOString().slice(0, 10);
-      const todayKey = `date-${iso}`;
-      const exists = dateTiles.some((t) => t.key === activeKey);
-      if (!exists) onChange?.(todayKey);
+    if (isPlanPage) {
+      const activeDate = parseDateKey(activeKey);
+      if (!activeDate) {
+        const todayKey = formatDateKey(getToday());
+        if (activeKey !== todayKey) onChange?.(todayKey);
+      }
       return;
     }
 
@@ -109,17 +164,31 @@ export default function TopPanel({
       const fallback = conf.defaultTab ?? conf.tabs[0]?.key;
       if (fallback) onChange?.(fallback);
     }
-  }, [activePage, activeKey, items, onChange, dateTiles]);
+  }, [activePage, activeKey, onChange, isPlanPage]);
 
-  const renderArray = activePage === "plan" ? dateTiles : items;
+  useEffect(() => {
+    if (!isPlanPage) return;
+    const targetDate = parseDateKey(activeKey) ?? getToday();
+    setDateWindowStart((current) => {
+      const nextStart = ensureDateWithinWindow(current, targetDate);
+      if (nextStart.getTime() === current.getTime()) return current;
+      return nextStart;
+    });
+  }, [activeKey, isPlanPage]);
+
+  const handleDateWindowShift = (offset: number) => {
+    setDateWindowStart((current) => addDays(current, offset));
+  };
+
+  const renderArray = isPlanPage ? dateTiles : items;
   const count = renderArray.length;
 
   return (
     <Box
       sx={(t) => ({
         width: "100%",
-        bgcolor: t.palette.grey[200],
-        borderBottom: `1px solid ${t.palette.grey[300]}`,
+        bgcolor: t.palette.background.paper,
+        borderBottom: `1px solid ${t.palette.divider}`,
         px: 0,
         py: 0, // no vertical padding so inner strip can control exact height
         position: sticky ? "sticky" : "static",
@@ -129,44 +198,132 @@ export default function TopPanel({
     >
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${count}, 1fr)`,
-          gap: 0,
+          position: "relative",
           width: "100%",
           height: TOP_PANEL_HEIGHT,
-          alignItems: "stretch",
+          overflow: "hidden",
+          px: 0,
         }}
       >
-        {renderArray.map((it, i) => {
-          const key = (it as any).key as string;
-          const label = (it as any).label as string;
-          const icon = (it as any).icon as ReactNode | undefined;
-          const disabled = (it as any).disabled as boolean | undefined;
-          const active = key === activeKey;
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${count}, 1fr)`,
+            gap: 0,
+            width: "100%",
+            height: "100%",
+            alignItems: "stretch",
+          }}
+        >
+          {renderArray.map((it, i) => {
+            const key = (it as any).key as string;
+            const label = (it as any).label as string;
+            const icon = (it as any).icon as ReactNode | undefined;
+            const disabled = (it as any).disabled as boolean | undefined;
+            const active = key === activeKey;
 
-          return (
+            return (
+              <Box
+                key={key}
+                sx={(t) => ({
+                  width: "100%",
+                  height: "100%",
+                  borderRight:
+                    i < count - 1
+                      ? `1px solid ${t.palette.divider}`
+                      : "none",
+                })}
+              >
+                <Tile
+                  title={label}
+                  icon={icon}
+                  size={activePage === "plan" ? "sm" : "md"}
+                  square
+                  fullHeight
+                  active={active}
+                  disabled={disabled}
+                  onClick={() => onChange?.(key)}
+                />
+              </Box>
+            );
+          })}
+        </Box>
+        {isPlanPage && (
+          <>
             <Box
-              key={key}
+              component="button"
+              type="button"
+              aria-label="Poprzednie dni"
+              onClick={() => handleDateWindowShift(-1)}
               sx={(t) => ({
-                width: "100%",
-                height: "100%",
-                borderRight:
-                  i < count - 1 ? `1px solid ${t.palette.grey[300]}` : "none",
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: NAV_OVERLAY_WIDTH,
+                border: "none",
+                padding: 0,
+                outline: "none",
+                appearance: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "transparent",
+                color: t.palette.text.secondary,
+                zIndex: 2,
+                transition: "color 0.2s ease, background-color 0.2s ease",
+                "&:hover": {
+                  color: t.palette.secondary.contrastText,
+                  backgroundColor: t.palette.secondary.main,
+                },
+                "&:focus-visible": {
+                  outline: `2px solid ${t.palette.secondary.main}`,
+                  outlineOffset: -2,
+                },
+                "& > svg": { fontSize: 22 },
               })}
             >
-              <Tile
-                title={label}
-                icon={icon}
-                size={activePage === "plan" ? "sm" : "md"}
-                square
-                fullHeight
-                active={active}
-                disabled={disabled}
-                onClick={() => onChange?.(key)}
-              />
+              <ChevronLeft />
             </Box>
-          );
-        })}
+            <Box
+              component="button"
+              type="button"
+              aria-label="Kolejne dni"
+              onClick={() => handleDateWindowShift(1)}
+              sx={(t) => ({
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: NAV_OVERLAY_WIDTH,
+                border: "none",
+                padding: 0,
+                outline: "none",
+                appearance: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "transparent",
+                color: t.palette.text.secondary,
+                zIndex: 2,
+                transition: "color 0.2s ease, background-color 0.2s ease",
+                "&:hover": {
+                  color: t.palette.secondary.contrastText,
+                  backgroundColor: t.palette.secondary.main,
+                },
+                "&:focus-visible": {
+                  outline: `2px solid ${t.palette.secondary.main}`,
+                  outlineOffset: -2,
+                },
+                "& > svg": { fontSize: 22 },
+              })}
+            >
+              <ChevronRight />
+            </Box>
+          </>
+        )}
       </Box>
     </Box>
   );

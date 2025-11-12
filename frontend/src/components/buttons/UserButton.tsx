@@ -1,6 +1,6 @@
 import { Button, Avatar, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import type { MouseEventHandler } from "react";
-import { colors } from "../../theme";
 
 interface UserButtonProps {
   name: string;
@@ -13,7 +13,7 @@ export function UserButton({ name, avatarUrl, onClick }: UserButtonProps) {
     <Button
       onClick={onClick}
       disableElevation
-      sx={{
+      sx={(t) => ({
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
@@ -21,23 +21,33 @@ export function UserButton({ name, avatarUrl, onClick }: UserButtonProps) {
         px: 1.5,
         py: 0.5,
         borderRadius: 20,
-        backgroundColor: colors.elements.logoutButton,
-        color: "text.primary",
+        backgroundColor:
+          t.palette.mode === "dark"
+            ? alpha(t.palette.common.white, 0.12)
+            : alpha(t.palette.text.primary, 0.05),
+        color: t.palette.text.primary,
         textTransform: "none",
         fontWeight: 600,
         "&:hover": {
-          backgroundColor: colors.elements.logoutButtonHover,
+          backgroundColor:
+            t.palette.mode === "dark"
+              ? alpha(t.palette.common.white, 0.2)
+              : alpha(t.palette.text.primary, 0.1),
         },
-      }}
+      })}
     >
       <Avatar
         src={avatarUrl}
         alt={name}
-        sx={{
+        sx={(t) => ({
           width: 28,
           height: 28,
-          border: `2px solid ${colors.elements.userAvatarBorder}`,
-        }}
+          border: `2px solid ${
+            t.palette.mode === "dark"
+              ? alpha(t.palette.common.white, 0.4)
+              : alpha(t.palette.common.black, 0.1)
+          }`,
+        })}
       />
       <Typography
         variant="body1"

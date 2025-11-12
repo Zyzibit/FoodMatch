@@ -1,6 +1,6 @@
 import { Button, Box, Typography } from "@mui/material";
 import type { ReactNode, MouseEventHandler } from "react";
-import { colors } from "../../theme";
+import { alpha } from "@mui/material/styles";
 
 export type TileSize = "sm" | "md" | "lg";
 
@@ -45,34 +45,50 @@ export default function Tile({
       onClick={onClick}
       className={className}
       sx={(t) => {
-        const neutralBg = colors.elements.tileNeutral;
-        const neutralHover = colors.elements.tileNeutralHover;
+        const isLight = t.palette.mode === "light";
+        const lightNeutral = "#c0c4c9";
+        const lightNeutralHover = "#b5bac0";
+        const neutralBg = isLight
+          ? lightNeutral
+          : alpha(t.palette.common.white, 0.08);
+        const neutralHover = isLight
+          ? lightNeutralHover
+          : alpha(t.palette.common.white, 0.18);
+        const activeBg = t.palette.secondary.main;
+        const activeColor = t.palette.getContrastText(activeBg);
 
         return {
           justifyContent: "center",
           borderRadius: square ? 0 : 9999,
-          // when fullHeight is requested, let parent control height and remove vertical padding
           py: fullHeight ? 0 : paddings[size],
           px: 2,
           textTransform: "none",
           boxShadow: "none",
           height: fullHeight ? "100%" : heights[size],
-          backgroundColor: active ? t.palette.secondary.main : neutralBg,
-          color: active ? t.palette.common.white : t.palette.text.secondary,
+          backgroundColor: active ? activeBg : neutralBg,
+          color: active ? activeColor : t.palette.text.primary,
           overflow: "hidden",
+          border: bordered
+            ? `1px solid ${t.palette.divider}`
+            : `1px solid ${
+                active
+                  ? alpha(activeBg, 0.6)
+                  : alpha(t.palette.common.black, isLight ? 0.08 : 0.2)
+              }`,
+          transition:
+            "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s",
+
           "&:hover": {
-            backgroundColor: active ? t.palette.secondary.dark : neutralHover,
+            backgroundColor: active ? activeBg : neutralHover,
+            color: active ? activeColor : t.palette.text.primary,
           },
           "&.Mui-disabled": {
-            backgroundColor: t.palette.grey[200],
-            color: t.palette.grey[500],
+            backgroundColor:
+              t.palette.mode === "dark"
+                ? alpha(t.palette.common.white, 0.04)
+                : t.palette.action.disabledBackground,
+            color: t.palette.text.disabled,
           },
-          ...(bordered
-            ? {
-                border: `1px solid ${t.palette.grey[300]}`,
-                boxSizing: "border-box",
-              }
-            : {}),
         };
       }}
     >
