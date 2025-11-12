@@ -332,13 +332,13 @@ public class ProductService : IProductService
             {
                 Code = $"AI-GENERATED-{Guid.NewGuid()}",
                 ProductName = ingredient.Name.Trim(),
-                IsAiGenerated = true,
                 Language = "pl",
                 estimatedCalories = ingredient.EstimatedCalories,
                 estimatedProteins = ingredient.EstimatedProteins,
                 estimatedCarbohydrates = ingredient.EstimatedCarbohydrates,
                 estimatedFats = ingredient.EstimatedFats,
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = DateTime.UtcNow,
+                Source = ProductSource.AI
             };
 
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);

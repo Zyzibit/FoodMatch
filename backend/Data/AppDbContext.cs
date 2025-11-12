@@ -38,7 +38,6 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
-        modelBuilder.ApplyConfiguration(new MealPlanConfiguration());
         
         modelBuilder.Entity<Receipt>()
             .HasKey(r => r.Id);
