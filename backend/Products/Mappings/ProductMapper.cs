@@ -1,4 +1,5 @@
-﻿using inzynierka.Products.Responses;
+﻿using inzynierka.Products.Dto;
+using inzynierka.Products.Responses;
 using inzynierka.Products.Model;
 
 namespace inzynierka.Products.Mappings;

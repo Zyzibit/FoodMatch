@@ -1,4 +1,6 @@
-﻿namespace inzynierka.Products.Responses;
+﻿using inzynierka.Products.Dto;
+
+namespace inzynierka.Products.Responses;
 
 public class ProductResult
 {

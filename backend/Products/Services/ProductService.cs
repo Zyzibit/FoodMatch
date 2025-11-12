@@ -1,3 +1,4 @@
+using inzynierka.Products.Dto;
 using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
