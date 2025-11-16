@@ -209,7 +209,7 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         
         var data = new Dictionary<string, object?>
         {
-            ["availableIngredients"] = request.AvailableIngredients != null && request.AvailableIngredients.Any()
+            ["availableIngredients"] = request.AvailableIngredients.Any()
                 ? string.Join("\n", request.AvailableIngredients)
                 : "",
             ["allowedUnits"] = unitNames,
