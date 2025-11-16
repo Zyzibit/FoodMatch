@@ -11,7 +11,7 @@ public class ReceiptMapper : IReceiptMapper
         {
             Id = receipt.Id,
             UserId = receipt.UserId,
-            IsAiGenerated = receipt.IsAiGenerated,
+            Source = receipt.Source.ToString(),
             Ingredients = receipt.Ingredients.Select(i =>
             {
                 var quantityInGrams = i.NormalizedQuantityInGrams ?? 100m;
@@ -24,6 +24,7 @@ public class ReceiptMapper : IReceiptMapper
                     Quantity = i.Quantity,
                     NormalizedQuantityInGrams = i.NormalizedQuantityInGrams,
                     ProductName = i.Product.ProductName ?? "",
+                    Source = i.Product.Source.ToString(),
                     EstimatedCalories = (i.Product.estimatedCalories ?? 0) * scaleFactor,
                     EstimatedProteins = (i.Product.estimatedProteins ?? 0) * scaleFactor,
                     EstimatedCarbohydrates = (i.Product.estimatedCarbohydrates ?? 0) * scaleFactor,
@@ -37,10 +38,10 @@ public class ReceiptMapper : IReceiptMapper
             Servings = receipt.Servings,
             PreparationTimeMinutes = receipt.PreparationTimeMinutes,
             TotalWeightGrams = receipt.TotalWeightGrams,
-            CaloriesPer100G = receipt.Calories,
-            ProteinPer100G = receipt.Protein,
-            CarbohydratesPer100G = receipt.Carbohydrates,
-            FatsPer100G = receipt.Fats,
+            Calories = receipt.Calories,
+            Protein = receipt.Protein,
+            Carbohydrates = receipt.Carbohydrates,
+            Fats = receipt.Fats,
             CreatedAt = receipt.CreatedAt
         };
     }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿﻿using System.ComponentModel.DataAnnotations;
 using inzynierka.Users.Model;
 
 namespace inzynierka.Receipts.Model;
@@ -11,7 +11,7 @@ public class Receipt {
     public User User { get; set; }
     
     [Required]
-    public bool IsAiGenerated { get; set; }
+    public ReceiptSource Source { get; set; } = ReceiptSource.User;
     
     public ICollection<ReceiptIngredient> Ingredients { get; set; }
     

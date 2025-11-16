@@ -10,5 +10,6 @@ public class GeneratedRecipeIngredient
     public decimal EstimatedProteins { get; set; }
     public decimal EstimatedCarbohydrates { get; set; }
     public decimal EstimatedFats { get; set; }
+    public int? ProductId { get; set; }
 }
 

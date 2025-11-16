@@ -141,7 +141,7 @@ public class ReceiptService : IReceiptService
             var receipt = new Receipt
             {
                 UserId = userId,
-                IsAiGenerated = false,
+                Source = ReceiptSource.User,
                 Ingredients = request.Ingredients.Select(i => new ReceiptIngredient
                 {
                     ProductId = i.ProductId,
@@ -312,7 +312,7 @@ public class ReceiptService : IReceiptService
             var receipt = new Receipt
             {
                 UserId = userId,
-                IsAiGenerated = true,
+                Source = ReceiptSource.AI,
                 Title = generatedRecipe.Title,
                 Description = generatedRecipe.Description,
                 Instructions = generatedRecipe.Instructions,
