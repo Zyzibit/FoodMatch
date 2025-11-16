@@ -329,16 +329,7 @@
                     ? string.Join(", ", request.Preferences.DislikedIngredients)
                     : "brak";
                 
-                if (request.Preferences.TargetMealCalories.HasValue)
-                {
-                    data["targetMealCalories"] = request.Preferences.TargetMealCalories.Value;
-                }
-                
-                if (!string.IsNullOrEmpty(request.Preferences.MealType))
-                {
-                    data["mealType"] = request.Preferences.MealType;
-                }
-                
+                // Cele dzienne
                 if (request.Preferences.DailyCalorieGoal.HasValue)
                 {
                     data["dailyCalorieGoal"] = request.Preferences.DailyCalorieGoal.Value;
@@ -357,6 +348,32 @@
                 if (request.Preferences.DailyFatGoal.HasValue)
                 {
                     data["dailyFatGoal"] = request.Preferences.DailyFatGoal.Value;
+                }
+                
+                // Cele dla konkretnego posiłku
+                if (!string.IsNullOrEmpty(request.Preferences.MealType))
+                {
+                    data["mealType"] = request.Preferences.MealType;
+                }
+                
+                if (request.Preferences.TargetMealCalories.HasValue)
+                {
+                    data["targetMealCalories"] = request.Preferences.TargetMealCalories.Value;
+                }
+                
+                if (request.Preferences.TargetMealProtein.HasValue)
+                {
+                    data["targetMealProtein"] = request.Preferences.TargetMealProtein.Value;
+                }
+                
+                if (request.Preferences.TargetMealCarbohydrates.HasValue)
+                {
+                    data["targetMealCarbohydrates"] = request.Preferences.TargetMealCarbohydrates.Value;
+                }
+                
+                if (request.Preferences.TargetMealFat.HasValue)
+                {
+                    data["targetMealFat"] = request.Preferences.TargetMealFat.Value;
                 }
             }
             return data;

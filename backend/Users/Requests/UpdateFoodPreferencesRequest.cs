@@ -24,4 +24,19 @@ public class UpdateFoodPreferencesRequest {
     public int? LunchCaloriePercentage { get; set; }
     public int? DinnerCaloriePercentage { get; set; }
     public int? SnackCaloriePercentage { get; set; }
+    
+    public int? BreakfastProteinPercentage { get; set; }
+    public int? LunchProteinPercentage { get; set; }
+    public int? DinnerProteinPercentage { get; set; }
+    public int? SnackProteinPercentage { get; set; }
+    
+    public int? BreakfastCarbohydratePercentage { get; set; }
+    public int? LunchCarbohydratePercentage { get; set; }
+    public int? DinnerCarbohydratePercentage { get; set; }
+    public int? SnackCarbohydratePercentage { get; set; }
+    
+    public int? BreakfastFatPercentage { get; set; }
+    public int? LunchFatPercentage { get; set; }
+    public int? DinnerFatPercentage { get; set; }
+    public int? SnackFatPercentage { get; set; }
 }

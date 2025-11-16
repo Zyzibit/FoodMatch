@@ -34,16 +34,33 @@
         { "field": "isVegetarian", "text": "✓ WEGETARIAŃSKI (bez mięsa/ryb) - MUSISZ USUNĄĆ BOCZEK I INNE MIĘSA!" },
         { "field": "isGlutenFree", "text": "✓ BEZGLUTENOWY" },
         { "field": "isLactoseFree", "text": "✓ BEZLAKTOZOWY" },
-        { "field": "targetMealCalories", "template": "🎯 DOCELOWE KALORIE POSIŁKU: {value} kcal (staraj się trafić ±10%)" },
         { "field": "mealType", "template": "🍴 TYP POSIŁKU: {value}" },
         { "field": "maxCalories", "template": "⚡ LIMIT KALORII: Maksymalnie {value} kcal (NIE PRZEKRACZAJ!)" },
         { "field": "allergies", "template": "⚠️ ALERGENY - BEZWZGLĘDNIE NIE UŻYWAJ: {value}" },
         { "field": "dislikedIngredients", "template": "❌ NIECHCIANE SKŁADNIKI - NIE UŻYWAJ: {value}" },
-        { "field": "dailyProteinGoal", "template": "💪 Dzienny cel białka: {value}g (uwzględnij w proporcjach)" },
         { "field": "cuisineType", "template": "🌍 Preferowana kuchnia: {value}" },
         { "field": "desiredServings", "template": "👥 Liczba porcji: {value}" },
         { "field": "maxPreparationTimeMinutes", "template": "⏱️ Maksymalny czas (ŁĄCZNIE): {value} minut" },
         { "field": "additionalInstructions", "template": "📝 Specjalne wymagania: {value}" }
+      ]
+    },
+    {
+      "title": "📊 CELE ŻYWIENIOWE - DZIENNE (suma wszystkich posiłków):",
+      "conditionalFields": [
+        { "field": "dailyCalorieGoal", "template": "📈 Dzienny cel kaloryczny: {value} kcal" },
+        { "field": "dailyProteinGoal", "template": "💪 Dzienny cel białka: {value}g" },
+        { "field": "dailyCarbohydrateGoal", "template": "🌾 Dzienny cel węglowodanów: {value}g" },
+        { "field": "dailyFatGoal", "template": "🥑 Dzienny cel tłuszczów: {value}g" }
+      ]
+    },
+    {
+      "title": "🎯 CELE DLA TEGO KONKRETNEGO POSIŁKU (PRIORYTET - DOPASUJ PRZEPIS!):",
+      "note": "Te wartości są już obliczone na podstawie dziennych celów i rozkładu procentowego. TRAFIJ w te cele ±10%!",
+      "conditionalFields": [
+        { "field": "targetMealCalories", "template": "🎯 Docelowe KALORIE tego posiłku: {value} kcal (STARAJ SIĘ TRAFIĆ!)" },
+        { "field": "targetMealProtein", "template": "🎯 Docelowe BIAŁKO tego posiłku: {value}g (STARAJ SIĘ TRAFIĆ!)" },
+        { "field": "targetMealCarbohydrates", "template": "🎯 Docelowe WĘGLOWODANY tego posiłku: {value}g (STARAJ SIĘ TRAFIĆ!)" },
+        { "field": "targetMealFat", "template": "🎯 Docelowe TŁUSZCZE tego posiłku: {value}g (STARAJ SIĘ TRAFIĆ!)" }
       ]
     },
     {

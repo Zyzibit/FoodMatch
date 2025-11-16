@@ -39,6 +39,30 @@ public static class UserMappingExtensions
             ? preferences.DailyCalorieGoal 
             : (dailyCalories ?? 0);
         
+        // Obliczanie celów kalorycznych dla poszczególnych posiłków
+        int? breakfastCalories = targetCalories > 0 ? (int)(targetCalories * preferences.BreakfastCaloriePercentage / 100.0) : null;
+        int? lunchCalories = targetCalories > 0 ? (int)(targetCalories * preferences.LunchCaloriePercentage / 100.0) : null;
+        int? dinnerCalories = targetCalories > 0 ? (int)(targetCalories * preferences.DinnerCaloriePercentage / 100.0) : null;
+        int? snackCalories = targetCalories > 0 ? (int)(targetCalories * preferences.SnackCaloriePercentage / 100.0) : null;
+        
+        // Obliczanie celów białka dla poszczególnych posiłków
+        int? breakfastProtein = preferences.DailyProteinGoal > 0 ? (int)(preferences.DailyProteinGoal * preferences.BreakfastProteinPercentage / 100.0) : null;
+        int? lunchProtein = preferences.DailyProteinGoal > 0 ? (int)(preferences.DailyProteinGoal * preferences.LunchProteinPercentage / 100.0) : null;
+        int? dinnerProtein = preferences.DailyProteinGoal > 0 ? (int)(preferences.DailyProteinGoal * preferences.DinnerProteinPercentage / 100.0) : null;
+        int? snackProtein = preferences.DailyProteinGoal > 0 ? (int)(preferences.DailyProteinGoal * preferences.SnackProteinPercentage / 100.0) : null;
+        
+        // Obliczanie celów węglowodanów dla poszczególnych posiłków
+        int? breakfastCarbs = preferences.DailyCarbohydrateGoal > 0 ? (int)(preferences.DailyCarbohydrateGoal * preferences.BreakfastCarbohydratePercentage / 100.0) : null;
+        int? lunchCarbs = preferences.DailyCarbohydrateGoal > 0 ? (int)(preferences.DailyCarbohydrateGoal * preferences.LunchCarbohydratePercentage / 100.0) : null;
+        int? dinnerCarbs = preferences.DailyCarbohydrateGoal > 0 ? (int)(preferences.DailyCarbohydrateGoal * preferences.DinnerCarbohydratePercentage / 100.0) : null;
+        int? snackCarbs = preferences.DailyCarbohydrateGoal > 0 ? (int)(preferences.DailyCarbohydrateGoal * preferences.SnackCarbohydratePercentage / 100.0) : null;
+        
+        // Obliczanie celów tłuszczów dla poszczególnych posiłków
+        int? breakfastFat = preferences.DailyFatGoal > 0 ? (int)(preferences.DailyFatGoal * preferences.BreakfastFatPercentage / 100.0) : null;
+        int? lunchFat = preferences.DailyFatGoal > 0 ? (int)(preferences.DailyFatGoal * preferences.LunchFatPercentage / 100.0) : null;
+        int? dinnerFat = preferences.DailyFatGoal > 0 ? (int)(preferences.DailyFatGoal * preferences.DinnerFatPercentage / 100.0) : null;
+        int? snackFat = preferences.DailyFatGoal > 0 ? (int)(preferences.DailyFatGoal * preferences.SnackFatPercentage / 100.0) : null;
+        
         return new FoodPreferencesDto
         {
             IsVegan = preferences.IsVegan,
@@ -59,12 +83,36 @@ public static class UserMappingExtensions
             LunchCaloriePercentage = preferences.LunchCaloriePercentage,
             DinnerCaloriePercentage = preferences.DinnerCaloriePercentage,
             SnackCaloriePercentage = preferences.SnackCaloriePercentage,
+            BreakfastProteinPercentage = preferences.BreakfastProteinPercentage,
+            LunchProteinPercentage = preferences.LunchProteinPercentage,
+            DinnerProteinPercentage = preferences.DinnerProteinPercentage,
+            SnackProteinPercentage = preferences.SnackProteinPercentage,
+            BreakfastCarbohydratePercentage = preferences.BreakfastCarbohydratePercentage,
+            LunchCarbohydratePercentage = preferences.LunchCarbohydratePercentage,
+            DinnerCarbohydratePercentage = preferences.DinnerCarbohydratePercentage,
+            SnackCarbohydratePercentage = preferences.SnackCarbohydratePercentage,
+            BreakfastFatPercentage = preferences.BreakfastFatPercentage,
+            LunchFatPercentage = preferences.LunchFatPercentage,
+            DinnerFatPercentage = preferences.DinnerFatPercentage,
+            SnackFatPercentage = preferences.SnackFatPercentage,
             CalculatedBMR = bmr,
             CalculatedDailyCalories = dailyCalories,
-            BreakfastCalories = targetCalories > 0 ? (int)(targetCalories * preferences.BreakfastCaloriePercentage / 100.0) : null,
-            LunchCalories = targetCalories > 0 ? (int)(targetCalories * preferences.LunchCaloriePercentage / 100.0) : null,
-            DinnerCalories = targetCalories > 0 ? (int)(targetCalories * preferences.DinnerCaloriePercentage / 100.0) : null,
-            SnackCalories = targetCalories > 0 ? (int)(targetCalories * preferences.SnackCaloriePercentage / 100.0) : null
+            BreakfastCalories = breakfastCalories,
+            LunchCalories = lunchCalories,
+            DinnerCalories = dinnerCalories,
+            SnackCalories = snackCalories,
+            BreakfastProteinGoal = breakfastProtein,
+            LunchProteinGoal = lunchProtein,
+            DinnerProteinGoal = dinnerProtein,
+            SnackProteinGoal = snackProtein,
+            BreakfastCarbohydrateGoal = breakfastCarbs,
+            LunchCarbohydrateGoal = lunchCarbs,
+            DinnerCarbohydrateGoal = dinnerCarbs,
+            SnackCarbohydrateGoal = snackCarbs,
+            BreakfastFatGoal = breakfastFat,
+            LunchFatGoal = lunchFat,
+            DinnerFatGoal = dinnerFat,
+            SnackFatGoal = snackFat
         };
     }
     

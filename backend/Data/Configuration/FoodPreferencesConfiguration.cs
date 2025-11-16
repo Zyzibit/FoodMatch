@@ -27,6 +27,15 @@ public class FoodPreferencesConfiguration : IEntityTypeConfiguration<User>
                     v => v == null || v.Count == 0 ? string.Empty : string.Join(',', v),
                     v => string.IsNullOrWhiteSpace(v) ? new List<string>() : v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                 )
+                .Metadata.SetValueComparer(
+                    new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
+                        (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()
+                    )
+                );
+            
+            fp.Property(p => p.Allergies)
                 .IsRequired(false);
             
             fp.Property(p => p.Age)
@@ -70,6 +79,45 @@ public class FoodPreferencesConfiguration : IEntityTypeConfiguration<User>
                 .HasDefaultValue(25);
             
             fp.Property(p => p.SnackCaloriePercentage)
+                .HasDefaultValue(5);
+            
+
+            fp.Property(p => p.BreakfastProteinPercentage)
+                .HasDefaultValue(25);
+            
+            fp.Property(p => p.LunchProteinPercentage)
+                .HasDefaultValue(35);
+            
+            fp.Property(p => p.DinnerProteinPercentage)
+                .HasDefaultValue(35);
+            
+            fp.Property(p => p.SnackProteinPercentage)
+                .HasDefaultValue(5);
+            
+
+            fp.Property(p => p.BreakfastCarbohydratePercentage)
+                .HasDefaultValue(30);
+            
+            fp.Property(p => p.LunchCarbohydratePercentage)
+                .HasDefaultValue(40);
+            
+            fp.Property(p => p.DinnerCarbohydratePercentage)
+                .HasDefaultValue(25);
+            
+            fp.Property(p => p.SnackCarbohydratePercentage)
+                .HasDefaultValue(5);
+
+            
+            fp.Property(p => p.BreakfastFatPercentage)
+                .HasDefaultValue(30);
+            
+            fp.Property(p => p.LunchFatPercentage)
+                .HasDefaultValue(40);
+            
+            fp.Property(p => p.DinnerFatPercentage)
+                .HasDefaultValue(25);
+            
+            fp.Property(p => p.SnackFatPercentage)
                 .HasDefaultValue(5);
         });
     }

@@ -333,6 +333,33 @@ public class UserService : IUserService
                 user.FoodPreferences.DinnerCaloriePercentage = request.DinnerCaloriePercentage.Value;
             if (request.SnackCaloriePercentage.HasValue)
                 user.FoodPreferences.SnackCaloriePercentage = request.SnackCaloriePercentage.Value;
+            
+            if (request.BreakfastProteinPercentage.HasValue)
+                user.FoodPreferences.BreakfastProteinPercentage = request.BreakfastProteinPercentage.Value;
+            if (request.LunchProteinPercentage.HasValue)
+                user.FoodPreferences.LunchProteinPercentage = request.LunchProteinPercentage.Value;
+            if (request.DinnerProteinPercentage.HasValue)
+                user.FoodPreferences.DinnerProteinPercentage = request.DinnerProteinPercentage.Value;
+            if (request.SnackProteinPercentage.HasValue)
+                user.FoodPreferences.SnackProteinPercentage = request.SnackProteinPercentage.Value;
+            
+            if (request.BreakfastCarbohydratePercentage.HasValue)
+                user.FoodPreferences.BreakfastCarbohydratePercentage = request.BreakfastCarbohydratePercentage.Value;
+            if (request.LunchCarbohydratePercentage.HasValue)
+                user.FoodPreferences.LunchCarbohydratePercentage = request.LunchCarbohydratePercentage.Value;
+            if (request.DinnerCarbohydratePercentage.HasValue)
+                user.FoodPreferences.DinnerCarbohydratePercentage = request.DinnerCarbohydratePercentage.Value;
+            if (request.SnackCarbohydratePercentage.HasValue)
+                user.FoodPreferences.SnackCarbohydratePercentage = request.SnackCarbohydratePercentage.Value;
+            
+            if (request.BreakfastFatPercentage.HasValue)
+                user.FoodPreferences.BreakfastFatPercentage = request.BreakfastFatPercentage.Value;
+            if (request.LunchFatPercentage.HasValue)
+                user.FoodPreferences.LunchFatPercentage = request.LunchFatPercentage.Value;
+            if (request.DinnerFatPercentage.HasValue)
+                user.FoodPreferences.DinnerFatPercentage = request.DinnerFatPercentage.Value;
+            if (request.SnackFatPercentage.HasValue)
+                user.FoodPreferences.SnackFatPercentage = request.SnackFatPercentage.Value;
 
             user.UpdatedAt = DateTime.UtcNow;
             var result = await _userManager.UpdateAsync(user);

@@ -227,15 +227,55 @@ public class ReceiptService : IReceiptService
             {
                 preferences.MealType = request.MealType;
                 
-                if (!preferences.TargetMealCalories.HasValue)
+                // Obliczanie celów żywieniowych dla tego posiłku na podstawie preferencji użytkownika
+                var mealGoals = CalculateMealNutritionalGoals(request.MealType, userPreferences);
+                
+                if (mealGoals != null)
                 {
-                    var targetCalories = CalculateTargetMealCalories(request.MealType, userPreferences);
-                    if (targetCalories.HasValue)
+                    if (!preferences.TargetMealCalories.HasValue && mealGoals.Calories.HasValue)
                     {
-                        preferences.TargetMealCalories = targetCalories.Value;
-                        _logger.LogInformation("Calculated target calories for {MealType}: {Calories} kcal", 
-                            request.MealType, targetCalories.Value);
+                        preferences.TargetMealCalories = mealGoals.Calories.Value;
                     }
+                    
+                    if (!preferences.TargetMealProtein.HasValue && mealGoals.Protein.HasValue)
+                    {
+                        preferences.TargetMealProtein = mealGoals.Protein.Value;
+                    }
+                    
+                    if (!preferences.TargetMealCarbohydrates.HasValue && mealGoals.Carbohydrates.HasValue)
+                    {
+                        preferences.TargetMealCarbohydrates = mealGoals.Carbohydrates.Value;
+                    }
+                    
+                    if (!preferences.TargetMealFat.HasValue && mealGoals.Fat.HasValue)
+                    {
+                        preferences.TargetMealFat = mealGoals.Fat.Value;
+                    }
+                    
+                    _logger.LogInformation(
+                        "Calculated nutritional goals for {MealType}: {Calories} kcal, {Protein}g protein, {Carbs}g carbs, {Fat}g fat", 
+                        request.MealType, mealGoals.Calories, mealGoals.Protein, mealGoals.Carbohydrates, mealGoals.Fat);
+                }
+                
+                // Przekazujemy również dzienne cele do AI
+                if (!preferences.DailyCalorieGoal.HasValue)
+                {
+                    preferences.DailyCalorieGoal = userPreferences.DailyCalorieGoal ?? userPreferences.CalculatedDailyCalories;
+                }
+                
+                if (!preferences.DailyProteinGoal.HasValue)
+                {
+                    preferences.DailyProteinGoal = userPreferences.DailyProteinGoal;
+                }
+                
+                if (!preferences.DailyCarbohydrateGoal.HasValue)
+                {
+                    preferences.DailyCarbohydrateGoal = userPreferences.DailyCarbohydrateGoal;
+                }
+                
+                if (!preferences.DailyFatGoal.HasValue)
+                {
+                    preferences.DailyFatGoal = userPreferences.DailyFatGoal;
                 }
             }
             
@@ -444,29 +484,60 @@ public class ReceiptService : IReceiptService
         };
     }
     
-    private int? CalculateTargetMealCalories(string mealType, Users.Responses.FoodPreferencesDto userPreferences)
+    private MealNutritionalGoals? CalculateMealNutritionalGoals(string mealType, Users.Responses.FoodPreferencesDto userPreferences)
     {
         var mealTypeLower = mealType.ToLowerInvariant();
         
         if (mealTypeLower == "breakfast" || mealTypeLower == "śniadanie")
         {
-            return userPreferences.BreakfastCalories;
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.BreakfastCalories,
+                Protein = userPreferences.BreakfastProteinGoal,
+                Carbohydrates = userPreferences.BreakfastCarbohydrateGoal,
+                Fat = userPreferences.BreakfastFatGoal
+            };
         }
         else if (mealTypeLower == "lunch" || mealTypeLower == "obiad")
         {
-            return userPreferences.LunchCalories;
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.LunchCalories,
+                Protein = userPreferences.LunchProteinGoal,
+                Carbohydrates = userPreferences.LunchCarbohydrateGoal,
+                Fat = userPreferences.LunchFatGoal
+            };
         }
         else if (mealTypeLower == "dinner" || mealTypeLower == "kolacja")
         {
-            return userPreferences.DinnerCalories;
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.DinnerCalories,
+                Protein = userPreferences.DinnerProteinGoal,
+                Carbohydrates = userPreferences.DinnerCarbohydrateGoal,
+                Fat = userPreferences.DinnerFatGoal
+            };
         }
         else if (mealTypeLower == "snack" || mealTypeLower == "przekąska")
         {
-            return userPreferences.SnackCalories;
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.SnackCalories,
+                Protein = userPreferences.SnackProteinGoal,
+                Carbohydrates = userPreferences.SnackCarbohydrateGoal,
+                Fat = userPreferences.SnackFatGoal
+            };
         }
         
-        _logger.LogWarning("Unknown meal type: {MealType}. Cannot calculate target calories.", mealType);
+        _logger.LogWarning("Unknown meal type: {MealType}. Cannot calculate nutritional goals.", mealType);
         return null;
     }
-    
+}
+
+internal class MealNutritionalGoals
+{
+    public int? Calories { get; set; }
+    public int? Protein { get; set; }
+    public int? Carbohydrates { get; set; }
+    public int? Fat { get; set; }
 }

@@ -875,6 +875,21 @@ namespace inzynierka.Migrations
                                 .HasColumnType("integer")
                                 .HasDefaultValue(30);
 
+                            b1.Property<int>("BreakfastCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(30);
+
+                            b1.Property<int>("BreakfastFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(30);
+
+                            b1.Property<int>("BreakfastProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
                             b1.Property<int>("DailyCalorieGoal")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
@@ -899,6 +914,21 @@ namespace inzynierka.Migrations
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
                                 .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(35);
 
                             b1.Property<string>("Gender")
                                 .HasColumnType("text");
@@ -932,7 +962,37 @@ namespace inzynierka.Migrations
                                 .HasColumnType("integer")
                                 .HasDefaultValue(40);
 
+                            b1.Property<int>("LunchCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(40);
+
+                            b1.Property<int>("LunchFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(40);
+
+                            b1.Property<int>("LunchProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(35);
+
                             b1.Property<int>("SnackCaloriePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackProteinPercentage")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
                                 .HasDefaultValue(5);
