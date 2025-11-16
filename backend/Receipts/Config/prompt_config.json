@@ -30,7 +30,7 @@
       "footer": "═══════════════════════════════════════════════════════════════════════"
     },
     {
-      "title": "🍽️ PREFERENCJE ŻYWIENIOWE (MUSISZ PRZESTRZEGAĆ):",
+      "title": "🍽️ PREFERENCJE ŻYWIENIOWE UŻYTKOWNIKA (MUSISZ PRZESTRZEGAĆ):",
       "conditionalFields": [
         {
           "field": "isVegan",
@@ -49,8 +49,32 @@
           "text": "✓ BEZLAKTOZOWY - żadnych: mleka, sera, jogurtu, śmietany, masła (chyba że bezlaktozowe)"
         },
         {
+          "field": "targetMealCalories",
+          "template": "🎯 DOCELOWE KALORIE DLA TEGO POSIŁKU: {value} kcal (cel użytkownika - staraj się dopasować ±10%)"
+        },
+        {
+          "field": "mealType",
+          "template": "🍴 TYP POSIŁKU: {value} (dostosuj składniki i porcje odpowiednio do pory dnia)"
+        },
+        {
           "field": "maxCalories",
-          "template": "⚡ LIMIT KALORII: Maksymalnie {value} kcal dla CAŁEGO przepisu"
+          "template": "⚡ BEZWZGLĘDNY LIMIT KALORII: Maksymalnie {value} kcal dla CAŁEGO przepisu (NIE PRZEKRACZAJ!)"
+        },
+        {
+          "field": "dailyCalorieGoal",
+          "template": "📊 Dzienny cel kaloryczny użytkownika: {value} kcal (kontekst dla planowania posiłków)"
+        },
+        {
+          "field": "dailyProteinGoal",
+          "template": "💪 Dzienny cel białka: {value}g (uwzględnij w doborze składników)"
+        },
+        {
+          "field": "dailyCarbohydrateGoal",
+          "template": "🍞 Dzienny cel węglowodanów: {value}g (uwzględnij w doborze składników)"
+        },
+        {
+          "field": "dailyFatGoal",
+          "template": "🥑 Dzienny cel tłuszczów: {value}g (uwzględnij w doborze składników)"
         },
         {
           "field": "allergies",
@@ -88,31 +112,42 @@
       "content": "📜 ZASADY TWORZENIA PRZEPISU:",
       "items": [
         "",
-        "1. 🎯 PRIORYTET: Wykorzystaj MAKSYMALNIE DUŻO składników z dostępnych",
-        "2. ➕ Możesz dodać 3-5 podstawowych składników:",
+        "1. 🎯 PRIORYTET #1: Wykorzystaj MAKSYMALNIE DUŻO składników z dostępnych",
+        "2. 📊 PRIORYTET #2: Dopasuj kalorie do celu użytkownika:",
+        " - Jeśli podano 'targetMealCalories' - STARAJ SIĘ trafić w ten zakres (±10%)",
+        " - Dostosuj PORCJE i ILOŚCI składników, aby osiągnąć cel kaloryczny",
+        " - Jeśli podano 'maxCalories' - BEZWZGLĘDNIE NIE PRZEKRACZAJ tego limitu!",
+        " - Uwzględnij typ posiłku (śniadanie - lżejsze, obiad - większe porcje, kolacja - średnie)",
+        "3. 🥗 PRIORYTET #3: Uwzględnij cele makroskładników użytkownika:",
+        " - Jeśli podano cele dzienne (białko/węglowodany/tłuszcze) - dobierz składniki proporcjonalnie",
+        " - Dla wysokiego celu białkowego - więcej mięsa, ryb, jajek, roślin strączkowych",
+        " - Dla wysokiego celu węglowodanów - więcej zbóż, ziemniaków, ryżu, kaszy",
+        " - Dla wysokiego celu tłuszczów - dodaj orzechy, nasiona, zdrowe oleje, awokado",
+        "4. ➕ Możesz dodać 3-5 podstawowych składników:",
         " - Przyprawy: sól, pieprz, papryka, oregano, bazylia, czosnek",
         " - Podstawy: olej, mąka, cukier, ocet, cytryna",
         " - NIE dodawaj egzotycznych składników!",
-        "3. 🔄 Jeśli brakuje składnika - zaproponuj DOSTĘPNY zamiennik",
-        "4. ✅ Przepis musi być WYKONALNY z podanych składników",
-        "5. 📊 Oblicz DOKŁADNE wartości odżywcze dla każdego składnika:",
+        "5. 🔄 Jeśli brakuje składnika - zaproponuj DOSTĘPNY zamiennik",
+        "6. ✅ Przepis musi być WYKONALNY z podanych składników",
+        "7. 📊 Oblicz DOKŁADNE wartości odżywcze dla każdego składnika:",
         " - Użyj standardowych tabel wartości odżywczych",
         " - Przelicz proporcjonalnie do ilości składnika",
         " - Bądź REALISTYCZNY w szacunkach",
-        "6. 🔢 Jednostki: TYLKO z dozwolonej listy, BEZ WYJĄTKÓW!",
-        "7. ⚖️ Matematyka MUSI się zgadzać:",
+        " - SPRAWDŹ czy suma kalorii mieści się w limicie użytkownika!",
+        "8. 🔢 Jednostki: TYLKO z dozwolonej listy, BEZ WYJĄTKÓW!",
+        "9. ⚖️ Matematyka MUSI się zgadzać:",
         " - totalWeightGrams = suma wszystkich quantity (przeliczone na gramy)",
         " - estimatedCalories = suma wszystkich estimatedCalories składników",
         " - estimatedProtein = suma wszystkich estimatedProteins składników",
         " - estimatedCarbohydrates = suma wszystkich estimatedCarbohydrates",
         " - estimatedFats = suma wszystkich estimatedFats",
-        "8. 📖 Instrukcje: BARDZO SZCZEGÓŁOWE, krok po kroku:",
+        "10. 📖 Instrukcje: BARDZO SZCZEGÓŁOWE, krok po kroku:",
         " - Podaj dokładne czasy (np. 'smaż 5-7 minut')",
         " - Opisz kolory/tekstury (np. 'aż będzie złocisty')",
         " - Wyjaśnij techniki (np. 'mieszając co 2 minuty')",
         " - Dodaj wskazówki (np. 'sprawdź widełkiem czy miękkie')",
-        "9. 🇵🇱 Wszystko po polsku, naturalnym językiem",
-        "10. 🚫 BEZWZGLĘDNIE przestrzegaj preferencji i alergenów!",
+        "11. 🇵🇱 Wszystko po polsku, naturalnym językiem",
+        "12. 🚫 BEZWZGLĘDNIE przestrzegaj preferencji żywieniowych i alergenów użytkownika!",
         ""
       ]
     },

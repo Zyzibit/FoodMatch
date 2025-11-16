@@ -281,19 +281,40 @@ public class UserService : IUserService
                 user.FoodPreferences.HasGlutenIntolerance = request.HasGlutenIntolerance.Value;
             if (request.HasLactoseIntolerance.HasValue)
                 user.FoodPreferences.HasLactoseIntolerance = request.HasLactoseIntolerance.Value;
-            if (request.HasNutAllergy.HasValue)
-                user.FoodPreferences.HasNutAllergy = request.HasNutAllergy.Value;
+            if (request.Allergies != null)
+                user.FoodPreferences.Allergies = request.Allergies;
             
             if (request.Age.HasValue)
                 user.FoodPreferences.Age = request.Age.Value;
-            if (request.Gender.HasValue)
-                user.FoodPreferences.Gender = request.Gender.Value;
+            
+            if (!string.IsNullOrEmpty(request.Gender))
+            {
+                if (Enum.TryParse<Gender>(request.Gender, ignoreCase: true, out var gender))
+                {
+                    user.FoodPreferences.Gender = gender;
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid Gender value: {Gender}", request.Gender);
+                }
+            }
+            
             if (request.Weight.HasValue)
                 user.FoodPreferences.Weight = request.Weight.Value;
             if (request.Height.HasValue)
                 user.FoodPreferences.Height = request.Height.Value;
-            if (request.ActivityLevel.HasValue)
-                user.FoodPreferences.ActivityLevel = request.ActivityLevel.Value;
+            
+            if (!string.IsNullOrEmpty(request.ActivityLevel))
+            {
+                if (Enum.TryParse<PhysicalActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
+                {
+                    user.FoodPreferences.ActivityLevel = activityLevel;
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid ActivityLevel value: {ActivityLevel}", request.ActivityLevel);
+                }
+            }
             
             if (request.DailyProteinGoal.HasValue)
                 user.FoodPreferences.DailyProteinGoal = request.DailyProteinGoal.Value;

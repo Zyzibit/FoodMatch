@@ -1,4 +1,4 @@
-﻿﻿using inzynierka.Users.Model;
+﻿using inzynierka.Users.Model;
 
 namespace inzynierka.Users.Requests;
 
@@ -7,13 +7,13 @@ public class UpdateFoodPreferencesRequest {
     public bool? IsVegetarian { get; set; }
     public bool? HasGlutenIntolerance { get; set; }
     public bool? HasLactoseIntolerance { get; set; }
-    public bool? HasNutAllergy { get; set; }
+    public List<string>? Allergies { get; set; }
     
     public int? Age { get; set; }
-    public Gender? Gender { get; set; }
+    public string? Gender { get; set; } // "Male", "Female", "Other"
     public decimal? Weight { get; set; } // kg
     public decimal? Height { get; set; } // cm
-    public PhysicalActivityLevel? ActivityLevel { get; set; }
+    public string? ActivityLevel { get; set; } // "Sedentary", "LightlyActive", "ModeratelyActive", "VeryActive", "ExtraActive"
     
     public int? DailyProteinGoal { get; set; }
     public int? DailyCarbohydrateGoal { get; set; }

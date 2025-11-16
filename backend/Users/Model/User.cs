@@ -21,7 +21,7 @@ public class FoodPreferences {
     public bool IsVegetarian { get; set; }= false;
     public bool HasGlutenIntolerance { get; set; } = false;
     public bool HasLactoseIntolerance { get; set; } = false;
-    public bool HasNutAllergy { get; set; } = false;
+    public List<string> Allergies { get; set; } = new();
 
     public int? Age { get; set; }
     public Gender? Gender { get; set; }
@@ -43,7 +43,8 @@ public class FoodPreferences {
 public enum Gender
 {
     Male,
-    Female
+    Female,
+    Other
 }
 
 public enum PhysicalActivityLevel

@@ -209,7 +209,9 @@ public class RecipeGeneratorService : IRecipeGeneratorService
         
         var data = new Dictionary<string, object?>
         {
-            ["availableIngredients"] = string.Join("\n", request.AvailableIngredients),
+            ["availableIngredients"] = request.AvailableIngredients != null && request.AvailableIngredients.Any()
+                ? string.Join("\n", request.AvailableIngredients)
+                : "",
             ["allowedUnits"] = unitNames,
             ["cuisineType"] = request.CuisineType,
             ["desiredServings"] = request.DesiredServings,
@@ -224,8 +226,42 @@ public class RecipeGeneratorService : IRecipeGeneratorService
             data["isGlutenFree"] = request.Preferences.IsGlutenFree;
             data["isLactoseFree"] = request.Preferences.IsLactoseFree;
             data["maxCalories"] = request.Preferences.MaxCalories;
-            data["allergies"] = string.Join(", ", request.Preferences.Allergies);
-            data["dislikedIngredients"] = string.Join(", ", request.Preferences.DislikedIngredients);
+            data["allergies"] = request.Preferences.Allergies.Any() 
+                ? string.Join(", ", request.Preferences.Allergies) 
+                : "brak";
+            data["dislikedIngredients"] = request.Preferences.DislikedIngredients.Any()
+                ? string.Join(", ", request.Preferences.DislikedIngredients)
+                : "brak";
+            
+            if (request.Preferences.TargetMealCalories.HasValue)
+            {
+                data["targetMealCalories"] = request.Preferences.TargetMealCalories.Value;
+            }
+            
+            if (!string.IsNullOrEmpty(request.Preferences.MealType))
+            {
+                data["mealType"] = request.Preferences.MealType;
+            }
+            
+            if (request.Preferences.DailyCalorieGoal.HasValue)
+            {
+                data["dailyCalorieGoal"] = request.Preferences.DailyCalorieGoal.Value;
+            }
+            
+            if (request.Preferences.DailyProteinGoal.HasValue)
+            {
+                data["dailyProteinGoal"] = request.Preferences.DailyProteinGoal.Value;
+            }
+            
+            if (request.Preferences.DailyCarbohydrateGoal.HasValue)
+            {
+                data["dailyCarbohydrateGoal"] = request.Preferences.DailyCarbohydrateGoal.Value;
+            }
+            
+            if (request.Preferences.DailyFatGoal.HasValue)
+            {
+                data["dailyFatGoal"] = request.Preferences.DailyFatGoal.Value;
+            }
         }
         return data;
     }

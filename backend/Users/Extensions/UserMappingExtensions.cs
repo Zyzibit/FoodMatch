@@ -45,7 +45,7 @@ public static class UserMappingExtensions
             IsVegetarian = preferences.IsVegetarian,
             HasGlutenIntolerance = preferences.HasGlutenIntolerance,
             HasLactoseIntolerance = preferences.HasLactoseIntolerance,
-            HasNutAllergy = preferences.HasNutAllergy,
+            Allergies = preferences.Allergies,
             Age = preferences.Age,
             Gender = preferences.Gender?.ToString(),
             Weight = preferences.Weight,

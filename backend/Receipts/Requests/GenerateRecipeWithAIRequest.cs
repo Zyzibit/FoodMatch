@@ -11,5 +11,6 @@ public class GenerateRecipeWithAIRequest
     public int? DesiredServings { get; set; }
     public int? MaxPreparationTimeMinutes { get; set; }
     public string? AdditionalInstructions { get; set; }
+    public string? MealType { get; set; } // "Breakfast", "Lunch", "Dinner", "Snack" - opcjonalne
 }
 

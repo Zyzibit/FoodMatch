@@ -400,10 +400,8 @@ public class ProductService : IProductService
                     "Using default of 100g for nutritional calculations.", 
                     ingredient.Name);
             }
-            // Calculate nutritional values per 100g
             var scaleFactor = 100m / normalizedQuantity;
             
-            // Create new AI-generated product with normalized values
             var aiProduct = new Product
             {
                 Code = $"AI-GENERATED-{Guid.NewGuid()}",

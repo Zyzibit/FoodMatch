@@ -219,8 +219,25 @@ public class ReceiptService : IReceiptService
                     ErrorMessage = "User not found in the database" 
                 };
             }
-            
             var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            
+            var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
+            
+            if (!string.IsNullOrEmpty(request.MealType) && preferences != null && userPreferences != null)
+            {
+                preferences.MealType = request.MealType;
+                
+                if (!preferences.TargetMealCalories.HasValue)
+                {
+                    var targetCalories = CalculateTargetMealCalories(request.MealType, userPreferences);
+                    if (targetCalories.HasValue)
+                    {
+                        preferences.TargetMealCalories = targetCalories.Value;
+                        _logger.LogInformation("Calculated target calories for {MealType}: {Calories} kcal", 
+                            request.MealType, targetCalories.Value);
+                    }
+                }
+            }
             
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
@@ -251,8 +268,6 @@ public class ReceiptService : IReceiptService
                     ? (string.IsNullOrWhiteSpace(p.Brand) ? $"Product {p.Id}" : p.Brand)
                     : p.Name)
                 .ToList();
-            
-            var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
             
             var aiRequest = new GenerateRecipeRequest
             {
@@ -412,22 +427,46 @@ public class ReceiptService : IReceiptService
             return null;
         }
         
-        var allergies = new List<string>();
-        if (userPreferences.HasNutAllergy == true)
-        {
-            allergies.Add("nuts");
-        }
-        
         return new DietaryPreferences
         {
             IsVegan = userPreferences.IsVegan ?? false,
             IsVegetarian = userPreferences.IsVegetarian ?? false,
             IsGlutenFree = userPreferences.HasGlutenIntolerance ?? false,
             IsLactoseFree = userPreferences.HasLactoseIntolerance ?? false,
-            Allergies = allergies,
+            Allergies = userPreferences.Allergies ?? new List<string>(),
             DislikedIngredients = new List<string>(),
-            MaxCalories = userPreferences.DailyCalorieGoal
+            MaxCalories = userPreferences.DailyCalorieGoal,
+            
+            DailyCalorieGoal = userPreferences.DailyCalorieGoal,
+            DailyProteinGoal = userPreferences.DailyProteinGoal,
+            DailyCarbohydrateGoal = userPreferences.DailyCarbohydrateGoal,
+            DailyFatGoal = userPreferences.DailyFatGoal
         };
+    }
+    
+    private int? CalculateTargetMealCalories(string mealType, Users.Responses.FoodPreferencesDto userPreferences)
+    {
+        var mealTypeLower = mealType.ToLowerInvariant();
+        
+        if (mealTypeLower == "breakfast" || mealTypeLower == "śniadanie")
+        {
+            return userPreferences.BreakfastCalories;
+        }
+        else if (mealTypeLower == "lunch" || mealTypeLower == "obiad")
+        {
+            return userPreferences.LunchCalories;
+        }
+        else if (mealTypeLower == "dinner" || mealTypeLower == "kolacja")
+        {
+            return userPreferences.DinnerCalories;
+        }
+        else if (mealTypeLower == "snack" || mealTypeLower == "przekąska")
+        {
+            return userPreferences.SnackCalories;
+        }
+        
+        _logger.LogWarning("Unknown meal type: {MealType}. Cannot calculate target calories.", mealType);
+        return null;
     }
     
 }

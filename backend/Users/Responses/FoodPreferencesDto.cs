@@ -5,7 +5,7 @@ public class FoodPreferencesDto {
     public bool? IsVegetarian { get; set; }
     public bool? HasGlutenIntolerance { get; set; }
     public bool? HasLactoseIntolerance { get; set; }
-    public bool? HasNutAllergy { get; set; }
+    public List <string>? Allergies { get; set; }
     
     public int? Age { get; set; }
     public string? Gender { get; set; }
