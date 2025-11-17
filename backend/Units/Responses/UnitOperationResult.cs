@@ -1,4 +1,6 @@
-﻿namespace inzynierka.Receipts.Responses;
+﻿using inzynierka.Units.Dto;
+
+namespace inzynierka.Units.Responses;
 
 public class UnitOperationResult
 {

@@ -7,6 +7,7 @@ using inzynierka.Products.Repositories;
 using inzynierka.Receipts.Model.Recipe;
 using inzynierka.Receipts.Requests;
 using inzynierka.Receipts.Responses;
+using inzynierka.Units.Services;
 
 namespace inzynierka.Receipts.Services;
 

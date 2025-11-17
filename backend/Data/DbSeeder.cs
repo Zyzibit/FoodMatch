@@ -1,7 +1,8 @@
 ﻿using inzynierka.Users.Model;
-using inzynierka.Receipts.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using inzynierka.Receipts.Model;
+using inzynierka.Units.Models;
 
 namespace inzynierka.Data;
 
@@ -30,7 +31,7 @@ public class DbSeeder
                         Description = "Unit of mass in the metric system",
                         PromptDescription = "Use for solid ingredients weight (e.g., flour, sugar, meat). 1000 grams = 1 kilogram"
                     },
-                    new Unit()
+                    new Unit
                     {
                         Name = "ząbek",
                         Description = "Clove - small segment of a bulb (typically garlic)",
@@ -66,7 +67,7 @@ public class DbSeeder
                         Description = "Tablespoon - approximately 15ml",
                         PromptDescription = "Use for small amounts of ingredients (e.g., 2 tablespoons of oil, 1 tablespoon of honey)"
                     },
-                        new Unit 
+                    new Unit 
                     { 
                         Name = "łyżeczka", 
                         Description = "Teaspoon - approximately 5ml",

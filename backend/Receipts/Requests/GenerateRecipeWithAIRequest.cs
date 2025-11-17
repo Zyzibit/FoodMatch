@@ -1,4 +1,3 @@
-
 using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Receipts.Requests;

@@ -11,7 +11,7 @@ public class ReceiptIngredient {
     
     public decimal? NormalizedQuantityInGrams { get; set; }
     
-    public Unit Unit { get; set; }
+    public Units.Models.Unit Unit { get; set; }
     public Receipt Receipt { get; set; }
     public Product Product { get; set; }
     

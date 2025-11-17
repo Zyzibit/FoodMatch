@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace inzynierka.Receipts.Model;
+namespace inzynierka.Units.Models;
 
 public class Unit
 {

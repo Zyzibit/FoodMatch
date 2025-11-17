@@ -1,11 +1,12 @@
 ﻿using inzynierka.Products.Services;
-using inzynierka.Receipts.Extensions;
 using inzynierka.Receipts.Extensions.Builders;
 using inzynierka.Receipts.Model;
 using inzynierka.Receipts.Model.Recipe;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Requests;
 using inzynierka.Receipts.Responses;
+using inzynierka.Receipts.Extensions;
+using inzynierka.Units.Services;
 using inzynierka.Users.Services;
 
 namespace inzynierka.Receipts.Services;
@@ -346,7 +347,18 @@ public class ReceiptService : IReceiptService
             var ingredients = new List<ReceiptIngredient>();
             var additionalProductsList = new List<string>();
 
-            foreach (var product in usedProducts)
+            var distinctProducts = usedProducts
+                .GroupBy(p => p.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            if (distinctProducts.Count < usedProducts.Count)
+            {
+                _logger.LogWarning("Removed {DuplicateCount} duplicate products from the list", 
+                    usedProducts.Count - distinctProducts.Count);
+            }
+
+            foreach (var product in distinctProducts)
             {
                 var aiIngredient = _ingredientMatcher.FindMatchingRecipeIngredient(product, generatedRecipe.Ingredients);
 

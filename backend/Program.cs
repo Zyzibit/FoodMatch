@@ -14,6 +14,8 @@ using inzynierka.Users.Model;
 using inzynierka.Users.Services;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Services;
+using inzynierka.Units.Repositories;
+using inzynierka.Units.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
