@@ -58,7 +58,9 @@ public class PromptConfigService : IPromptConfigService
 
         if (!string.IsNullOrEmpty(section.Content))
         {
-            builder.AppendLine(section.Content);
+            // Zastąp wszystkie placeholdery w contencie
+            var renderedContent = ReplacePlaceholders(section.Content, data);
+            builder.AppendLine(renderedContent);
         }
 
         if (!string.IsNullOrEmpty(section.Placeholder))
@@ -145,6 +147,20 @@ public class PromptConfigService : IPromptConfigService
         }
 
         builder.AppendLine();
+    }
+
+    private string ReplacePlaceholders(string text, Dictionary<string, object?> data)
+    {
+        var result = text;
+        
+        foreach (var kvp in data)
+        {
+            var placeholder = $"{{{kvp.Key}}}";
+            var value = kvp.Value?.ToString() ?? string.Empty;
+            result = result.Replace(placeholder, value);
+        }
+        
+        return result;
     }
 
     private string? ResolvePlaceholder(string placeholder, Dictionary<string, object?> data)
