@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Receipts.Extensions.Responses;
+﻿namespace inzynierka.Receipts.Responses;
 
 public class ReceiptDto
 {

@@ -1,4 +1,4 @@
-using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Model;
 using inzynierka.Users.Model;
 
 namespace inzynierka.MealPlans.Model;

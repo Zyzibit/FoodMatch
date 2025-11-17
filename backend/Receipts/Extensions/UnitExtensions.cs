@@ -1,5 +1,5 @@
-using inzynierka.Receipts.Extensions.Model;
-using inzynierka.Receipts.Extensions.Responses;
+using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Responses;
 
 namespace inzynierka.Receipts.Extensions;
 

@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Receipts.Extensions.Requests;
+﻿namespace inzynierka.Receipts.Requests;
 
 public class UpdateUnitRequest
 {

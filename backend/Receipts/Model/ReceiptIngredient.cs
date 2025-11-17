@@ -1,6 +1,6 @@
 ﻿using inzynierka.Products.Model;
 
-namespace inzynierka.Receipts.Extensions.Model;
+namespace inzynierka.Receipts.Model;
 
 public class ReceiptIngredient {
     public int ReceiptId { get; set; }

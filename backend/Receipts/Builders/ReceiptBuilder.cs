@@ -1,4 +1,4 @@
-using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Model;
 
 namespace inzynierka.Receipts.Extensions.Builders;
 

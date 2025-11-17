@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Services;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Services;
 
 namespace inzynierka.Receipts.Extensions.API;
 
@@ -127,7 +127,7 @@ public class ReceiptsController : ControllerBase
 
     [HttpPost("generate-with-ai")]
     [Authorize]
-    public async Task<IActionResult> GenerateRecipeWithAI([FromBody] GenerateRecipeWithAIRequest request)
+    public async Task<IActionResult> GenerateRecipeWithAI([FromBody] GenerateRecipeWithAiRequest request)
     {
         try
         {

@@ -1,7 +1,7 @@
-﻿﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using inzynierka.Users.Model;
 
-namespace inzynierka.Receipts.Extensions.Model;
+namespace inzynierka.Receipts.Model;
 
 public class Receipt {
     public int Id { get; set; }

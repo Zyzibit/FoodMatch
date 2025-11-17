@@ -1,7 +1,7 @@
-﻿using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Responses;
+﻿using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
-namespace inzynierka.Receipts.Extensions.Services;
+namespace inzynierka.Receipts.Services;
 
 public interface IReceiptService
 {
@@ -9,5 +9,5 @@ public interface IReceiptService
     Task<ReceiptDto?> GetReceiptAsync(int id);
     Task<ReceiptsListResult> GetAllReceiptsAsync(int limit = 50, int offset = 0);
     Task<ReceiptsListResult> GetUserReceiptsAsync(string userId, int limit = 50, int offset = 0);
-    Task<CreateReceiptResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAIRequest request);
+    Task<CreateReceiptResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAiRequest request);
 }

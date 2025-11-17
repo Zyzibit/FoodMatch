@@ -1,13 +1,14 @@
 ﻿using inzynierka.Products.Services;
+using inzynierka.Receipts.Extensions;
 using inzynierka.Receipts.Extensions.Builders;
-using inzynierka.Receipts.Extensions.Model;
-using inzynierka.Receipts.Extensions.Model.Recipe;
-using inzynierka.Receipts.Extensions.Repositories;
-using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Responses;
+using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Repositories;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 using inzynierka.Users.Services;
 
-namespace inzynierka.Receipts.Extensions.Services;
+namespace inzynierka.Receipts.Services;
 
 
 public class ReceiptService : IReceiptService
@@ -188,7 +189,7 @@ public class ReceiptService : IReceiptService
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
-    public async Task<CreateReceiptResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAIRequest request)
+    public async Task<CreateReceiptResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAiRequest request)
     {
         try
         {

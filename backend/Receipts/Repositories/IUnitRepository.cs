@@ -1,6 +1,6 @@
-using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Model;
 
-namespace inzynierka.Receipts.Extensions.Repositories;
+namespace inzynierka.Receipts.Repositories;
 
 public interface IUnitRepository
 {

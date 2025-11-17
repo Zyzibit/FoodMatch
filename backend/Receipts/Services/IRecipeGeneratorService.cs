@@ -1,7 +1,7 @@
-using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Responses;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
-namespace inzynierka.Receipts.Extensions.Services;
+namespace inzynierka.Receipts.Services;
 
 public interface IRecipeGeneratorService
 {

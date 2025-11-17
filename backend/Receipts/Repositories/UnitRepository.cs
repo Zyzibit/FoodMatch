@@ -1,8 +1,8 @@
 using inzynierka.Data;
-using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Receipts.Extensions.Repositories;
+namespace inzynierka.Receipts.Repositories;
 
 public class UnitRepository : IUnitRepository
 {

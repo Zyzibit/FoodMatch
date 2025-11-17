@@ -1,9 +1,9 @@
 
-using inzynierka.Receipts.Extensions.Model.Recipe;
+using inzynierka.Receipts.Model.Recipe;
 
-namespace inzynierka.Receipts.Extensions.Requests;
+namespace inzynierka.Receipts.Requests;
 
-public class GenerateRecipeWithAIRequest
+public class GenerateRecipeWithAiRequest
 {
     public List<int> ProductIds { get; set; } = new();
     public DietaryPreferences? Preferences { get; set; }
