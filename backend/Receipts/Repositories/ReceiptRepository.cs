@@ -1,6 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using inzynierka.Data;
+﻿using inzynierka.Data;
 using inzynierka.Receipts.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.Receipts.Repositories;
 

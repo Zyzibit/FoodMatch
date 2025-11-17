@@ -1,5 +1,5 @@
-using inzynierka.AI.Contracts.Models;
-using inzynierka.Products.Responses;
+using inzynierka.Products.Dto;
+using inzynierka.Receipts.Model.Recipe;
 
 namespace inzynierka.Receipts.Services;
 
@@ -9,13 +9,13 @@ public interface IRecipeIngredientMatcher
         List<string> userProvidedIngredientNames,
         List<GeneratedRecipeIngredient> allIngredients);
     
-    List<ProductInfo> GetMatchingProducts(
-        List<ProductInfo> availableProducts,
+    List<ProductDto> GetMatchingProducts(
+        List<ProductDto> availableProducts,
         List<GeneratedRecipeIngredient> recipeIngredients);
     
     GeneratedRecipeIngredient? FindMatchingRecipeIngredient(
-        ProductInfo product,
+        ProductDto product,
         List<GeneratedRecipeIngredient> recipeIngredients);
     
-    string GetProductDisplayName(ProductInfo product);
+    string GetProductDisplayName(ProductDto product);
 }

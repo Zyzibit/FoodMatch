@@ -155,21 +155,6 @@ namespace inzynierka.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ProductIngredientTag", b =>
-                {
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("IngredientTagId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProductId", "IngredientTagId");
-
-                    b.HasIndex("IngredientTagId");
-
-                    b.ToTable("ProductIngredientTag");
-                });
-
             modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -220,6 +205,37 @@ namespace inzynierka.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("inzynierka.MealPlans.Model.MealPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ReceiptId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MealPlans");
+                });
+
             modelBuilder.Entity("inzynierka.Products.Model.Product", b =>
                 {
                     b.Property<int>("Id")
@@ -265,9 +281,6 @@ namespace inzynierka.Migrations
                     b.Property<string>("IngredientsText")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsAiGenerated")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("IsVegan")
                         .HasColumnType("text");
 
@@ -306,6 +319,9 @@ namespace inzynierka.Migrations
 
                     b.Property<double?>("Sodium100g")
                         .HasColumnType("double precision");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
 
                     b.Property<double?>("Sugars100g")
                         .HasColumnType("double precision");
@@ -443,6 +459,21 @@ namespace inzynierka.Migrations
                     b.ToTable("IngredientTags");
                 });
 
+            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("IngredientTagId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductId", "IngredientTagId");
+
+                    b.HasIndex("IngredientTagId");
+
+                    b.ToTable("ProductIngredientTag");
+                });
+
             modelBuilder.Entity("inzynierka.Receipts.Model.Receipt", b =>
                 {
                     b.Property<int>("Id")
@@ -474,9 +505,6 @@ namespace inzynierka.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsAiGenerated")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("PreparationTimeMinutes")
                         .HasColumnType("integer");
 
@@ -484,6 +512,9 @@ namespace inzynierka.Migrations
                         .HasColumnType("numeric");
 
                     b.Property<int>("Servings")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Source")
                         .HasColumnType("integer");
 
                     b.Property<string>("Title")
@@ -511,6 +542,9 @@ namespace inzynierka.Migrations
 
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal?>("NormalizedQuantityInGrams")
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric");
@@ -677,25 +711,6 @@ namespace inzynierka.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ProductIngredientTag", b =>
-                {
-                    b.HasOne("inzynierka.Products.Model.Tag.IngredientTag.IngredientTag", "IngredientTag")
-                        .WithMany("ProductIngredientTags")
-                        .HasForeignKey("IngredientTagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
-                        .WithMany("ProductIngredientTags")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("IngredientTag");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
                 {
                     b.HasOne("inzynierka.Users.Model.User", "User")
@@ -703,6 +718,24 @@ namespace inzynierka.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("inzynierka.MealPlans.Model.MealPlan", b =>
+                {
+                    b.HasOne("inzynierka.Receipts.Model.Receipt", "Receipt")
+                        .WithMany()
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("inzynierka.Users.Model.User", "User")
+                        .WithMany("MealPlans")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receipt");
 
                     b.Navigation("User");
                 });
@@ -764,6 +797,25 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
+                {
+                    b.HasOne("inzynierka.Products.Model.Tag.IngredientTag.IngredientTag", "IngredientTag")
+                        .WithMany("ProductIngredientTags")
+                        .HasForeignKey("IngredientTagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                        .WithMany("ProductIngredientTags")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("IngredientTag");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("inzynierka.Receipts.Model.Receipt", b =>
                 {
                     b.HasOne("inzynierka.Users.Model.User", "User")
@@ -809,32 +861,145 @@ namespace inzynierka.Migrations
                             b1.Property<string>("UserId")
                                 .HasColumnType("text");
 
-                            b1.Property<int>("DailyCalorieGoal")
+                            b1.Property<string>("ActivityLevel")
+                                .HasColumnType("text");
+
+                            b1.Property<int?>("Age")
                                 .HasColumnType("integer");
+
+                            b1.Property<string>("Allergies")
+                                .HasColumnType("text");
+
+                            b1.Property<int>("BreakfastCaloriePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(30);
+
+                            b1.Property<int>("BreakfastCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(30);
+
+                            b1.Property<int>("BreakfastFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(30);
+
+                            b1.Property<int>("BreakfastProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DailyCalorieGoal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0);
 
                             b1.Property<int>("DailyCarbohydrateGoal")
-                                .HasColumnType("integer");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0);
 
                             b1.Property<int>("DailyFatGoal")
-                                .HasColumnType("integer");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0);
 
                             b1.Property<int>("DailyProteinGoal")
-                                .HasColumnType("integer");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(0);
+
+                            b1.Property<int>("DinnerCaloriePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(25);
+
+                            b1.Property<int>("DinnerProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(35);
+
+                            b1.Property<string>("Gender")
+                                .HasColumnType("text");
 
                             b1.Property<bool>("HasGlutenIntolerance")
-                                .HasColumnType("boolean");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false);
 
                             b1.Property<bool>("HasLactoseIntolerance")
-                                .HasColumnType("boolean");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false);
 
-                            b1.Property<bool>("HasNutAllergy")
-                                .HasColumnType("boolean");
+                            b1.Property<decimal?>("Height")
+                                .HasPrecision(5, 2)
+                                .HasColumnType("numeric(5,2)");
 
                             b1.Property<bool>("IsVegan")
-                                .HasColumnType("boolean");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false);
 
                             b1.Property<bool>("IsVegetarian")
-                                .HasColumnType("boolean");
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(false);
+
+                            b1.Property<int>("LunchCaloriePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(40);
+
+                            b1.Property<int>("LunchCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(40);
+
+                            b1.Property<int>("LunchFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(40);
+
+                            b1.Property<int>("LunchProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(35);
+
+                            b1.Property<int>("SnackCaloriePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackCarbohydratePercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackFatPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<int>("SnackProteinPercentage")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5);
+
+                            b1.Property<decimal?>("Weight")
+                                .HasPrecision(5, 2)
+                                .HasColumnType("numeric(5,2)");
 
                             b1.HasKey("UserId");
 
@@ -888,6 +1053,8 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("inzynierka.Users.Model.User", b =>
                 {
+                    b.Navigation("MealPlans");
+
                     b.Navigation("Receipts");
                 });
 #pragma warning restore 612, 618

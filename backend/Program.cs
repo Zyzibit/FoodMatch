@@ -1,6 +1,6 @@
 using System.Text;
 using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.PromptBuilders;
+using inzynierka.AI.OpenAI.Services;
 using inzynierka.Auth.Repositories;
 using inzynierka.Data;
 using inzynierka.Products.Extensions;
@@ -9,19 +9,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
-
-// New modular imports
-using inzynierka.Auth.Contracts;
-using inzynierka.AI.Contracts;
-using inzynierka.Auth.Modules;
-using inzynierka.AI.Modules;
 using inzynierka.Auth.Services;
-using inzynierka.Users.Contracts;
 using inzynierka.Users.Model;
-using inzynierka.Users.Modules;
 using inzynierka.Users.Services;
 using inzynierka.Receipts.Repositories;
 using inzynierka.Receipts.Services;
+using inzynierka.Units.Repositories;
+using inzynierka.Units.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,19 +84,16 @@ builder.Services.AddProductsServices();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
-builder.Services.AddScoped<IAuthContract, AuthModule>();
-builder.Services.AddScoped<IAIContract, AIModule>();
-builder.Services.AddScoped<IUserContract, UserModule>();
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
-builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
-builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
-builder.Services.AddScoped<IRecipeProductService, RecipeProductService>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
-builder.Services.AddScoped<IReceiptService, UserReceiptService>();
+builder.Services.AddScoped<IReceiptService, ReceiptService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
+builder.Services.AddScoped<IPromptConfigService, PromptConfigService>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
-builder.Services.AddScoped<IRecipePromptBuilder, RecipePromptBuilder>();
+
+builder.Services.AddScoped<inzynierka.MealPlans.Services.IMealPlanService, inzynierka.MealPlans.Services.MealPlanService>();
+builder.Services.AddScoped<inzynierka.MealPlans.Repositories.IMealPlanRepository, inzynierka.MealPlans.Repositories.MealPlanRepository>();
 
 builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
 builder.Services.AddSingleton<OpenAIClient>();
@@ -111,7 +102,12 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 builder.Services.AddHealthChecks()
     .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "127.0.0.1:6379");

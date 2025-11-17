@@ -1,8 +1,9 @@
 using inzynierka.Users.Model;
-using inzynierka.Users.Contracts.Models;
+using inzynierka.Users.Responses;
+using inzynierka.Users.Requests;
+using inzynierka.Users.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using FoodPreferences = inzynierka.Users.Model.FoodPreferences;
 
 namespace inzynierka.Users.Services;
 
@@ -22,31 +23,53 @@ public class UserService : IUserService
         _roleService = roleService;
     }
 
-    public async Task<User?> GetUserByIdAsync(string userId)
+    public async Task<UserDto?> GetUserByIdAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        return user?.ToDto();
+    }
+
+    public async Task<UserDto?> GetUserByUsernameAsync(string username)
+    {
+        var user = await _userManager.FindByNameAsync(username);
+        return user?.ToDto();
+        
+    }
+    
+    public async Task<UserDto?> GetUserByEmailAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        return user?.ToDto();
+    }
+    
+    // Internal methods - return entities
+    public async Task<User?> GetUserEntityByIdAsync(string userId)
     {
         return await _userManager.FindByIdAsync(userId);
     }
 
-    public async Task<User?> GetUserByUsernameAsync(string username)
+    public async Task<User?> GetUserEntityByUsernameAsync(string username)
     {
         return await _userManager.FindByNameAsync(username);
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    public async Task<User?> GetUserEntityByEmailAsync(string email)
     {
         return await _userManager.FindByEmailAsync(email);
     }
 
-    public async Task<List<User>> GetUsersAsync(int pageNumber, int pageSize)
+    public async Task<List<UserDto>> GetUsersAsync(int pageNumber, int pageSize)
     {
-        return await _userManager.Users
+        var users = await _userManager.Users
             .OrderBy(u => u.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+        
+        return users.Select(u => u.ToDto()).ToList();
     }
 
-    public async Task<bool> UpdateUserProfileAsync(string userId, string? name, string? email)
+    public async Task<bool> UpdateUserProfileAsync(string userId, UpdateUserProfileRequest request)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
@@ -57,15 +80,15 @@ public class UserService : IUserService
 
         var hasChanges = false;
 
-        if (!string.IsNullOrEmpty(name) && user.Name != name)
+        if (!string.IsNullOrEmpty(request.Name) && user.Name != request.Name)
         {
-            user.Name = name;
+            user.Name = request.Name;
             hasChanges = true;
         }
 
-        if (!string.IsNullOrEmpty(email) && user.Email != email)
+        if (!string.IsNullOrEmpty(request.Email) && user.Email != request.Email)
         {
-            var setEmailResult = await _userManager.SetEmailAsync(user, email);
+            var setEmailResult = await _userManager.SetEmailAsync(user, request.Email);
             if (!setEmailResult.Succeeded)
             {
                 _logger.LogError("Failed to set email for user {UserId}. Errors: {Errors}",
@@ -225,15 +248,15 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<FoodPreferences> GetUserFoodPreferencesAsync(string userId)
+    public async Task<FoodPreferencesDto?> GetUserFoodPreferencesAsync(string userId)
     {
         var user = await _userManager.FindByIdAsync(userId);
-        return user?.FoodPreferences;
+        return user?.FoodPreferences?.ToDto();
     }
     
     public async Task<bool> UpdateUserFoodPreferencesAsync(
         string userId,
-        FoodPreferences foodPreferences)
+        UpdateFoodPreferencesRequest request)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -250,55 +273,111 @@ public class UserService : IUserService
                 return false;
             }
 
-            var hasChanges = false;
-
-            SetIfChanged(ref hasChanges, foodPreferences.IsVegan, v => user.FoodPreferences.IsVegan = v, () => user.FoodPreferences.IsVegan);
-            SetIfChanged(ref hasChanges, foodPreferences.IsVegetarian, v => user.FoodPreferences.IsVegetarian = v, () =>user.FoodPreferences.IsVegetarian);
-            SetIfChanged(ref hasChanges, foodPreferences.HasGlutenIntolerance, v => user.FoodPreferences.HasGlutenIntolerance = v, () => user.FoodPreferences.HasGlutenIntolerance);
-            SetIfChanged(ref hasChanges, foodPreferences.HasLactoseIntolerance, v => user.FoodPreferences.HasLactoseIntolerance = v, () => user.FoodPreferences.HasLactoseIntolerance);
-            SetIfChanged(ref hasChanges, foodPreferences.HasNutAllergy, v => user.FoodPreferences.HasNutAllergy = v, () => user.FoodPreferences.HasNutAllergy);
-
-            SetIfChanged(ref hasChanges, foodPreferences.DailyProteinGoal, v => user.FoodPreferences.DailyProteinGoal = v, () => user.FoodPreferences.DailyProteinGoal);
-            SetIfChanged(ref hasChanges, foodPreferences.DailyCarbohydrateGoal, v => user.FoodPreferences.DailyCarbohydrateGoal = v, () => user.FoodPreferences.DailyCarbohydrateGoal);
-            SetIfChanged(ref hasChanges, foodPreferences.DailyFatGoal, v => user.FoodPreferences.DailyFatGoal = v, () => user.FoodPreferences.DailyFatGoal);
-            SetIfChanged(ref hasChanges, foodPreferences.DailyCalorieGoal, v => user.FoodPreferences.DailyCalorieGoal = v, () => user.FoodPreferences.DailyCalorieGoal);
-
-            if (hasChanges)
+            if (request.IsVegan.HasValue)
+                user.FoodPreferences.IsVegan = request.IsVegan.Value;
+            if (request.IsVegetarian.HasValue)
+                user.FoodPreferences.IsVegetarian = request.IsVegetarian.Value;
+            if (request.HasGlutenIntolerance.HasValue)
+                user.FoodPreferences.HasGlutenIntolerance = request.HasGlutenIntolerance.Value;
+            if (request.HasLactoseIntolerance.HasValue)
+                user.FoodPreferences.HasLactoseIntolerance = request.HasLactoseIntolerance.Value;
+            if (request.Allergies != null)
+                user.FoodPreferences.Allergies = request.Allergies;
+            
+            if (request.Age.HasValue)
+                user.FoodPreferences.Age = request.Age.Value;
+            
+            if (!string.IsNullOrEmpty(request.Gender))
             {
-                user.UpdatedAt = DateTime.UtcNow;
-                var result = await _userManager.UpdateAsync(user);
-
-                if (!result.Succeeded)
+                if (Enum.TryParse<Gender>(request.Gender, ignoreCase: true, out var gender))
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    _logger.LogError("Failed to update food preferences for user {UserId}. Errors: {Errors}", userId, errors);
-                    return false;
+                    user.FoodPreferences.Gender = gender;
                 }
+                else
+                {
+                    _logger.LogWarning("Invalid Gender value: {Gender}", request.Gender);
+                }
+            }
+            
+            if (request.Weight.HasValue)
+                user.FoodPreferences.Weight = request.Weight.Value;
+            if (request.Height.HasValue)
+                user.FoodPreferences.Height = request.Height.Value;
+            
+            if (!string.IsNullOrEmpty(request.ActivityLevel))
+            {
+                if (Enum.TryParse<PhysicalActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
+                {
+                    user.FoodPreferences.ActivityLevel = activityLevel;
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid ActivityLevel value: {ActivityLevel}", request.ActivityLevel);
+                }
+            }
+            
+            if (request.DailyProteinGoal.HasValue)
+                user.FoodPreferences.DailyProteinGoal = request.DailyProteinGoal.Value;
+            if (request.DailyCarbohydrateGoal.HasValue)
+                user.FoodPreferences.DailyCarbohydrateGoal = request.DailyCarbohydrateGoal.Value;
+            if (request.DailyFatGoal.HasValue)
+                user.FoodPreferences.DailyFatGoal = request.DailyFatGoal.Value;
+            if (request.DailyCalorieGoal.HasValue)
+                user.FoodPreferences.DailyCalorieGoal = request.DailyCalorieGoal.Value;
+            
+            if (request.BreakfastCaloriePercentage.HasValue)
+                user.FoodPreferences.BreakfastCaloriePercentage = request.BreakfastCaloriePercentage.Value;
+            if (request.LunchCaloriePercentage.HasValue)
+                user.FoodPreferences.LunchCaloriePercentage = request.LunchCaloriePercentage.Value;
+            if (request.DinnerCaloriePercentage.HasValue)
+                user.FoodPreferences.DinnerCaloriePercentage = request.DinnerCaloriePercentage.Value;
+            if (request.SnackCaloriePercentage.HasValue)
+                user.FoodPreferences.SnackCaloriePercentage = request.SnackCaloriePercentage.Value;
+            
+            if (request.BreakfastProteinPercentage.HasValue)
+                user.FoodPreferences.BreakfastProteinPercentage = request.BreakfastProteinPercentage.Value;
+            if (request.LunchProteinPercentage.HasValue)
+                user.FoodPreferences.LunchProteinPercentage = request.LunchProteinPercentage.Value;
+            if (request.DinnerProteinPercentage.HasValue)
+                user.FoodPreferences.DinnerProteinPercentage = request.DinnerProteinPercentage.Value;
+            if (request.SnackProteinPercentage.HasValue)
+                user.FoodPreferences.SnackProteinPercentage = request.SnackProteinPercentage.Value;
+            
+            if (request.BreakfastCarbohydratePercentage.HasValue)
+                user.FoodPreferences.BreakfastCarbohydratePercentage = request.BreakfastCarbohydratePercentage.Value;
+            if (request.LunchCarbohydratePercentage.HasValue)
+                user.FoodPreferences.LunchCarbohydratePercentage = request.LunchCarbohydratePercentage.Value;
+            if (request.DinnerCarbohydratePercentage.HasValue)
+                user.FoodPreferences.DinnerCarbohydratePercentage = request.DinnerCarbohydratePercentage.Value;
+            if (request.SnackCarbohydratePercentage.HasValue)
+                user.FoodPreferences.SnackCarbohydratePercentage = request.SnackCarbohydratePercentage.Value;
+            
+            if (request.BreakfastFatPercentage.HasValue)
+                user.FoodPreferences.BreakfastFatPercentage = request.BreakfastFatPercentage.Value;
+            if (request.LunchFatPercentage.HasValue)
+                user.FoodPreferences.LunchFatPercentage = request.LunchFatPercentage.Value;
+            if (request.DinnerFatPercentage.HasValue)
+                user.FoodPreferences.DinnerFatPercentage = request.DinnerFatPercentage.Value;
+            if (request.SnackFatPercentage.HasValue)
+                user.FoodPreferences.SnackFatPercentage = request.SnackFatPercentage.Value;
 
-                _logger.LogInformation("Food preferences updated for user {UserId}", userId);
+            user.UpdatedAt = DateTime.UtcNow;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                _logger.LogError("Failed to update food preferences for user {UserId}. Errors: {Errors}", userId, errors);
+                return false;
             }
 
+            _logger.LogInformation("Food preferences updated for user {UserId}", userId);
             return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating food preferences for user {UserId}", userId);
             return false;
-        }
-    }
-    private void SetIfChanged<T>(
-        ref bool hasChanges, 
-        T? newValue, 
-        Action<T> setter, 
-        Func<T> currentValueGetter) where T : struct
-    {
-        if (newValue.HasValue)
-        {
-            if (!EqualityComparer<T>.Default.Equals(currentValueGetter(), newValue.Value))
-            {
-                setter(newValue.Value);
-                hasChanges = true;
-            }
         }
     }
 

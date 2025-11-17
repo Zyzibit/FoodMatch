@@ -3,13 +3,14 @@ using EFCore.BulkExtensions;
 using inzynierka.Data;
 using inzynierka.Products.Model;
 using inzynierka.Products.Model.Tag;
+using inzynierka.Products.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace inzynierka.Products.OpenFoodFacts.Repositories
 {
-    public class OpenFoodFactsRepository : IOpenFoodFactsRepository
+    public class OpenFoodFactsRepository : IOpenFoodFactsRepository, IProductBulkRepository
     {
         private readonly AppDbContext _context;
         private readonly ILogger<OpenFoodFactsRepository> _logger;
@@ -430,8 +431,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         salt_100g            double precision NULL,
                         sodium_100g          double precision NULL,
                         energy_kcal_serving  double precision NULL,
-                        last_updated         timestamp        NULL,
-                        is_ai_generated      boolean          NOT NULL DEFAULT false
+                        last_updated         timestamp        NULL
                     ) ON COMMIT DROP;";
 
                 await using (var cmd = new NpgsqlCommand(createTemp, conn, tx) { CommandTimeout = 0 })
@@ -542,7 +542,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         ""Sodium100g"",
                         ""EnergyKcalServing"",
                         ""LastUpdated"",
-                        ""IsAiGenerated""
+                        ""Source""
                     )
                     SELECT
                         s.code,
@@ -571,7 +571,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                         s.sodium_100g,
                         s.energy_kcal_serving,
                         s.last_updated,
-                        s.is_ai_generated
+                        0
                     FROM products_stage s
                     WHERE s.code IS NOT NULL AND btrim(s.code) <> ''
                     ON CONFLICT (""Code"") DO NOTHING;";

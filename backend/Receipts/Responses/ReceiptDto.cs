@@ -1,13 +1,12 @@
-﻿using System.Collections.Generic;
-
-namespace inzynierka.Receipts.Responses;
+﻿namespace inzynierka.Receipts.Responses;
 
 public class ReceiptDto
 {
     public int Id { get; set; }
     public string UserId { get; set; } = string.Empty;
-    public bool IsAiGenerated { get; set; }
+    public string Source { get; set; } = string.Empty;
     public List<ReceiptIngredientReadDto> Ingredients { get; set; } = new List<ReceiptIngredientReadDto>();
+    
     public List<string>? AdditionalProducts { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -15,10 +14,10 @@ public class ReceiptDto
     public int Servings { get; set; }
     public int PreparationTimeMinutes { get; set; }
     public int TotalWeightGrams { get; set; }
-    public decimal CaloriesPer100G { get; set; }
-    public decimal ProteinPer100G { get; set; }
-    public decimal CarbohydratesPer100G { get; set; }
-    public decimal FatsPer100G { get; set; }
+    public decimal Calories { get; set; }
+    public decimal Protein { get; set; }
+    public decimal Carbohydrates { get; set; }
+    public decimal Fats { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -27,7 +26,8 @@ public class ReceiptIngredientReadDto
     public int ProductId { get; set; }
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
-    public bool IsAiGenerated { get; set; }
+    public decimal? NormalizedQuantityInGrams { get; set; }
+    public string Source { get; set; } = string.Empty;
     public decimal EstimatedCalories { get; set; }
     public decimal EstimatedProteins { get; set; }
     public decimal EstimatedCarbohydrates { get; set; }

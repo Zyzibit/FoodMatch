@@ -12,14 +12,14 @@ using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
-using inzynierka.Products.OpenFoodFacts.Repositories;
+using inzynierka.Products.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace inzynierka.Products.OpenFoodFacts.Import
 {
     public sealed class ProductImporter : IProductImporter
     {
-        private readonly IOpenFoodFactsRepository _repo;
+        private readonly IProductBulkRepository _bulkRepository;
         private readonly ILogger<ProductImporter> _logger;
 
         private const int ProductBatchSize = 50;
@@ -30,19 +30,19 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             ReadCommentHandling = JsonCommentHandling.Skip
         };
 
-        public ProductImporter(IOpenFoodFactsRepository repo, ILogger<ProductImporter> logger)
+        public ProductImporter(IProductBulkRepository bulkRepository, ILogger<ProductImporter> logger)
         {
-            _repo = repo;
+            _bulkRepository = bulkRepository;
             _logger = logger;
         }
 
         public async Task ImportJsonlAsync(string filePath, CancellationToken ct = default)
         {
-            _repo.PrepareForBulkImport();
+            _bulkRepository.PrepareForBulkImport();
 
             try
             {
-                var products = new List<Product?>(ProductBatchSize);
+                var products = new List<Product>(ProductBatchSize);
                 var tags = new TagBuffers(ProductBatchSize);
 
                 var processed = 0;
@@ -58,7 +58,8 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
                     var code = Sanitizer(src.Code);
                     if (string.IsNullOrWhiteSpace(code)) continue;
-                    code = code!.Trim();
+                    code = code.Trim();
+                    
                     var product = MapToProduct(src);
                     if (product != null) {
                         products.Add(product);
@@ -86,7 +87,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             }
             finally
             {
-                _repo.RestoreAfterBulkImport();
+                _bulkRepository.RestoreAfterBulkImport();
             }
         }
 
@@ -160,17 +161,17 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
         private async Task FlushAsync(List<Product> products, TagBuffers tags, CancellationToken ct)
         {
-            await _repo.BulkInsertProductsAsync(products, ct);
+            await _bulkRepository.BulkInsertProductsAsync(products, ct);
 
-            await _repo.BulkEnsureTagsAsync<IngredientTag>(tags.IngredientNames, ct);
-            await _repo.BulkEnsureTagsAsync<CountryTag>(tags.CountryNames, ct);
-            await _repo.BulkEnsureTagsAsync<CategoryTag>(tags.CategoryNames, ct);
-            await _repo.BulkEnsureTagsAsync<AllergenTag>(tags.AllergenNames, ct);
+            await _bulkRepository.BulkEnsureTagsAsync<IngredientTag>(tags.IngredientNames, ct);
+            await _bulkRepository.BulkEnsureTagsAsync<CountryTag>(tags.CountryNames, ct);
+            await _bulkRepository.BulkEnsureTagsAsync<CategoryTag>(tags.CategoryNames, ct);
+            await _bulkRepository.BulkEnsureTagsAsync<AllergenTag>(tags.AllergenNames, ct);
 
-            await _repo.BulkUpsertProductIngredientLinksAsync(tags.IngredientLinks, ct);
-            await _repo.BulkUpsertProductCountryLinksAsync(tags.CountryLinks, ct);
-            await _repo.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
-            await _repo.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
+            await _bulkRepository.BulkUpsertProductIngredientLinksAsync(tags.IngredientLinks, ct);
+            await _bulkRepository.BulkUpsertProductCountryLinksAsync(tags.CountryLinks, ct);
+            await _bulkRepository.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
+            await _bulkRepository.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
         }
         
 

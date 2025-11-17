@@ -2,10 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
 using inzynierka.Receipts.Services;
 
-namespace inzynierka.Receipts.API;
+namespace inzynierka.Receipts.Extensions.API;
 
 [ApiController]
 [Route("api/v1/receipts")]
@@ -128,7 +127,7 @@ public class ReceiptsController : ControllerBase
 
     [HttpPost("generate-with-ai")]
     [Authorize]
-    public async Task<IActionResult> GenerateRecipeWithAI([FromBody] GenerateRecipeWithAIRequest request)
+    public async Task<IActionResult> GenerateRecipeWithAI([FromBody] GenerateRecipeWithAiRequest request)
     {
         try
         {
