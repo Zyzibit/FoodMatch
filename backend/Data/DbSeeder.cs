@@ -1,5 +1,5 @@
 ﻿using inzynierka.Users.Model;
-using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Extensions.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

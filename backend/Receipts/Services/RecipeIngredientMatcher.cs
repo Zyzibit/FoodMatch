@@ -1,8 +1,8 @@
 using inzynierka.Products.Dto;
 using inzynierka.Products.Responses;
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Receipts.Extensions.Services;
 
 public class RecipeIngredientMatcher : IRecipeIngredientMatcher
 {

@@ -1,9 +1,10 @@
 using inzynierka.MealPlans.Constants;
+using inzynierka.MealPlans.Extensions;
 using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
-using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Extensions.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.MealPlans.Services;
@@ -117,24 +118,7 @@ public class MealPlanService: IMealPlanService
             
             var mealPlans = await _mealPlanRepository.GetMealPlansForUserAsync(userId, startOfDay, endOfDay);
             
-            var mealPlanDtos = mealPlans.Select(mp => new MealPlanDto
-            {
-                Id = mp.Id,
-                Name = mp.Name,
-                Date = mp.Date,
-                Receipt = mp.Receipt != null ? new MealPlanReceiptDto
-                {
-                    Id = mp.Receipt.Id,
-                    Title = mp.Receipt.Title,
-                    Description = mp.Receipt.Description,
-                    CaloriesPer100G = mp.Receipt.Calories,
-                    ProteinPer100G = mp.Receipt.Protein,
-                    CarbohydratesPer100G = mp.Receipt.Carbohydrates,
-                    FatsPer100G = mp.Receipt.Fats,
-                    Servings = mp.Receipt.Servings,
-                    PreparationTimeMinutes = mp.Receipt.PreparationTimeMinutes
-                } : null
-            }).ToList();
+            var mealPlanDtos = mealPlans.Select(mp => mp.ToDto()).ToList();
             
             return new GetMealPlansResponse
             {

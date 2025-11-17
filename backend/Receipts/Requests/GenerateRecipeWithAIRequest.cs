@@ -1,7 +1,7 @@
 
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
-namespace inzynierka.Receipts.Requests;
+namespace inzynierka.Receipts.Extensions.Requests;
 
 public class GenerateRecipeWithAIRequest
 {
@@ -11,5 +11,6 @@ public class GenerateRecipeWithAIRequest
     public int? DesiredServings { get; set; }
     public int? MaxPreparationTimeMinutes { get; set; }
     public string? AdditionalInstructions { get; set; }
+    public string? MealType { get; set; }
 }
 

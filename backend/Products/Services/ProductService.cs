@@ -3,7 +3,7 @@ using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
 using inzynierka.Products.Mappings;
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
 namespace inzynierka.Products.Services;
 
@@ -400,10 +400,8 @@ public class ProductService : IProductService
                     "Using default of 100g for nutritional calculations.", 
                     ingredient.Name);
             }
-            // Calculate nutritional values per 100g
             var scaleFactor = 100m / normalizedQuantity;
             
-            // Create new AI-generated product with normalized values
             var aiProduct = new Product
             {
                 Code = $"AI-GENERATED-{Guid.NewGuid()}",

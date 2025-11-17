@@ -1,7 +1,7 @@
-﻿using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
+﻿using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Responses;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Receipts.Extensions.Services;
 
 public interface IReceiptService
 {

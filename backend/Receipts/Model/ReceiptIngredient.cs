@@ -1,12 +1,11 @@
 ﻿using inzynierka.Products.Model;
 
-namespace inzynierka.Receipts.Model;
+namespace inzynierka.Receipts.Extensions.Model;
 
 public class ReceiptIngredient {
     public int ReceiptId { get; set; }
     public int ProductId { get; set; }
     public int UnitId { get; set; }
-
     public decimal Quantity { get; set; }
     
     

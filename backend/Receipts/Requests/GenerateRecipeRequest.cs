@@ -1,10 +1,11 @@
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
-namespace inzynierka.Receipts.Requests;
+namespace inzynierka.Receipts.Extensions.Requests;
 
 public class GenerateRecipeRequest
 {
     public List<string> AvailableIngredients { get; set; } = new();
+    public List<int> ProductIds { get; set; } = new();
     public DietaryPreferences? Preferences { get; set; }
     public string? CuisineType { get; set; }
     public int? DesiredServings { get; set; }

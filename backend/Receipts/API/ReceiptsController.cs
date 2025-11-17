@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Services;
 
-namespace inzynierka.Receipts.API;
+namespace inzynierka.Receipts.Extensions.API;
 
 [ApiController]
 [Route("api/v1/receipts")]

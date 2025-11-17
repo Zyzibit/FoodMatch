@@ -12,8 +12,8 @@ using StackExchange.Redis;
 using inzynierka.Auth.Services;
 using inzynierka.Users.Model;
 using inzynierka.Users.Services;
-using inzynierka.Receipts.Repositories;
-using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Extensions.Repositories;
+using inzynierka.Receipts.Extensions.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,8 +83,6 @@ builder.Services.AddProductsServices();
 builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
-builder.Services.AddScoped<inzynierka.Receipts.Mappings.IReceiptMapper, inzynierka.Receipts.Mappings.ReceiptMapper>();
-builder.Services.AddScoped<inzynierka.Receipts.Mappings.IUnitMapper, inzynierka.Receipts.Mappings.UnitMapper>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IReceiptService, ReceiptService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
@@ -102,7 +100,12 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 builder.Services.AddHealthChecks()
     .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "127.0.0.1:6379");

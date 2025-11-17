@@ -7,7 +7,7 @@ using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
 using inzynierka.MealPlans.Model;
-using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Extensions.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,6 +38,7 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new ProductCountryTagConfiguration());
         modelBuilder.ApplyConfiguration(new ProductIngredientTagConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new FoodPreferencesConfiguration());
         
         modelBuilder.Entity<Receipt>()
             .HasKey(r => r.Id);
@@ -84,8 +85,5 @@ public class AppDbContext : IdentityDbContext<User> {
             .WithMany()
             .HasForeignKey(mp => mp.ReceiptId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<User>()
-            .OwnsOne(u => u.FoodPreferences);
     }
 }

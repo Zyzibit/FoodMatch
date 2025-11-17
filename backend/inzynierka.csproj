@@ -24,6 +24,7 @@
       <None Remove="Auth\Model\DTO\**" />
       <None Remove="Products\Controller\**" />
       <None Remove="Products\Service\**" />
+      <None Remove="Receipts\README_RecipeGeneration.md" />
     </ItemGroup>
 
     <ItemGroup>

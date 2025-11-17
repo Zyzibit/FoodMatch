@@ -1,15 +1,13 @@
-﻿using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
-using inzynierka.Receipts.Model;
-using inzynierka.Receipts.Model.Recipe;
-using inzynierka.Receipts.Repositories;
-using inzynierka.Products.Services;
-using inzynierka.Data;
-using inzynierka.Receipts.Mappings;
-using inzynierka.Users.Model;
+﻿using inzynierka.Products.Services;
+using inzynierka.Receipts.Extensions.Builders;
+using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Extensions.Model.Recipe;
+using inzynierka.Receipts.Extensions.Repositories;
+using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Responses;
 using inzynierka.Users.Services;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Receipts.Extensions.Services;
 
 
 public class ReceiptService : IReceiptService
@@ -21,7 +19,6 @@ public class ReceiptService : IReceiptService
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
     private readonly IUnitService _unitService;
     private readonly IUserService _userService;
-    private readonly IReceiptMapper _receiptMapper;
 
     public ReceiptService(
         IReceiptRepository receiptRepository, 
@@ -30,8 +27,7 @@ public class ReceiptService : IReceiptService
         IRecipeGeneratorService recipeGeneratorService,
         IProductService productService,
         IRecipeIngredientMatcher ingredientMatcher,
-        IUnitService unitService,
-        IReceiptMapper receiptMapper)
+        IUnitService unitService)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
@@ -40,12 +36,6 @@ public class ReceiptService : IReceiptService
         _productService = productService;
         _ingredientMatcher = ingredientMatcher;
         _unitService = unitService;
-        _receiptMapper = receiptMapper;
-    }
-
-    public ReceiptDto MapToDto(Receipt receipt)
-    {
-        return _receiptMapper.MapToDto(receipt);
     }
     
     public async Task<int> GetUnitIdForIngredientAsync(string? unitName)
@@ -138,30 +128,33 @@ public class ReceiptService : IReceiptService
                 };
             }
             
-            var receipt = new Receipt
+            var ingredients = request.Ingredients.Select(i => new ReceiptIngredient
             {
-                UserId = userId,
-                IsAiGenerated = false,
-                Ingredients = request.Ingredients.Select(i => new ReceiptIngredient
-                {
-                    ProductId = i.ProductId,
-                    UnitId = i.UnitId,
-                    Quantity = i.Quantity,
-                    NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
-                }).ToList(),
-                AdditionalProducts = request.AdditionalProducts,
-                Title = request.Title,
-                Description = request.Description,
-                Instructions = request.Instructions,
-                Servings = request.Servings,
-                PreparationTimeMinutes = request.PreparationTimeMinutes,
-                TotalWeightGrams = request.TotalWeightGrams,
-                Calories = request.CaloriesPer100G,
-                Protein = request.ProteinPer100G,
-                Carbohydrates = request.CarbohydratesPer100G,
-                Fats = request.FatsPer100G,
-                CreatedAt = DateTime.UtcNow
-            };
+                ProductId = i.ProductId,
+                UnitId = i.UnitId,
+                Quantity = i.Quantity,
+                NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
+            }).ToList();
+
+            var builder = ReceiptBuilder.Create()
+                .ForUser(userId)
+                .FromSource(ReceiptSource.User)
+                .WithIngredients(ingredients)
+                .WithAdditionalProducts(request.AdditionalProducts)
+                .WithTitle(request.Title)
+                .WithDescription(request.Description)
+                .WithInstructions(request.Instructions)
+                .WithServings(request.Servings)
+                .WithPreparationTime(request.PreparationTimeMinutes)
+                .WithTotalWeightGrams(request.TotalWeightGrams)
+                .WithMacros(
+                    calories: request.CaloriesPer100G,
+                    protein: request.ProteinPer100G,
+                    carbohydrates: request.CarbohydratesPer100G,
+                    fats: request.FatsPer100G)
+                .CreatedAt(DateTime.UtcNow);
+
+            var receipt = builder.Build();
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
             return new CreateReceiptResult { Success = true, ReceiptId = added.Id };
@@ -178,20 +171,20 @@ public class ReceiptService : IReceiptService
         var receipt = await _receiptRepository.GetReceiptByIdAsync(id);
         if (receipt == null) return null;
 
-        return MapToDto(receipt);
+        return receipt.ToDto();
     }
 
     public async Task<ReceiptsListResult> GetAllReceiptsAsync(int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetAllReceiptsAsync(limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.ToDtoList().ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
     public async Task<ReceiptsListResult> GetUserReceiptsAsync(string userId, int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetUserReceiptsAsync(userId, limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.ToDtoList().ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
@@ -218,6 +211,65 @@ public class ReceiptService : IReceiptService
                     Success = false, 
                     ErrorMessage = "User not found in the database" 
                 };
+            }
+            var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            
+            var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
+            
+            if (!string.IsNullOrEmpty(request.MealType) && preferences != null && userPreferences != null)
+            {
+                preferences.MealType = request.MealType;
+                
+                // Obliczanie celów żywieniowych dla tego posiłku na podstawie preferencji użytkownika
+                var mealGoals = CalculateMealNutritionalGoals(request.MealType, userPreferences);
+                
+                if (mealGoals != null)
+                {
+                    if (!preferences.TargetMealCalories.HasValue && mealGoals.Calories.HasValue)
+                    {
+                        preferences.TargetMealCalories = mealGoals.Calories.Value;
+                    }
+                    
+                    if (!preferences.TargetMealProtein.HasValue && mealGoals.Protein.HasValue)
+                    {
+                        preferences.TargetMealProtein = mealGoals.Protein.Value;
+                    }
+                    
+                    if (!preferences.TargetMealCarbohydrates.HasValue && mealGoals.Carbohydrates.HasValue)
+                    {
+                        preferences.TargetMealCarbohydrates = mealGoals.Carbohydrates.Value;
+                    }
+                    
+                    if (!preferences.TargetMealFat.HasValue && mealGoals.Fat.HasValue)
+                    {
+                        preferences.TargetMealFat = mealGoals.Fat.Value;
+                    }
+                    
+                    _logger.LogInformation(
+                        "Calculated nutritional goals for {MealType}: {Calories} kcal, {Protein}g protein, {Carbs}g carbs, {Fat}g fat", 
+                        request.MealType, mealGoals.Calories, mealGoals.Protein, mealGoals.Carbohydrates, mealGoals.Fat);
+                }
+                
+                // Przekazujemy również dzienne cele do AI
+                if (!preferences.DailyCalorieGoal.HasValue)
+                {
+                    preferences.DailyCalorieGoal = userPreferences.DailyCalorieGoal ?? userPreferences.CalculatedDailyCalories;
+                }
+                
+                if (!preferences.DailyProteinGoal.HasValue)
+                {
+                    preferences.DailyProteinGoal = userPreferences.DailyProteinGoal;
+                }
+                
+                if (!preferences.DailyCarbohydrateGoal.HasValue)
+                {
+                    preferences.DailyCarbohydrateGoal = userPreferences.DailyCarbohydrateGoal;
+                }
+                
+                if (!preferences.DailyFatGoal.HasValue)
+                {
+                    preferences.DailyFatGoal = userPreferences.DailyFatGoal;
+                }
             }
             
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
@@ -253,7 +305,7 @@ public class ReceiptService : IReceiptService
             var aiRequest = new GenerateRecipeRequest
             {
                 AvailableIngredients = ingredientNames,
-                Preferences = request.Preferences,
+                Preferences = preferences,
                 CuisineType = request.CuisineType,
                 DesiredServings = request.DesiredServings,
                 MaxPreparationTimeMinutes = request.MaxPreparationTimeMinutes,
@@ -290,24 +342,8 @@ public class ReceiptService : IReceiptService
                     usedProducts.Count, productsList.Count, string.Join(", ", unusedProducts));
             }
 
-            var receipt = new Receipt
-            {
-                UserId = userId,
-                IsAiGenerated = true,
-                Title = generatedRecipe.Title,
-                Description = generatedRecipe.Description,
-                Instructions = generatedRecipe.Instructions,
-                Servings = generatedRecipe.Servings,
-                PreparationTimeMinutes = generatedRecipe.PreparationTimeMinutes,
-                TotalWeightGrams = generatedRecipe.TotalWeightGrams,
-                Calories = generatedRecipe.EstimatedCalories,
-                Protein = generatedRecipe.EstimatedProtein,
-                Carbohydrates = generatedRecipe.EstimatedCarbohydrates,
-                Fats = generatedRecipe.EstimatedFats,
-                CreatedAt = DateTime.UtcNow,
-                Ingredients = new List<ReceiptIngredient>(),
-                AdditionalProducts = new List<string>()
-            };
+            var ingredients = new List<ReceiptIngredient>();
+            var additionalProductsList = new List<string>();
 
             foreach (var product in usedProducts)
             {
@@ -341,7 +377,7 @@ public class ReceiptService : IReceiptService
                     
                     var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams;
                     
-                    receipt.Ingredients.Add(new ReceiptIngredient
+                    ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = productId,
                         UnitId = unitId,
@@ -363,7 +399,7 @@ public class ReceiptService : IReceiptService
                     var aiGeneratedProduct = await _productService.CreateAiGeneratedProductAsync(additionalIngredient);
                     var unitId = await GetUnitIdForIngredientAsync(additionalIngredient.Unit);
                     
-                    receipt.Ingredients.Add(new ReceiptIngredient
+                    ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = aiGeneratedProduct.Id,
                         UnitId = unitId,
@@ -374,15 +410,35 @@ public class ReceiptService : IReceiptService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to add AI-generated ingredient {IngredientName}", additionalIngredient.Name);
-                    receipt.AdditionalProducts.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
+                    additionalProductsList.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
                 }
             }
+
+            var builder = ReceiptBuilder.Create()
+                .ForUser(userId)
+                .FromSource(ReceiptSource.AI)
+                .WithTitle(generatedRecipe.Title)
+                .WithDescription(generatedRecipe.Description)
+                .WithInstructions(generatedRecipe.Instructions)
+                .WithServings(generatedRecipe.Servings)
+                .WithPreparationTime(generatedRecipe.PreparationTimeMinutes)
+                .WithTotalWeightGrams(generatedRecipe.TotalWeightGrams)
+                .WithMacros(
+                    calories: generatedRecipe.EstimatedCalories,
+                    protein: generatedRecipe.EstimatedProtein,
+                    carbohydrates: generatedRecipe.EstimatedCarbohydrates,
+                    fats: generatedRecipe.EstimatedFats)
+                .WithIngredients(ingredients)
+                .WithAdditionalProducts(additionalProductsList)
+                .CreatedAt(DateTime.UtcNow);
+
+            var receipt = builder.Build();
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
             
             
             _logger.LogInformation("AI-generated recipe created with ID: {ReceiptId}, with {Count} ingredients and {AdditionalCount} AI-generated products", 
-                added.Id, receipt.Ingredients.Count, additionalIngredientsData.Count);
+                added.Id, ingredients.Count, additionalIngredientsData.Count);
             
             return new CreateReceiptResult 
             { 
@@ -401,4 +457,84 @@ public class ReceiptService : IReceiptService
         }
     }
     
+    private DietaryPreferences? CreatePreferencesFromUser(Users.Responses.FoodPreferencesDto? userPreferences)
+    {
+        if (userPreferences == null)
+        {
+            return null;
+        }
+        
+        return new DietaryPreferences
+        {
+            IsVegan = userPreferences.IsVegan ?? false,
+            IsVegetarian = userPreferences.IsVegetarian ?? false,
+            IsGlutenFree = userPreferences.HasGlutenIntolerance ?? false,
+            IsLactoseFree = userPreferences.HasLactoseIntolerance ?? false,
+            Allergies = userPreferences.Allergies ?? new List<string>(),
+            DislikedIngredients = new List<string>(),
+            MaxCalories = userPreferences.DailyCalorieGoal,
+            
+            DailyCalorieGoal = userPreferences.DailyCalorieGoal,
+            DailyProteinGoal = userPreferences.DailyProteinGoal,
+            DailyCarbohydrateGoal = userPreferences.DailyCarbohydrateGoal,
+            DailyFatGoal = userPreferences.DailyFatGoal
+        };
+    }
+    
+    private MealNutritionalGoals? CalculateMealNutritionalGoals(string mealType, Users.Responses.FoodPreferencesDto userPreferences)
+    {
+        var mealTypeLower = mealType.ToLowerInvariant();
+        
+        if (mealTypeLower == "breakfast")
+        {
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.BreakfastCalories,
+                Protein = userPreferences.BreakfastProteinGoal,
+                Carbohydrates = userPreferences.BreakfastCarbohydrateGoal,
+                Fat = userPreferences.BreakfastFatGoal
+            };
+        }
+        else if (mealTypeLower == "lunch")
+        {
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.LunchCalories,
+                Protein = userPreferences.LunchProteinGoal,
+                Carbohydrates = userPreferences.LunchCarbohydrateGoal,
+                Fat = userPreferences.LunchFatGoal
+            };
+        }
+        else if (mealTypeLower == "dinner")
+        {
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.DinnerCalories,
+                Protein = userPreferences.DinnerProteinGoal,
+                Carbohydrates = userPreferences.DinnerCarbohydrateGoal,
+                Fat = userPreferences.DinnerFatGoal
+            };
+        }
+        else if (mealTypeLower == "snack")
+        {
+            return new MealNutritionalGoals
+            {
+                Calories = userPreferences.SnackCalories,
+                Protein = userPreferences.SnackProteinGoal,
+                Carbohydrates = userPreferences.SnackCarbohydrateGoal,
+                Fat = userPreferences.SnackFatGoal
+            };
+        }
+        
+        _logger.LogWarning("Unknown meal type: {MealType}. Cannot calculate nutritional goals.", mealType);
+        return null;
+    }
+}
+
+internal class MealNutritionalGoals
+{
+    public int? Calories { get; set; }
+    public int? Protein { get; set; }
+    public int? Carbohydrates { get; set; }
+    public int? Fat { get; set; }
 }

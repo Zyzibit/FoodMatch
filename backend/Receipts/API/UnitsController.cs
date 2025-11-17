@@ -1,9 +1,9 @@
+using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using inzynierka.Receipts.Services;
-using inzynierka.Receipts.Requests;
 
-namespace inzynierka.Receipts.API;
+namespace inzynierka.Receipts.Extensions.API;
 
 [ApiController]
 [Route("api/v1/units")]

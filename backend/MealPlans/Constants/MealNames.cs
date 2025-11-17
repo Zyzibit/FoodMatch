@@ -2,10 +2,10 @@ namespace inzynierka.MealPlans.Constants;
 
 public static class MealNames
 {
-    public const string Breakfast = "Śniadanie";
-    public const string Lunch = "Obiad";
-    public const string Dinner = "Kolacja";
-    public const string Snack = "Przekąska";
+    public const string Breakfast = "Breakfast";
+    public const string Lunch = "Lunch";
+    public const string Dinner = "Dinner";
+    public const string Snack = "Snack";
     
     public static readonly HashSet<string> AllowedMealNames = new()
     {
