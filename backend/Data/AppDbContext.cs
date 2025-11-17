@@ -8,6 +8,7 @@ using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
 using inzynierka.MealPlans.Model;
 using inzynierka.Receipts.Model;
+using inzynierka.Units.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -65,6 +66,7 @@ public class AppDbContext : IdentityDbContext<User> {
             
         modelBuilder.Entity<Unit>()
             .HasKey(u => u.UnitId);
+        
         modelBuilder.Entity<Receipt>()
             .HasOne(r => r.User)            
             .WithMany(u => u.Receipts)      

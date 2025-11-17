@@ -1,7 +1,8 @@
-using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
+using inzynierka.Units.Dto;
+using inzynierka.Units.Requests;
+using inzynierka.Units.Responses;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Units.Services;
 
 public interface IUnitService
 {

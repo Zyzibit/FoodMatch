@@ -1,7 +1,7 @@
-using inzynierka.Receipts.Model;
-using inzynierka.Receipts.Responses;
+using inzynierka.Units.Dto;
+using inzynierka.Units.Models;
 
-namespace inzynierka.Receipts.Extensions;
+namespace inzynierka.Units.Extensions;
 
 public static class UnitExtensions
 {
