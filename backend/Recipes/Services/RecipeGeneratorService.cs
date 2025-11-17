@@ -290,11 +290,14 @@ namespace inzynierka.Recipes.Services;
                 productsInfo = string.Join("\n", products.Select(p => FormatProductForPrompt(p)));
             }
             
+            var availableIngredientsText = request.AvailableIngredients.Any()
+                ? string.Join("\n", request.AvailableIngredients)
+                : (products.Any() ? string.Join("\n", products.Select(p => p.ProductName)) : "");
+            
             var data = new Dictionary<string, object?>
             {
-                ["availableIngredients"] = request.AvailableIngredients.Any()
-                    ? string.Join("\n", request.AvailableIngredients)
-                    : "",
+                ["availableIngredients"] = availableIngredientsText,
+                ["productsFromDatabase"] = productsInfo,
                 ["allowedUnits"] = unitNames,
                 ["cuisineType"] = request.CuisineType,
                 ["desiredServings"] = request.DesiredServings,

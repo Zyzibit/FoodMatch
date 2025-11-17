@@ -219,11 +219,13 @@ public class RecipeService : IRecipeService
             
             var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
             
+            _logger.LogInformation("MealType from request: '{MealType}', Preferences: {HasPreferences}, UserPreferences: {HasUserPreferences}", 
+                request.MealType ?? "NULL", preferences != null, userPreferences != null);
+            
             if (!string.IsNullOrEmpty(request.MealType) && preferences != null && userPreferences != null)
             {
                 preferences.MealType = request.MealType;
                 
-                // Obliczanie celów żywieniowych dla tego posiłku na podstawie preferencji użytkownika
                 var mealGoals = CalculateMealNutritionalGoals(request.MealType, userPreferences);
                 
                 if (mealGoals != null)
@@ -324,6 +326,17 @@ public class RecipeService : IRecipeService
                 MaxPreparationTimeMinutes = request.MaxPreparationTimeMinutes,
                 AdditionalInstructions = request.AdditionalInstructions
             };
+
+            if (preferences != null)
+            {
+                _logger.LogInformation(
+                    "Sending to AI - MealType: {MealType}, TargetMealCalories: {Calories}, TargetMealProtein: {Protein}, TargetMealCarbs: {Carbs}, TargetMealFat: {Fat}",
+                    preferences.MealType ?? "NULL",
+                    preferences.TargetMealCalories?.ToString() ?? "NULL",
+                    preferences.TargetMealProtein?.ToString() ?? "NULL",
+                    preferences.TargetMealCarbohydrates?.ToString() ?? "NULL",
+                    preferences.TargetMealFat?.ToString() ?? "NULL");
+            }
 
             var aiResult = await _recipeGeneratorService.GenerateRecipeAsync(aiRequest);
 

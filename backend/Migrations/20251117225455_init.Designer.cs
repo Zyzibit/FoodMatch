@@ -13,7 +13,7 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251117223348_init")]
+    [Migration("20251117225455_init")]
     partial class init
     {
         /// <inheritdoc />
