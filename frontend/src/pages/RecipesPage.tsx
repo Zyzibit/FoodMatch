@@ -11,7 +11,10 @@ export default function RecipesPage() {
   const label = activeTab ? tabLabels[activeTab] ?? activeTab : "Moje przepisy";
 
   return (
-    <Paper elevation={1} sx={{ p: 3, width: "100%", maxWidth: 960 }}>
+    <Paper
+      elevation={1}
+      sx={{ p: 3, width: "100%", maxWidth: 1100, mx: "auto" }}
+    >
       <Typography variant="h5" gutterBottom fontWeight={800}>
         Przepisy
       </Typography>

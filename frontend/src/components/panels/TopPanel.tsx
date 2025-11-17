@@ -81,6 +81,15 @@ const formatDateKey = (date: Date) => {
   return `${DATE_KEY_PREFIX}${year}-${month}-${day}`;
 };
 
+const formatTileLabel = (date: Date, todayTime: number) => {
+  const weekday = date
+    .toLocaleDateString("pl-PL", { weekday: "short" })
+    .replace(".", "");
+  const day = date.getDate().toString().padStart(2, "0");
+  const isToday = date.getTime() === todayTime;
+  return isToday ? `Dziś ${day}` : `${weekday} ${day}`;
+};
+
 const parseDateKey = (key?: string) => {
   if (!key?.startsWith(DATE_KEY_PREFIX)) return null;
   const iso = key.slice(DATE_KEY_PREFIX.length);
@@ -110,6 +119,8 @@ const ensureDateWithinWindow = (windowStart: Date, targetDate: Date) => {
   return windowStart;
 };
 
+const centerWindowAround = (date: Date) => addDays(date, -DATE_WINDOW_PADDING);
+
 export default function TopPanel({
   activePage,
   activeKey,
@@ -127,19 +138,41 @@ export default function TopPanel({
     addDays(getToday(), -DATE_WINDOW_PADDING)
   );
   // date strip: create sliding window that can extend infinitely
+  const todayTime = getToday().getTime();
+  const todayDate = useMemo(() => {
+    const d = new Date(todayTime);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [todayTime]);
+  const todayKey = formatDateKey(todayDate);
+
   const dateTiles = useMemo(() => {
     if (!isPlanPage) return [];
 
-    return Array.from({ length: DATE_WINDOW_LENGTH }, (_, index) => {
+    const tiles = Array.from({ length: DATE_WINDOW_LENGTH }, (_, index) => {
       const d = addDays(dateWindowStart, index);
-      const weekday = d
-        .toLocaleDateString("pl-PL", { weekday: "short" })
-        .replace(".", "");
-      const day = d.getDate().toString().padStart(2, "0");
-
-      return { key: formatDateKey(d), label: `${weekday} ${day}` };
+      return {
+        key: formatDateKey(d),
+        label: formatTileLabel(d, todayTime),
+      };
     });
-  }, [dateWindowStart, isPlanPage]);
+
+    const windowEnd = addDays(dateWindowStart, DATE_WINDOW_LENGTH - 1);
+
+    if (todayDate < dateWindowStart) {
+      tiles[0] = {
+        key: todayKey,
+        label: formatTileLabel(todayDate, todayTime),
+      };
+    } else if (todayDate > windowEnd) {
+      tiles[tiles.length - 1] = {
+        key: todayKey,
+        label: formatTileLabel(todayDate, todayTime),
+      };
+    }
+
+    return tiles;
+  }, [dateWindowStart, isPlanPage, todayDate, todayKey, todayTime]);
 
   const items = useMemo(
     () => topPanelConfigs[activePage]?.tabs ?? [],
@@ -178,6 +211,13 @@ export default function TopPanel({
 
   const handleDateWindowShift = (offset: number) => {
     setDateWindowStart((current) => addDays(current, offset));
+  };
+
+  const handleTileClick = (key: string) => {
+    if (isPlanPage && key === todayKey) {
+      setDateWindowStart(centerWindowAround(todayDate));
+    }
+    onChange?.(key);
   };
 
   const renderArray = isPlanPage ? dateTiles : items;
@@ -242,7 +282,7 @@ export default function TopPanel({
                   fullHeight
                   active={active}
                   disabled={disabled}
-                  onClick={() => onChange?.(key)}
+                  onClick={() => handleTileClick(key)}
                 />
               </Box>
             );

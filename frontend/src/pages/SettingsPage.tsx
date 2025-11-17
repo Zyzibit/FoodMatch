@@ -51,11 +51,17 @@ export default function SettingsPage() {
         alignItems: "center",
       }}
     >
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 3, width: "100%", maxWidth: 720 }}>
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 800, mb: 3, width: "100%", maxWidth: 900 }}
+      >
         Ustawienia
       </Typography>
 
-      <Paper elevation={1} sx={{ p: 3, width: "100%", maxWidth: 720 }}>
+      <Paper
+        elevation={1}
+        sx={{ p: 3, width: "100%", maxWidth: 900, mx: "auto" }}
+      >
         <Typography variant="h6" gutterBottom>
           Ustawienia aplikacji
         </Typography>

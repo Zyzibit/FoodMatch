@@ -9,23 +9,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-
-const defaultAllergens = [
-  "Gluten",
-  "Laktoza",
-  "Orzechy",
-  "Jaja",
-  "Soja",
-  "Ryby",
-  "Skorupiaki",
-  "Seler",
-  "Gorczyca",
-  "Sezam",
-];
+import { allergenOptions } from "../../constants/allergens";
 
 export default function UserAllergensManager() {
   const [selected, setSelected] = useState<string[]>(["Laktoza"]);
   const [customValue, setCustomValue] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const toggleAllergen = (name: string) => {
     setSelected((prev) =>
@@ -50,10 +40,20 @@ export default function UserAllergensManager() {
   const customAllergens = useMemo(
     () =>
       selected.filter(
-        (name) => !defaultAllergens.some((base) => base === name)
+        (name) => !allergenOptions.some((base) => base === name)
       ),
     [selected]
   );
+
+  const handleSave = () => {
+    if (saving) return;
+    setSaving(true);
+    // Symulujemy zapis lokalny – docelowo tu trafi wywołanie API.
+    setTimeout(() => {
+      setLastSavedAt(new Date());
+      setSaving(false);
+    }, 500);
+  };
 
   return (
     <Stack spacing={3}>
@@ -69,7 +69,7 @@ export default function UserAllergensManager() {
       </Box>
 
       <Stack spacing={1}>
-        {defaultAllergens.map((name) => (
+        {allergenOptions.map((name) => (
           <Box
             key={name}
             sx={{
@@ -134,6 +134,28 @@ export default function UserAllergensManager() {
           )}
         </Stack>
       )}
+
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        justifyContent="flex-end"
+        alignItems={{ xs: "stretch", sm: "center" }}
+      >
+        {lastSavedAt && (
+          <Typography variant="body2" color="text.secondary">
+            Zapisano: {lastSavedAt.toLocaleTimeString("pl-PL")}
+          </Typography>
+        )}
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleSave}
+          disabled={saving}
+          sx={{ textTransform: "none" }}
+        >
+          {saving ? "Zapisywanie…" : "Zapisz alergeny"}
+        </Button>
+      </Stack>
     </Stack>
   );
 }
