@@ -1,7 +1,7 @@
 ﻿using inzynierka.Users.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using inzynierka.Receipts.Model;
+using inzynierka.Recipes.Model;
 using inzynierka.Units.Models;
 
 namespace inzynierka.Data;

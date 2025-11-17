@@ -7,7 +7,7 @@ using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
 using inzynierka.MealPlans.Model;
-using inzynierka.Receipts.Model;
+using inzynierka.Recipes.Model;
 using inzynierka.Units.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +25,8 @@ public class AppDbContext : IdentityDbContext<User> {
     public DbSet<CountryTag> CountryTags { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     
-    public DbSet<Receipt> Receipts { get; set; }
-    public DbSet<ReceiptIngredient> ReceiptIngredients { get; set; }
+    public DbSet<Recipe> Recipes { get; set; }
+    public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
     public DbSet<Unit> Units { get; set; }
     
     public DbSet<MealPlan> MealPlans { get; set; }
@@ -41,25 +41,25 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
         modelBuilder.ApplyConfiguration(new FoodPreferencesConfiguration());
         
-        modelBuilder.Entity<Receipt>()
+        modelBuilder.Entity<Recipe>()
             .HasKey(r => r.Id);
 
-        modelBuilder.Entity<ReceiptIngredient>()
-            .HasKey(ri => new { ri.ReceiptId, ri.ProductId }); 
+        modelBuilder.Entity<RecipeIngredient>()
+            .HasKey(ri => new { ri.RecipeId, ri.ProductId }); 
 
-        modelBuilder.Entity<ReceiptIngredient>()
-            .HasOne(ri => ri.Receipt)
+        modelBuilder.Entity<RecipeIngredient>()
+            .HasOne(ri => ri.Recipe)
             .WithMany(r => r.Ingredients)
-            .HasForeignKey(ri => ri.ReceiptId);
+            .HasForeignKey(ri => ri.RecipeId);
 
 
-        modelBuilder.Entity<ReceiptIngredient>()
+        modelBuilder.Entity<RecipeIngredient>()
             .HasOne(ri => ri.Product)
-            .WithMany(p => p.ReceiptIngredients)
+            .WithMany(p => p.RecipeIngredients)
             .HasForeignKey(ri => ri.ProductId)
             .HasPrincipalKey(p => p.Id); 
 
-        modelBuilder.Entity<ReceiptIngredient>()
+        modelBuilder.Entity<RecipeIngredient>()
             .HasOne(ri => ri.Unit)
             .WithMany()
             .HasForeignKey(ri => ri.UnitId);
@@ -67,13 +67,12 @@ public class AppDbContext : IdentityDbContext<User> {
         modelBuilder.Entity<Unit>()
             .HasKey(u => u.UnitId);
         
-        modelBuilder.Entity<Receipt>()
+        modelBuilder.Entity<Recipe>()
             .HasOne(r => r.User)            
-            .WithMany(u => u.Receipts)      
+            .WithMany(u => u.Recipes)      
             .HasForeignKey(r => r.UserId)    
             .IsRequired()                   
             .OnDelete(DeleteBehavior.Cascade); 
-        
         
         modelBuilder.Entity<MealPlan>()
             .HasOne(mp => mp.User)
@@ -83,9 +82,9 @@ public class AppDbContext : IdentityDbContext<User> {
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<MealPlan>()
-            .HasOne(mp => mp.Receipt)
+            .HasOne(mp => mp.Recipe)
             .WithMany()
-            .HasForeignKey(mp => mp.ReceiptId)
+            .HasForeignKey(mp => mp.RecipeId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }

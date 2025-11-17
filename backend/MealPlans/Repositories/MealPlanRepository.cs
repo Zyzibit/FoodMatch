@@ -44,10 +44,10 @@ public class MealPlanRepository : IMealPlanRepository
     public async Task<List<MealPlan>> GetMealPlansForUserAsync(string userId, DateTime startDate, DateTime endDate)
     {
         return await _dbContext.MealPlans
-            .Include(mp => mp.Receipt)
+            .Include(mp => mp.Recipe)
                 .ThenInclude(r => r.Ingredients)
                     .ThenInclude(i => i.Product)
-            .Include(mp => mp.Receipt)
+            .Include(mp => mp.Recipe)
                 .ThenInclude(r => r.Ingredients)
                     .ThenInclude(i => i.Unit)
             .Where(mp => mp.UserId == userId && mp.Date >= startDate && mp.Date <= endDate)

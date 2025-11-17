@@ -4,5 +4,5 @@ public class CreateMealPlanRequest
 { 
     public string MealName { get; set; } = string.Empty;
     public DateTime Date { get; set; }
-    public int? ReceiptId { get; set; }
+    public int? RecipeId { get; set; }
 }

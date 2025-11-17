@@ -3,7 +3,7 @@ using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
 using inzynierka.Products.Mappings;
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Recipes.Model.RecipeModel;
 
 namespace inzynierka.Products.Services;
 

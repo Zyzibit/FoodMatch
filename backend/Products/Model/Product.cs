@@ -3,7 +3,7 @@ using inzynierka.Products.Model.Tag.AllergenTag;
 using inzynierka.Products.Model.Tag.CategoryTag;
 using inzynierka.Products.Model.Tag.CountryTag;
 using inzynierka.Products.Model.Tag.IngredientTag;
-using inzynierka.Receipts.Model;
+using inzynierka.Recipes.Model;
 
 namespace inzynierka.Products.Model;
 
@@ -24,7 +24,7 @@ public class Product
     public ICollection<ProductCategoryTag> ProductCategoryTags { get; set; } = new List<ProductCategoryTag>();
     public ICollection<ProductAllergenTag> ProductAllergenTags { get; set; } = new List<ProductAllergenTag>();
     
-    public ICollection<ReceiptIngredient> ReceiptIngredients { get; set; } = new List<ReceiptIngredient>();
+    public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
     
     public string? Brands { get; set; }
     public string? NutritionGrade { get; set; }

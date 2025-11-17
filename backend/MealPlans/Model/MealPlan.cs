@@ -1,4 +1,4 @@
-using inzynierka.Receipts.Model;
+using inzynierka.Recipes.Model;
 using inzynierka.Users.Model;
 
 namespace inzynierka.MealPlans.Model;
@@ -9,8 +9,8 @@ public class MealPlan
     public string Name { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     
-    public int? ReceiptId { get; set; } 
-    public Receipt? Receipt { get; set; }
+    public int? RecipeId { get; set; } 
+    public Recipe? Recipe { get; set; }
     
     public string UserId { get; set; } = string.Empty;
     public User? User { get; set; }

@@ -12,8 +12,8 @@ using StackExchange.Redis;
 using inzynierka.Auth.Services;
 using inzynierka.Users.Model;
 using inzynierka.Users.Services;
-using inzynierka.Receipts.Repositories;
-using inzynierka.Receipts.Services;
+using inzynierka.Recipes.Repositories;
+using inzynierka.Recipes.Services;
 using inzynierka.Units.Repositories;
 using inzynierka.Units.Services;
 
@@ -84,9 +84,9 @@ builder.Services.AddProductsServices();
 
 builder.Services.AddHostedService<TokenCleanupService>();
 
-builder.Services.AddScoped<IReceiptRepository, ReceiptRepository>();
+builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
-builder.Services.AddScoped<IReceiptService, ReceiptService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IPromptConfigService, PromptConfigService>();

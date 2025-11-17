@@ -24,7 +24,6 @@
       <None Remove="Auth\Model\DTO\**" />
       <None Remove="Products\Controller\**" />
       <None Remove="Products\Service\**" />
-      <None Remove="Receipts\README_RecipeGeneration.md" />
     </ItemGroup>
 
     <ItemGroup>
@@ -68,15 +67,11 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
     </ItemGroup>
-
+    
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Postman\Receipts.postman_collection.json" />
-      <_ContentIncludedByDefault Remove="Postman\Receipts.postman_environment.json" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="Receipts\Config\prompt_config.json">
+      <None Update="Recipes\Config\prompt_config.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+    
 </Project>
