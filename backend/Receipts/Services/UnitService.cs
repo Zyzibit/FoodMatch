@@ -1,22 +1,19 @@
-using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
-using inzynierka.Receipts.Model;
-using inzynierka.Receipts.Repositories;
-using inzynierka.Receipts.Mappings;
+using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Extensions.Repositories;
+using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Responses;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Receipts.Extensions.Services;
 
 public class UnitService : IUnitService
 {
     private readonly IUnitRepository _unitRepository;
     private readonly ILogger<UnitService> _logger;
-    private readonly IUnitMapper _unitMapper;
 
-    public UnitService(IUnitRepository unitRepository, ILogger<UnitService> logger, IUnitMapper unitMapper)
+    public UnitService(IUnitRepository unitRepository, ILogger<UnitService> logger)
     {
         _unitRepository = unitRepository;
         _logger = logger;
-        _unitMapper = unitMapper;
     }
 
     public async Task<UnitOperationResult> CreateUnitAsync(CreateUnitRequest request)
@@ -44,7 +41,7 @@ public class UnitService : IUnitService
             return new UnitOperationResult
             {
                 Success = true,
-                Unit = MapToDto(createdUnit)
+                Unit = createdUnit.ToDto()
             };
         }
         catch (Exception ex)
@@ -63,7 +60,7 @@ public class UnitService : IUnitService
         try
         {
             var unit = await _unitRepository.GetUnitByIdAsync(id);
-            return unit != null ? MapToDto(unit) : null;
+            return unit != null ? unit.ToDto() : null;
         }
         catch (Exception ex)
         {
@@ -77,7 +74,7 @@ public class UnitService : IUnitService
         try
         {
             var units = await _unitRepository.GetAllUnitsAsync();
-            return units.Select(MapToDto).ToList();
+            return units.ToDtoList().ToList();
         }
         catch (Exception ex)
         {
@@ -130,7 +127,7 @@ public class UnitService : IUnitService
             return new UnitOperationResult
             {
                 Success = true,
-                Unit = MapToDto(updatedUnit)
+                Unit = updatedUnit.ToDto()
             };
         }
         catch (Exception ex)
@@ -182,10 +179,5 @@ public class UnitService : IUnitService
                 ErrorMessage = "An error occurred while deleting the unit. Make sure the unit is not used in any recipes."
             };
         }
-    }
-
-    private UnitDto MapToDto(Unit unit)
-    {
-        return _unitMapper.MapToDto(unit);
     }
 }

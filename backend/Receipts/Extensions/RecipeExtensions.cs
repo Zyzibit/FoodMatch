@@ -1,11 +1,11 @@
-﻿using inzynierka.Receipts.Responses;
-using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Extensions.Responses;
 
-namespace inzynierka.Receipts.Mappings;
+namespace inzynierka.Receipts.Extensions;
 
-public class ReceiptMapper : IReceiptMapper
+public static class RecipeExtensions
 {
-    public ReceiptDto MapToDto(Receipt receipt)
+    public static ReceiptDto ToDto(this Receipt receipt)
     {
         return new ReceiptDto
         {
@@ -46,9 +46,7 @@ public class ReceiptMapper : IReceiptMapper
         };
     }
 
-    public IEnumerable<ReceiptDto> MapToDtoList(IEnumerable<Receipt> receipts)
-    {
-        return receipts.Select(MapToDto);
-    }
+    public static IEnumerable<ReceiptDto> ToDtoList(this IEnumerable<Receipt> receipts)
+        => receipts.Select(r => r.ToDto());
 }
 

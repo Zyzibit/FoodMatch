@@ -4,7 +4,7 @@ using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
-using inzynierka.Receipts.Services;
+using inzynierka.Receipts.Extensions.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.MealPlans.Services;

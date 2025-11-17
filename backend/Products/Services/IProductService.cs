@@ -1,7 +1,7 @@
 using inzynierka.Products.Dto;
 using inzynierka.Products.Model;
 using inzynierka.Products.Responses;
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
 namespace inzynierka.Products.Services;
 

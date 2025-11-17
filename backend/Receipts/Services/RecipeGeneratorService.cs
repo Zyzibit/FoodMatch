@@ -2,13 +2,13 @@
     using inzynierka.AI.OpenAI;
     using inzynierka.AI.OpenAI.Model;
     using inzynierka.AI.OpenAI.Services;
-    using inzynierka.Receipts.Model.Recipe;
-    using inzynierka.Receipts.Requests;
-    using inzynierka.Receipts.Responses;
     using inzynierka.Products.Repositories;
     using inzynierka.Products.Model;
+    using inzynierka.Receipts.Extensions.Model.Recipe;
+    using inzynierka.Receipts.Extensions.Requests;
+    using inzynierka.Receipts.Extensions.Responses;
 
-    namespace inzynierka.Receipts.Services;
+    namespace inzynierka.Receipts.Extensions.Services;
 
     public class RecipeGeneratorService : IRecipeGeneratorService
     {

@@ -1,15 +1,13 @@
-﻿using inzynierka.Receipts.Requests;
-using inzynierka.Receipts.Responses;
-using inzynierka.Receipts.Model;
-using inzynierka.Receipts.Model.Recipe;
-using inzynierka.Receipts.Repositories;
-using inzynierka.Products.Services;
-using inzynierka.Data;
-using inzynierka.Receipts.Mappings;
-using inzynierka.Users.Model;
+﻿using inzynierka.Products.Services;
+using inzynierka.Receipts.Extensions.Builders;
+using inzynierka.Receipts.Extensions.Model;
+using inzynierka.Receipts.Extensions.Model.Recipe;
+using inzynierka.Receipts.Extensions.Repositories;
+using inzynierka.Receipts.Extensions.Requests;
+using inzynierka.Receipts.Extensions.Responses;
 using inzynierka.Users.Services;
 
-namespace inzynierka.Receipts.Services;
+namespace inzynierka.Receipts.Extensions.Services;
 
 
 public class ReceiptService : IReceiptService
@@ -21,7 +19,6 @@ public class ReceiptService : IReceiptService
     private readonly IRecipeIngredientMatcher _ingredientMatcher;
     private readonly IUnitService _unitService;
     private readonly IUserService _userService;
-    private readonly IReceiptMapper _receiptMapper;
 
     public ReceiptService(
         IReceiptRepository receiptRepository, 
@@ -30,8 +27,7 @@ public class ReceiptService : IReceiptService
         IRecipeGeneratorService recipeGeneratorService,
         IProductService productService,
         IRecipeIngredientMatcher ingredientMatcher,
-        IUnitService unitService,
-        IReceiptMapper receiptMapper)
+        IUnitService unitService)
     {
         _receiptRepository = receiptRepository;
         _logger = logger;
@@ -40,12 +36,6 @@ public class ReceiptService : IReceiptService
         _productService = productService;
         _ingredientMatcher = ingredientMatcher;
         _unitService = unitService;
-        _receiptMapper = receiptMapper;
-    }
-
-    public ReceiptDto MapToDto(Receipt receipt)
-    {
-        return _receiptMapper.MapToDto(receipt);
     }
     
     public async Task<int> GetUnitIdForIngredientAsync(string? unitName)
@@ -138,7 +128,6 @@ public class ReceiptService : IReceiptService
                 };
             }
             
-            // Build ingredients first
             var ingredients = request.Ingredients.Select(i => new ReceiptIngredient
             {
                 ProductId = i.ProductId,
@@ -159,10 +148,10 @@ public class ReceiptService : IReceiptService
                 .WithPreparationTime(request.PreparationTimeMinutes)
                 .WithTotalWeightGrams(request.TotalWeightGrams)
                 .WithMacros(
-                    calories: (decimal)request.CaloriesPer100G,
-                    protein: (decimal)request.ProteinPer100G,
-                    carbohydrates: (decimal)request.CarbohydratesPer100G,
-                    fats: (decimal)request.FatsPer100G)
+                    calories: request.CaloriesPer100G,
+                    protein: request.ProteinPer100G,
+                    carbohydrates: request.CarbohydratesPer100G,
+                    fats: request.FatsPer100G)
                 .CreatedAt(DateTime.UtcNow);
 
             var receipt = builder.Build();
@@ -182,20 +171,20 @@ public class ReceiptService : IReceiptService
         var receipt = await _receiptRepository.GetReceiptByIdAsync(id);
         if (receipt == null) return null;
 
-        return MapToDto(receipt);
+        return receipt.ToDto();
     }
 
     public async Task<ReceiptsListResult> GetAllReceiptsAsync(int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetAllReceiptsAsync(limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.ToDtoList().ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
     public async Task<ReceiptsListResult> GetUserReceiptsAsync(string userId, int limit = 50, int offset = 0)
     {
         var (receipts, total) = await _receiptRepository.GetUserReceiptsAsync(userId, limit, offset);
-        var dtoList = receipts.Select(MapToDto).ToList();
+        var dtoList = receipts.ToDtoList().ToList();
         return new ReceiptsListResult { Success = true, Receipts = dtoList, TotalCount = total };
     }
 
@@ -353,7 +342,6 @@ public class ReceiptService : IReceiptService
                     usedProducts.Count, productsList.Count, string.Join(", ", unusedProducts));
             }
 
-            // Accumulate ingredients and additional products, then build via builder
             var ingredients = new List<ReceiptIngredient>();
             var additionalProductsList = new List<string>();
 

@@ -1,4 +1,4 @@
-namespace inzynierka.Receipts.Model;
+namespace inzynierka.Receipts.Extensions.Model;
 
 public enum ReceiptSource
 {

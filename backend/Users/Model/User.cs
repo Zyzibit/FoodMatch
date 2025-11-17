@@ -1,5 +1,5 @@
 ﻿using inzynierka.MealPlans.Model;
-using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Extensions.Model;
 using Microsoft.AspNetCore.Identity;
 
 namespace inzynierka.Users.Model;

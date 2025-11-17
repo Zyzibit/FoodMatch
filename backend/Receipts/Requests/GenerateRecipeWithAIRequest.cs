@@ -1,7 +1,7 @@
 
-using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Extensions.Model.Recipe;
 
-namespace inzynierka.Receipts.Requests;
+namespace inzynierka.Receipts.Extensions.Requests;
 
 public class GenerateRecipeWithAIRequest
 {
