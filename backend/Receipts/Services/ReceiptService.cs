@@ -138,30 +138,34 @@ public class ReceiptService : IReceiptService
                 };
             }
             
-            var receipt = new Receipt
+            // Build ingredients first
+            var ingredients = request.Ingredients.Select(i => new ReceiptIngredient
             {
-                UserId = userId,
-                Source = ReceiptSource.User,
-                Ingredients = request.Ingredients.Select(i => new ReceiptIngredient
-                {
-                    ProductId = i.ProductId,
-                    UnitId = i.UnitId,
-                    Quantity = i.Quantity,
-                    NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
-                }).ToList(),
-                AdditionalProducts = request.AdditionalProducts,
-                Title = request.Title,
-                Description = request.Description,
-                Instructions = request.Instructions,
-                Servings = request.Servings,
-                PreparationTimeMinutes = request.PreparationTimeMinutes,
-                TotalWeightGrams = request.TotalWeightGrams,
-                Calories = request.CaloriesPer100G,
-                Protein = request.ProteinPer100G,
-                Carbohydrates = request.CarbohydratesPer100G,
-                Fats = request.FatsPer100G,
-                CreatedAt = DateTime.UtcNow
-            };
+                ProductId = i.ProductId,
+                UnitId = i.UnitId,
+                Quantity = i.Quantity,
+                NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
+            }).ToList();
+
+            var builder = ReceiptBuilder.Create()
+                .ForUser(userId)
+                .FromSource(ReceiptSource.User)
+                .WithIngredients(ingredients)
+                .WithAdditionalProducts(request.AdditionalProducts)
+                .WithTitle(request.Title)
+                .WithDescription(request.Description)
+                .WithInstructions(request.Instructions)
+                .WithServings(request.Servings)
+                .WithPreparationTime(request.PreparationTimeMinutes)
+                .WithTotalWeightGrams(request.TotalWeightGrams)
+                .WithMacros(
+                    calories: (decimal)request.CaloriesPer100G,
+                    protein: (decimal)request.ProteinPer100G,
+                    carbohydrates: (decimal)request.CarbohydratesPer100G,
+                    fats: (decimal)request.FatsPer100G)
+                .CreatedAt(DateTime.UtcNow);
+
+            var receipt = builder.Build();
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
             return new CreateReceiptResult { Success = true, ReceiptId = added.Id };
@@ -349,24 +353,9 @@ public class ReceiptService : IReceiptService
                     usedProducts.Count, productsList.Count, string.Join(", ", unusedProducts));
             }
 
-            var receipt = new Receipt
-            {
-                UserId = userId,
-                Source = ReceiptSource.AI,
-                Title = generatedRecipe.Title,
-                Description = generatedRecipe.Description,
-                Instructions = generatedRecipe.Instructions,
-                Servings = generatedRecipe.Servings,
-                PreparationTimeMinutes = generatedRecipe.PreparationTimeMinutes,
-                TotalWeightGrams = generatedRecipe.TotalWeightGrams,
-                Calories = generatedRecipe.EstimatedCalories,
-                Protein = generatedRecipe.EstimatedProtein,
-                Carbohydrates = generatedRecipe.EstimatedCarbohydrates,
-                Fats = generatedRecipe.EstimatedFats,
-                CreatedAt = DateTime.UtcNow,
-                Ingredients = new List<ReceiptIngredient>(),
-                AdditionalProducts = new List<string>()
-            };
+            // Accumulate ingredients and additional products, then build via builder
+            var ingredients = new List<ReceiptIngredient>();
+            var additionalProductsList = new List<string>();
 
             foreach (var product in usedProducts)
             {
@@ -400,7 +389,7 @@ public class ReceiptService : IReceiptService
                     
                     var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams;
                     
-                    receipt.Ingredients.Add(new ReceiptIngredient
+                    ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = productId,
                         UnitId = unitId,
@@ -422,7 +411,7 @@ public class ReceiptService : IReceiptService
                     var aiGeneratedProduct = await _productService.CreateAiGeneratedProductAsync(additionalIngredient);
                     var unitId = await GetUnitIdForIngredientAsync(additionalIngredient.Unit);
                     
-                    receipt.Ingredients.Add(new ReceiptIngredient
+                    ingredients.Add(new ReceiptIngredient
                     {
                         ProductId = aiGeneratedProduct.Id,
                         UnitId = unitId,
@@ -433,15 +422,35 @@ public class ReceiptService : IReceiptService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to add AI-generated ingredient {IngredientName}", additionalIngredient.Name);
-                    receipt.AdditionalProducts.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
+                    additionalProductsList.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
                 }
             }
+
+            var builder = ReceiptBuilder.Create()
+                .ForUser(userId)
+                .FromSource(ReceiptSource.AI)
+                .WithTitle(generatedRecipe.Title)
+                .WithDescription(generatedRecipe.Description)
+                .WithInstructions(generatedRecipe.Instructions)
+                .WithServings(generatedRecipe.Servings)
+                .WithPreparationTime(generatedRecipe.PreparationTimeMinutes)
+                .WithTotalWeightGrams(generatedRecipe.TotalWeightGrams)
+                .WithMacros(
+                    calories: generatedRecipe.EstimatedCalories,
+                    protein: generatedRecipe.EstimatedProtein,
+                    carbohydrates: generatedRecipe.EstimatedCarbohydrates,
+                    fats: generatedRecipe.EstimatedFats)
+                .WithIngredients(ingredients)
+                .WithAdditionalProducts(additionalProductsList)
+                .CreatedAt(DateTime.UtcNow);
+
+            var receipt = builder.Build();
 
             var added = await _receiptRepository.AddReceiptAsync(receipt);
             
             
             _logger.LogInformation("AI-generated recipe created with ID: {ReceiptId}, with {Count} ingredients and {AdditionalCount} AI-generated products", 
-                added.Id, receipt.Ingredients.Count, additionalIngredientsData.Count);
+                added.Id, ingredients.Count, additionalIngredientsData.Count);
             
             return new CreateReceiptResult 
             { 
@@ -488,7 +497,7 @@ public class ReceiptService : IReceiptService
     {
         var mealTypeLower = mealType.ToLowerInvariant();
         
-        if (mealTypeLower == "breakfast" || mealTypeLower == "śniadanie")
+        if (mealTypeLower == "breakfast")
         {
             return new MealNutritionalGoals
             {
@@ -498,7 +507,7 @@ public class ReceiptService : IReceiptService
                 Fat = userPreferences.BreakfastFatGoal
             };
         }
-        else if (mealTypeLower == "lunch" || mealTypeLower == "obiad")
+        else if (mealTypeLower == "lunch")
         {
             return new MealNutritionalGoals
             {
@@ -508,7 +517,7 @@ public class ReceiptService : IReceiptService
                 Fat = userPreferences.LunchFatGoal
             };
         }
-        else if (mealTypeLower == "dinner" || mealTypeLower == "kolacja")
+        else if (mealTypeLower == "dinner")
         {
             return new MealNutritionalGoals
             {
@@ -518,7 +527,7 @@ public class ReceiptService : IReceiptService
                 Fat = userPreferences.DinnerFatGoal
             };
         }
-        else if (mealTypeLower == "snack" || mealTypeLower == "przekąska")
+        else if (mealTypeLower == "snack")
         {
             return new MealNutritionalGoals
             {
