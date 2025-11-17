@@ -61,7 +61,6 @@
                     new OpenAIMessage("user", userPrompt)
                 };
                 
-                // Logowanie pełnego prompta przed wysłaniem do AI
                 _logger.LogInformation("==================== PROMPT WYSYŁANY DO AI ====================");
                 _logger.LogInformation("SYSTEM MESSAGE:\n{SystemMessage}", config.SystemMessage);
                 _logger.LogInformation("==============================================================");
@@ -139,7 +138,6 @@
                     var ingredientName = ingredientElement.GetProperty("name").GetString() ?? "";
                     var normalizedQuantity = GetDecimalProperty(ingredientElement, "normalizedQuantityInGrams");
                     
-                    // Dopasowanie produktu na podstawie nazwy składnika
                     var matchedProduct = FindMatchingProduct(ingredientName, products);
                     
                     recipe.Ingredients.Add(new GeneratedRecipeIngredient
@@ -240,7 +238,6 @@
                 return exactMatch;
             }
             
-            // Dopasowanie częściowe - składnik zawiera nazwę produktu
             var partialMatch = products.FirstOrDefault(p => 
                 !string.IsNullOrWhiteSpace(p.ProductName) && 
                 normalizedIngredientName.Contains(p.ProductName.ToLowerInvariant().Trim()));
@@ -295,7 +292,6 @@
             var units = await _unitService.GetAllUnitsAsync();
             var unitNames = string.Join("\n", units.Select(u => u.Name));
             
-            // Formatowanie produktów z bazy danych
             var productsInfo = "";
             if (products.Any())
             {
@@ -329,7 +325,7 @@
                     ? string.Join(", ", request.Preferences.DislikedIngredients)
                     : "brak";
                 
-                // Cele dzienne
+
                 if (request.Preferences.DailyCalorieGoal.HasValue)
                 {
                     data["dailyCalorieGoal"] = request.Preferences.DailyCalorieGoal.Value;
@@ -350,7 +346,6 @@
                     data["dailyFatGoal"] = request.Preferences.DailyFatGoal.Value;
                 }
                 
-                // Cele dla konkretnego posiłku
                 if (!string.IsNullOrEmpty(request.Preferences.MealType))
                 {
                     data["mealType"] = request.Preferences.MealType;

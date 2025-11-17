@@ -40,19 +40,19 @@ public class FoodPreferences {
     public int LunchCaloriePercentage { get; set; } = 40;
     public int DinnerCaloriePercentage { get; set; } = 25;
     public int SnackCaloriePercentage { get; set; } = 5;
-    
+
     // Procentowy rozkład białka (domyślnie równomierny)
     public int BreakfastProteinPercentage { get; set; } = 25;
     public int LunchProteinPercentage { get; set; } = 35;
     public int DinnerProteinPercentage { get; set; } = 35;
     public int SnackProteinPercentage { get; set; } = 5;
-    
+
     // Procentowy rozkład węglowodanów
     public int BreakfastCarbohydratePercentage { get; set; } = 30;
     public int LunchCarbohydratePercentage { get; set; } = 40;
     public int DinnerCarbohydratePercentage { get; set; } = 25;
     public int SnackCarbohydratePercentage { get; set; } = 5;
-    
+
     // Procentowy rozkład tłuszczów
     public int BreakfastFatPercentage { get; set; } = 30;
     public int LunchFatPercentage { get; set; } = 40;
