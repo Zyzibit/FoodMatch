@@ -1,7 +1,6 @@
 using System;
 using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Responses;
-using inzynierka.Receipts.Extensions.Model;
 
 namespace inzynierka.MealPlans.Extensions;
 

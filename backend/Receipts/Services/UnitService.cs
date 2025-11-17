@@ -1,9 +1,10 @@
-using inzynierka.Receipts.Extensions.Model;
-using inzynierka.Receipts.Extensions.Repositories;
-using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Responses;
+using inzynierka.Receipts.Extensions;
+using inzynierka.Receipts.Model;
+using inzynierka.Receipts.Repositories;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
-namespace inzynierka.Receipts.Extensions.Services;
+namespace inzynierka.Receipts.Services;
 
 public class UnitService : IUnitService
 {

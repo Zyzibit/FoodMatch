@@ -1,14 +1,14 @@
-    using System.Text.Json;
-    using inzynierka.AI.OpenAI;
-    using inzynierka.AI.OpenAI.Model;
-    using inzynierka.AI.OpenAI.Services;
-    using inzynierka.Products.Repositories;
-    using inzynierka.Products.Model;
-    using inzynierka.Receipts.Extensions.Model.Recipe;
-    using inzynierka.Receipts.Extensions.Requests;
-    using inzynierka.Receipts.Extensions.Responses;
+using System.Text.Json;
+using inzynierka.AI.OpenAI;
+using inzynierka.AI.OpenAI.Model;
+using inzynierka.AI.OpenAI.Services;
+using inzynierka.Products.Model;
+using inzynierka.Products.Repositories;
+using inzynierka.Receipts.Model.Recipe;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Responses;
 
-    namespace inzynierka.Receipts.Extensions.Services;
+namespace inzynierka.Receipts.Services;
 
     public class RecipeGeneratorService : IRecipeGeneratorService
     {

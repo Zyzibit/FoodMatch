@@ -12,8 +12,8 @@ using StackExchange.Redis;
 using inzynierka.Auth.Services;
 using inzynierka.Users.Model;
 using inzynierka.Users.Services;
-using inzynierka.Receipts.Extensions.Repositories;
-using inzynierka.Receipts.Extensions.Services;
+using inzynierka.Receipts.Repositories;
+using inzynierka.Receipts.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

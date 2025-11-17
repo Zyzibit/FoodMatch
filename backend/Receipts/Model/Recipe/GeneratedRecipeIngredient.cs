@@ -1,4 +1,4 @@
-namespace inzynierka.Receipts.Extensions.Model.Recipe;
+namespace inzynierka.Receipts.Model.Recipe;
 
 public class GeneratedRecipeIngredient
 {

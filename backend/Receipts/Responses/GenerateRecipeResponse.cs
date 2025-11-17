@@ -1,6 +1,6 @@
-using inzynierka.Receipts.Extensions.Model.Recipe;
+using inzynierka.Receipts.Model.Recipe;
 
-namespace inzynierka.Receipts.Extensions.Responses;
+namespace inzynierka.Receipts.Responses;
 
 public class GenerateRecipeResponse
 {

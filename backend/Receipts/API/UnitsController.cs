@@ -1,5 +1,5 @@
-using inzynierka.Receipts.Extensions.Requests;
-using inzynierka.Receipts.Extensions.Services;
+using inzynierka.Receipts.Requests;
+using inzynierka.Receipts.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

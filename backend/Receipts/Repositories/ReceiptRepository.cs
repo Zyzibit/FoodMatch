@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using inzynierka.Data;
-using inzynierka.Receipts.Extensions.Model;
+﻿using inzynierka.Data;
+using inzynierka.Receipts.Model;
+using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Receipts.Extensions.Repositories;
+namespace inzynierka.Receipts.Repositories;
 
 public class ReceiptRepository : IReceiptRepository
 {
