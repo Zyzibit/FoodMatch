@@ -11,7 +11,10 @@ export default function UserDashboardPage() {
     !activeTab || activeTab === "pomiary" || activeTab === "zapotrzebowanie";
 
   return (
-    <Paper elevation={1} sx={{ p: 3, width: "100%", maxWidth: 960 }}>
+    <Paper
+      elevation={1}
+      sx={{ p: 3, width: "100%", maxWidth: 1100, mx: "auto" }}
+    >
       {activeTab === "profil" && <UserAccountSettings />}
 
       {showProfile && <UserProfilePage />}

@@ -5,6 +5,7 @@ import PlanMealCard from "./PlanMealCard";
 type PlanMealListProps = {
   meals: PlanMeal[];
   onEditMeal?: (meal: PlanMeal) => void;
+  onAddRecipe?: (meal: PlanMeal) => void;
   onExpandMeal?: (meal: PlanMeal) => void;
   expandedMealId?: string | null;
 };
@@ -12,6 +13,7 @@ type PlanMealListProps = {
 export default function PlanMealList({
   meals,
   onEditMeal,
+  onAddRecipe,
   onExpandMeal,
   expandedMealId,
 }: PlanMealListProps) {
@@ -22,6 +24,7 @@ export default function PlanMealList({
           key={meal.id}
           meal={meal}
           onEdit={onEditMeal}
+          onAddRecipe={onAddRecipe}
           onExpand={onExpandMeal}
           isExpanded={meal.id === expandedMealId}
         />
