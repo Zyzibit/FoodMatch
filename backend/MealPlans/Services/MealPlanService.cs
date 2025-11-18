@@ -4,7 +4,7 @@ using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
-using inzynierka.Receipts.Services;
+using inzynierka.Recipes.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.MealPlans.Services;
@@ -12,12 +12,12 @@ namespace inzynierka.MealPlans.Services;
 public class MealPlanService: IMealPlanService
 {
     private readonly IMealPlanRepository _mealPlanRepository;
-    private readonly IReceiptService _receiptService;
+    private readonly IRecipeService _recipeService;
         
-    public MealPlanService(IMealPlanRepository mealPlanRepository, IReceiptService receiptService)
+    public MealPlanService(IMealPlanRepository mealPlanRepository, IRecipeService recipeService)
     {
         _mealPlanRepository = mealPlanRepository;
-        _receiptService = receiptService;
+        _recipeService = recipeService;
     }
 
     public async Task<AddMealPlanResponse> AddMealPlanAsync(string userId, CreateMealPlanRequest request)
@@ -33,15 +33,15 @@ public class MealPlanService: IMealPlanService
                 };
             }
             
-            if (request.ReceiptId.HasValue)
+            if (request.RecipeId.HasValue)
             {
-                var receipt = await _receiptService.GetReceiptAsync(request.ReceiptId.Value);
-                if (receipt == null)
+                var recipe = await _recipeService.GetRecipeAsync(request.RecipeId.Value);
+                if (recipe == null)
                 {
                     return new AddMealPlanResponse
                     {
                         Success = false,
-                        Message = $"Receipt with ID {request.ReceiptId} not found"
+                        Message = $"Recipe with ID {request.RecipeId} not found"
                     };
                 }
             }
@@ -58,7 +58,7 @@ public class MealPlanService: IMealPlanService
             
             if (existingPlan != null)
             {
-                existingPlan.ReceiptId = request.ReceiptId;
+                existingPlan.RecipeId = request.RecipeId;
                 existingPlan.Date = dateUtc;
                 await _mealPlanRepository.UpdateMealPlanAsync(existingPlan);
                 
@@ -74,7 +74,7 @@ public class MealPlanService: IMealPlanService
             {
                 Name = request.MealName,
                 Date = dateUtc,
-                ReceiptId = request.ReceiptId,
+                RecipeId = request.RecipeId,
                 UserId = userId
             };
             
@@ -85,14 +85,6 @@ public class MealPlanService: IMealPlanService
                 Success = true,
                 MealPlanId = mealPlan.Id,
                 Message = "Meal plan added successfully"
-            };
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FK_MealPlans_Receipts_ReceiptId") == true)
-        {
-            return new AddMealPlanResponse
-            {
-                Success = false,
-                Message = $"Receipt with ID {request.ReceiptId} not found"
             };
         }
         catch (Exception ex)

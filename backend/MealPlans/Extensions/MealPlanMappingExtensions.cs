@@ -15,17 +15,16 @@ public static class MealPlanMappingExtensions
             Id = model.Id,
             Name = model.Name,
             Date = model.Date,
-            Receipt = model.Receipt != null ? new MealPlanReceiptDto
+            Recipe = model.Recipe != null ? new MealPlanRecipeDto
             {
-                Id = model.Receipt.Id,
-                Title = model.Receipt.Title,
-                Description = model.Receipt.Description ?? string.Empty,
-                CaloriesPer100G = model.Receipt.Calories,
-                ProteinPer100G = model.Receipt.Protein,
-                CarbohydratesPer100G = model.Receipt.Carbohydrates,
-                FatsPer100G = model.Receipt.Fats,
-                Servings = model.Receipt.Servings,
-                PreparationTimeMinutes = model.Receipt.PreparationTimeMinutes
+                Id = model.Recipe.Id,
+                Title = model.Recipe.Title,
+                Description = model.Recipe.Description ?? string.Empty,
+                CaloriesPer100G = model.Recipe.Calories,
+                ProteinPer100G = model.Recipe.Protein,
+                CarbohydratesPer100G = model.Recipe.Carbohydrates,
+                FatsPer100G = model.Recipe.Fats,
+                PreparationTimeMinutes = model.Recipe.PreparationTimeMinutes
             } : null
         };
     }

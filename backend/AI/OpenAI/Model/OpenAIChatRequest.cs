@@ -8,6 +8,6 @@ public class OpenAIChatRequest {
     [JsonPropertyName("messages")] 
     public List <OpenAIMessage> Messages { get; set; }
 
-    [JsonPropertyName("temperature")] public float Temperature { get; set; } = 1.0f;
+    [JsonPropertyName("temperature")] public float Temperature { get; set; } = 0.9f;
 
 }
