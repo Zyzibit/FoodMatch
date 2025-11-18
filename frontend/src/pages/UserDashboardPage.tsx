@@ -19,7 +19,7 @@ export default function UserDashboardPage() {
 
       {showProfile && <UserProfilePage />}
 
-      {activeTab === "alergeny" && <UserAllergensManager />}
+      {activeTab === "preferencje" && <UserAllergensManager />}
     </Paper>
   );
 }
