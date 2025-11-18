@@ -1,7 +1,8 @@
-import { useCallback, type ComponentProps } from "react";
+import { useCallback, useState, type ComponentProps } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import { LoginForm } from "../components/forms/LoginForm/LoginForm";
+import { useAuth } from "../contexts/AuthContext";
 
 type LoginFormSubmit = NonNullable<
   ComponentProps<typeof LoginForm>["onSubmitForm"]
@@ -9,12 +10,25 @@ type LoginFormSubmit = NonNullable<
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login, error, clearError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = useCallback<LoginFormSubmit>(
-    (_data) => {
-      navigate("/app/plan", { replace: true });
+    async (data) => {
+      setIsLoading(true);
+      clearError();
+
+      try {
+        await login(data.login, data.password);
+        navigate("/app/plan", { replace: true });
+      } catch (err) {
+        console.error("Login error:", err);
+        // Error is handled by AuthContext
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [navigate]
+    [login, navigate, clearError]
   );
 
   const handleRegisterRedirect = useCallback(() => {
@@ -31,7 +45,13 @@ export default function LoginPage() {
         onSubmitForm={handleLogin}
         onRegisterClick={handleRegisterRedirect}
         onForgotPasswordClick={handleForgotPasswordRedirect}
+        loading={isLoading}
       />
+      {error && (
+        <div style={{ color: "red", marginTop: "1rem", textAlign: "center" }}>
+          {error}
+        </div>
+      )}
     </AuthLayout>
   );
 }
