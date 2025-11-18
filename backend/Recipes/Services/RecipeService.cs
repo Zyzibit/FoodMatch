@@ -1,4 +1,5 @@
-﻿using inzynierka.Products.Services;
+﻿using inzynierka.Products.Model;
+using inzynierka.Products.Services;
 using inzynierka.Recipes.Builders;
 using inzynierka.Recipes.Extensions;
 using inzynierka.Recipes.Model;
@@ -161,7 +162,7 @@ public class RecipeService : IRecipeService
             var added = await _recipeRepository.AddRecipeAsync(recipe);
             return new CreateRecipeResult { Success = true, RecipeId = added.Id };
         }
-        catch (Exception ex)
+                catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating recipe");
             return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
@@ -190,14 +191,14 @@ public class RecipeService : IRecipeService
         return new RecipeListResult { Success = true, Recipes = dtoList, TotalCount = total };
     }
 
-    public async Task<CreateRecipeResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeRequest request)
+    public async Task<GenerateRecipePreviewResult> GenerateRecipePreviewAsync(string userId, GenerateRecipeRequest request)
     {
         try
         {
             if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError("GenerateRecipeWithAiAsync called with empty or null userId");
-                return new CreateRecipeResult 
+                _logger.LogError("GenerateRecipePreviewAsync called with empty or null userId");
+                return new GenerateRecipePreviewResult 
                 { 
                     Success = false, 
                     ErrorMessage = "User ID is required to generate a recipe" 
@@ -208,12 +209,13 @@ public class RecipeService : IRecipeService
             if (userExists == null)
             {
                 _logger.LogError("User with ID {UserId} does not exist in the database", userId);
-                return new CreateRecipeResult 
+                return new GenerateRecipePreviewResult 
                 { 
                     Success = false, 
                     ErrorMessage = "User not found in the database" 
                 };
             }
+            
             var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
             
             var preferences = request.Preferences ?? CreatePreferencesFromUser(userPreferences);
@@ -250,11 +252,10 @@ public class RecipeService : IRecipeService
                     }
                     
                     _logger.LogInformation(
-                        "Calculated nutritional goals for {MealType}: {Calories} kcal, {Protein}g protein, {Carbs}g carbs, {Fat}g fat", 
+                        "Calculated nutritional goals for {MealType}: {Calories} kcal, {Proteins}g protein, {Carbs}g carbs, {Fat}g fat", 
                         request.MealType, mealGoals.Calories, mealGoals.Protein, mealGoals.Carbohydrates, mealGoals.Fat);
                 }
                 
-                // Przekazujemy również dzienne cele do AI
                 if (!preferences.DailyCalorieGoal.HasValue)
                 {
                     preferences.DailyCalorieGoal = userPreferences.DailyCalorieGoal ?? userPreferences.CalculatedDailyCalories;
@@ -279,15 +280,6 @@ public class RecipeService : IRecipeService
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
-            // if (!productsList.Any())
-            // {
-            //     return new CreateRecipeResult 
-            //     { 
-            //         Success = false, 
-            //         ErrorMessage = "No products found with the provided IDs" 
-            //     };
-            // }
-            //
             var foundProductIds = productsList
                 .Select(p => int.TryParse(p.Id, out var id) ? id : -1)
                 .Where(id => id != -1)
@@ -315,14 +307,13 @@ public class RecipeService : IRecipeService
                 ingredientNames.AddRange(request.AvailableIngredients);
             }
             
-            // Aktualizujemy request o dodatkowe informacje
             request.AvailableIngredients = ingredientNames;
             request.Preferences = preferences;
 
             if (preferences != null)
             {
                 _logger.LogInformation(
-                    "Sending to AI - MealType: {MealType}, TargetMealCalories: {Calories}, TargetMealProtein: {Protein}, TargetMealCarbs: {Carbs}, TargetMealFat: {Fat}",
+                    "Sending to AI - MealType: {MealType}, TargetMealCalories: {Calories}, TargetMealProtein: {Proteins}, TargetMealCarbs: {Carbs}, TargetMealFat: {Fat}",
                     preferences.MealType ?? "NULL",
                     preferences.TargetMealCalories?.ToString() ?? "NULL",
                     preferences.TargetMealProtein?.ToString() ?? "NULL",
@@ -334,7 +325,7 @@ public class RecipeService : IRecipeService
 
             if (!aiResult.Success || aiResult.Recipe == null)
             {
-                return new CreateRecipeResult 
+                return new GenerateRecipePreviewResult 
                 { 
                     Success = false, 
                     ErrorMessage = aiResult.ErrorMessage ?? "Failed to generate recipe with AI" 
@@ -360,7 +351,7 @@ public class RecipeService : IRecipeService
                     usedProducts.Count, productsList.Count, string.Join(", ", unusedProducts));
             }
 
-            var ingredients = new List<RecipeIngredient>();
+            var previewIngredients = new List<PreviewRecipeIngredientDto>();
             var additionalProductsList = new List<string>();
 
             var distinctProducts = usedProducts
@@ -374,6 +365,7 @@ public class RecipeService : IRecipeService
                     usedProducts.Count - distinctProducts.Count);
             }
 
+            // Process user-provided products
             foreach (var product in distinctProducts)
             {
                 var aiIngredient = _ingredientMatcher.FindMatchingRecipeIngredient(product, generatedRecipe.Ingredients);
@@ -403,85 +395,183 @@ public class RecipeService : IRecipeService
                     }
 
                     var unitId = await GetUnitIdForIngredientAsync(aiIngredient.Unit);
+                    var units = await _unitService.GetAllUnitsAsync();
+                    var unitName = units.FirstOrDefault(u => u.UnitId == unitId)?.Name ?? aiIngredient.Unit;
                     
-                    var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams;
+                    var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams ?? 0;
                     
-                    ingredients.Add(new RecipeIngredient
+                    // Calculate nutritional values for this ingredient
+                    var calories = (decimal)(product.Nutrition?.Calories ?? 0) * (normalizedQuantityInGrams / 100m);
+                    var protein = (decimal)(product.Nutrition?.Proteins ?? 0) * (normalizedQuantityInGrams / 100m);
+                    var carbohydrates = (decimal)(product.Nutrition?.Carbohydrates ?? 0) * (normalizedQuantityInGrams / 100m);
+                    var fats = (decimal)(product.Nutrition?.Fat ?? 0) * (normalizedQuantityInGrams / 100m);
+                    
+                    previewIngredients.Add(new PreviewRecipeIngredientDto
                     {
                         ProductId = productId,
+                        ProductName = productName,
                         UnitId = unitId,
+                        UnitName = unitName,
+                        Quantity = quantity.Value,
                         NormalizedQuantityInGrams = normalizedQuantityInGrams,
-                        Quantity = quantity.Value
+                        Source = ProductSource.User,
+                        Calories = calories,
+                        Protein = protein,
+                        Carbohydrates = carbohydrates,
+                        Fats = fats
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to add ingredient {ProductName} with unit {Unit}", 
+                    _logger.LogError(ex, "Failed to process ingredient {ProductName} with unit {Unit}", 
                         productName, aiIngredient.Unit);
                 }
             }
 
+            // Process AI-generated ingredients
             foreach (var additionalIngredient in additionalIngredientsData)
             {
                 try
                 {
                     var aiGeneratedProduct = await _productService.CreateAiGeneratedProductAsync(additionalIngredient);
                     var unitId = await GetUnitIdForIngredientAsync(additionalIngredient.Unit);
+                    var units = await _unitService.GetAllUnitsAsync();
+                    var unitName = units.FirstOrDefault(u => u.UnitId == unitId)?.Name ?? additionalIngredient.Unit;
                     
-                    ingredients.Add(new RecipeIngredient
+                    // Get nutritional values from AI-generated product
+                    var normalizedQuantityInGrams = additionalIngredient.NormalizedQuantityInGrams ?? 0;
+                    var productDto = await _productService.GetProductAsync(aiGeneratedProduct.Id.ToString());
+                    
+                    decimal calories = 0, protein = 0, carbohydrates = 0, fats = 0;
+                    
+                    if (productDto.Success && productDto.Product != null && productDto.Product.Nutrition != null)
+                    {
+                        calories = (decimal)(productDto.Product.Nutrition.Calories ?? 0) * (normalizedQuantityInGrams / 100m);
+                        protein = (decimal)(productDto.Product.Nutrition.Proteins ?? 0) * (normalizedQuantityInGrams / 100m);
+                        carbohydrates = (decimal)(productDto.Product.Nutrition.Carbohydrates ?? 0) * (normalizedQuantityInGrams / 100m);
+                        fats = (decimal)(productDto.Product.Nutrition.Fat ?? 0) * (normalizedQuantityInGrams / 100m);
+                    }
+                    
+                    previewIngredients.Add(new PreviewRecipeIngredientDto
                     {
                         ProductId = aiGeneratedProduct.Id,
+                        ProductName = additionalIngredient.Name,
                         UnitId = unitId,
-                        NormalizedQuantityInGrams = additionalIngredient.NormalizedQuantityInGrams,
-                        Quantity = additionalIngredient.Quantity
+                        UnitName = unitName,
+                        Quantity = additionalIngredient.Quantity,
+                        NormalizedQuantityInGrams = normalizedQuantityInGrams,
+                        Source = ProductSource.AI,
+                        Calories = calories,
+                        Protein = protein,
+                        Carbohydrates = carbohydrates,
+                        Fats = fats
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to add AI-generated ingredient {IngredientName}", additionalIngredient.Name);
+                    _logger.LogError(ex, "Failed to process AI-generated ingredient {IngredientName}", additionalIngredient.Name);
                     additionalProductsList.Add($"{additionalIngredient.Name} ({additionalIngredient.Quantity} {additionalIngredient.Unit})");
                 }
             }
 
+            var preview = new GeneratedRecipePreviewDto
+            {
+                Title = generatedRecipe.Title,
+                Description = generatedRecipe.Description,
+                Instructions = generatedRecipe.Instructions,
+                PreparationTimeMinutes = generatedRecipe.PreparationTimeMinutes,
+                TotalWeightGrams = generatedRecipe.TotalWeightGrams,
+                Calories = generatedRecipe.EstimatedCalories,
+                Proteins = generatedRecipe.EstimatedProtein,
+                Carbohydrates = generatedRecipe.EstimatedCarbohydrates,
+                Fats = generatedRecipe.EstimatedFats,
+                Ingredients = previewIngredients,
+                AdditionalProducts = additionalProductsList
+            };
+
+            _logger.LogInformation("Generated recipe preview with {Count} ingredients and {AdditionalCount} additional products", 
+                previewIngredients.Count, additionalProductsList.Count);
+
+            return new GenerateRecipePreviewResult
+            {
+                Success = true,
+                Recipe = preview
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating recipe preview with AI");
+            return new GenerateRecipePreviewResult 
+            { 
+                Success = false, 
+                ErrorMessage = ex.Message 
+            };
+        }
+    }
+
+    public async Task<CreateRecipeResult> SaveGeneratedRecipeAsync(string userId, SaveGeneratedRecipeRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogError("SaveGeneratedRecipeAsync called with empty or null userId");
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User ID is required to save a recipe" 
+                };
+            }
+
+            var userExists = await _userService.GetUserByIdAsync(userId);
+            if (userExists == null)
+            {
+                _logger.LogError("User with ID {UserId} does not exist in the database", userId);
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "User not found in the database" 
+                };
+            }
+            
+            var ingredients = request.Ingredients.Select(i => new RecipeIngredient
+            {
+                ProductId = i.ProductId,
+                UnitId = i.UnitId,
+                Quantity = i.Quantity,
+                NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
+            }).ToList();
+
             var builder = RecipeBuilder.Create()
                 .ForUser(userId)
                 .FromSource(RecipeSource.AI)
-                .WithTitle(generatedRecipe.Title)
-                .WithDescription(generatedRecipe.Description)
-                .WithInstructions(generatedRecipe.Instructions)
-                .WithPreparationTime(generatedRecipe.PreparationTimeMinutes)
-                .WithTotalWeightGrams(generatedRecipe.TotalWeightGrams)
-                .WithMacros(
-                    calories: generatedRecipe.EstimatedCalories,
-                    protein: generatedRecipe.EstimatedProtein,
-                    carbohydrates: generatedRecipe.EstimatedCarbohydrates,
-                    fats: generatedRecipe.EstimatedFats)
                 .WithIngredients(ingredients)
-                .WithAdditionalProducts(additionalProductsList)
+                .WithAdditionalProducts(request.AdditionalProducts)
+                .WithTitle(request.Title)
+                .WithDescription(request.Description)
+                .WithInstructions(request.Instructions)
+                .WithPreparationTime(request.PreparationTimeMinutes)
+                .WithTotalWeightGrams(request.TotalWeightGrams)
+                .WithMacros(
+                    calories: request.Calories,
+                    protein: request.Proteins,
+                    carbohydrates: request.Carbohydrates,
+                    fats: request.Fats)
                 .CreatedAt(DateTime.UtcNow);
 
             var recipe = builder.Build();
 
             var added = await _recipeRepository.AddRecipeAsync(recipe);
             
+            _logger.LogInformation("Saved AI-generated recipe with ID: {RecipeId} for user {UserId}", 
+                added.Id, userId);
             
-            _logger.LogInformation("AI-generated recipe created with ID: {RecipeId}, with {Count} ingredients and {AdditionalCount} AI-generated products", 
-                added.Id, ingredients.Count, additionalIngredientsData.Count);
-            
-            return new CreateRecipeResult 
-            { 
-                Success = true, 
-                RecipeId = added.Id 
-            };
+            return new CreateRecipeResult { Success = true, RecipeId = added.Id };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating recipe with AI");
-            return new CreateRecipeResult 
-            { 
-                Success = false, 
-                ErrorMessage = ex.Message 
-            };
+            _logger.LogError(ex, "Error saving generated recipe");
+            return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
         }
     }
     

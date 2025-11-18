@@ -45,26 +45,69 @@ public class RecipeController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetRecipe(int id)
+    
+    [HttpPost("generate-preview")]
+    [Authorize]
+    public async Task<IActionResult> GenerateRecipePreview([FromBody] GenerateRecipeRequest request)
     {
         try
         {
-            var recipe = await _recipeService.GetRecipeAsync(id);
-            if (recipe == null)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                return NotFound(new { message = "Recipe not found" });
+                return Unauthorized(new { message = "Invalid token" });
             }
 
-            return Ok(recipe);
+            var result = await _recipeService.GenerateRecipePreviewAsync(userId, request);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { 
+                success = true, 
+                recipe = result.Recipe,
+                message = "Recipe preview generated successfully" 
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting recipe {Id}", id);
+            _logger.LogError(ex, "Error generating recipe preview");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+    
+    [HttpPost("save-generated")]
+    [Authorize]
+    public async Task<IActionResult> SaveGeneratedRecipe([FromBody] SaveGeneratedRecipeRequest request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var result = await _recipeService.SaveGeneratedRecipeAsync(userId, request);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { 
+                success = true, 
+                recipeId = result.RecipeId,
+                message = "Recipe saved successfully" 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving generated recipe");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
 
     [HttpGet]
     public async Task<IActionResult> GetAllRecipes([FromQuery] int limit = 50, [FromQuery] int offset = 0)
@@ -125,30 +168,24 @@ public class RecipeController : ControllerBase
         }
     }
 
-    [HttpPost("generate-with-ai")]
-    [Authorize]
-    public async Task<IActionResult> GenerateRecipeWithAi([FromBody] GenerateRecipeRequest request)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetRecipe(int id)
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var recipe = await _recipeService.GetRecipeAsync(id);
+            if (recipe == null)
             {
-                return Unauthorized(new { message = "Invalid token" });
+                return NotFound(new { message = "Recipe not found" });
             }
 
-            var result = await _recipeService.GenerateRecipeWithAiAsync(userId, request);
-            if (!result.Success)
-            {
-                return BadRequest(new { message = result.ErrorMessage });
-            }
-
-            return Ok(new { success = true, recipeId = result.RecipeId, message = "AI recipe generated successfully" });
+            return Ok(recipe);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating recipe with AI");
+            _logger.LogError(ex, "Error getting recipe {Id}", id);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
 }
+

@@ -38,7 +38,7 @@ public static class RecipeExtensions
             PreparationTimeMinutes = recipe.PreparationTimeMinutes,
             TotalWeightGrams = recipe.TotalWeightGrams,
             Calories = recipe.Calories,
-            Protein = recipe.Protein,
+            Proteins = recipe.Protein,
             Carbohydrates = recipe.Carbohydrates,
             Fats = recipe.Fats,
             CreatedAt = recipe.CreatedAt
