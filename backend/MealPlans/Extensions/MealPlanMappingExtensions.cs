@@ -20,10 +20,10 @@ public static class MealPlanMappingExtensions
                 Id = model.Recipe.Id,
                 Title = model.Recipe.Title,
                 Description = model.Recipe.Description ?? string.Empty,
-                CaloriesPer100G = model.Recipe.Calories,
-                ProteinPer100G = model.Recipe.Protein,
-                CarbohydratesPer100G = model.Recipe.Carbohydrates,
-                FatsPer100G = model.Recipe.Fats,
+                Calories = model.Recipe.Calories,
+                Proteins = model.Recipe.Protein,
+                Carbohydrates = model.Recipe.Carbohydrates,
+                Fats = model.Recipe.Fats,
                 PreparationTimeMinutes = model.Recipe.PreparationTimeMinutes
             } : null
         };
