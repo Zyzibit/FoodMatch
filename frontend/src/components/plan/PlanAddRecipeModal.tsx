@@ -581,6 +581,9 @@ export default function PlanAddRecipeModal({
           )}
         </>
       )}
+
+      {/* Dodatkowe miejsce na dole */}
+      <Box sx={{ height: 40 }} />
     </Stack>
   );
 
