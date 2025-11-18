@@ -45,10 +45,7 @@ public class RecipeController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Step 1: Generate a recipe preview without saving to database
-    /// </summary>
+    
     [HttpPost("generate-preview")]
     [Authorize]
     public async Task<IActionResult> GenerateRecipePreview([FromBody] GenerateRecipeRequest request)
