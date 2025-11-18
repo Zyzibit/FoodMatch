@@ -127,7 +127,7 @@ public class RecipeController : ControllerBase
 
     [HttpPost("generate-with-ai")]
     [Authorize]
-    public async Task<IActionResult> GenerateRecipeWithAi([FromBody] GenerateRecipeWithAiRequest request)
+    public async Task<IActionResult> GenerateRecipeWithAi([FromBody] GenerateRecipeRequest request)
     {
         try
         {

@@ -190,7 +190,7 @@ public class RecipeService : IRecipeService
         return new RecipeListResult { Success = true, Recipes = dtoList, TotalCount = total };
     }
 
-    public async Task<CreateRecipeResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeWithAiRequest request)
+    public async Task<CreateRecipeResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeRequest request)
     {
         try
         {
@@ -315,15 +315,9 @@ public class RecipeService : IRecipeService
                 ingredientNames.AddRange(request.AvailableIngredients);
             }
             
-            var aiRequest = new GenerateRecipeRequest
-            {
-                AvailableIngredients = ingredientNames,
-                ProductIds = request.ProductIds,
-                Preferences = preferences,
-                CuisineType = request.CuisineType,
-                MaxPreparationTimeMinutes = request.MaxPreparationTimeMinutes,
-                AdditionalInstructions = request.AdditionalInstructions
-            };
+            // Aktualizujemy request o dodatkowe informacje
+            request.AvailableIngredients = ingredientNames;
+            request.Preferences = preferences;
 
             if (preferences != null)
             {
@@ -336,7 +330,7 @@ public class RecipeService : IRecipeService
                     preferences.TargetMealFat?.ToString() ?? "NULL");
             }
 
-            var aiResult = await _recipeGeneratorService.GenerateRecipeAsync(aiRequest);
+            var aiResult = await _recipeGeneratorService.GenerateRecipeAsync(request);
 
             if (!aiResult.Success || aiResult.Recipe == null)
             {
