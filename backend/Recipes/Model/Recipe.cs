@@ -25,7 +25,6 @@ public class Recipe {
     [Required]
     public required string Instructions { get; set; }
     
-    public int Servings { get; set; }
     public int PreparationTimeMinutes { get; set; }
     
     [Required]

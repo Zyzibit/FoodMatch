@@ -120,7 +120,6 @@ namespace inzynierka.Recipes.Services;
                     Title = jsonElement.GetProperty("title").GetString() ?? "Invalid title",
                     Description = jsonElement.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "",
                     Instructions = jsonElement.TryGetProperty("instructions", out var instr) ? instr.GetString() ?? "" : "",
-                    Servings = jsonElement.TryGetProperty("servings", out var serv) ? serv.GetInt32() : 1,
                     PreparationTimeMinutes = jsonElement.TryGetProperty("preparationTimeMinutes", out var prep) ? prep.GetInt32() : 0
                 };
 
@@ -300,7 +299,6 @@ namespace inzynierka.Recipes.Services;
                 ["productsFromDatabase"] = productsInfo,
                 ["allowedUnits"] = unitNames,
                 ["cuisineType"] = request.CuisineType,
-                ["desiredServings"] = request.DesiredServings,
                 ["maxPreparationTimeMinutes"] = request.MaxPreparationTimeMinutes,
                 ["additionalInstructions"] = request.AdditionalInstructions
             };
@@ -311,7 +309,6 @@ namespace inzynierka.Recipes.Services;
                 data["isVegetarian"] = request.Preferences.IsVegetarian;
                 data["isGlutenFree"] = request.Preferences.IsGlutenFree;
                 data["isLactoseFree"] = request.Preferences.IsLactoseFree;
-                data["maxCalories"] = request.Preferences.MaxCalories;
                 data["allergies"] = request.Preferences.Allergies.Any() 
                     ? string.Join(", ", request.Preferences.Allergies) 
                     : "brak";

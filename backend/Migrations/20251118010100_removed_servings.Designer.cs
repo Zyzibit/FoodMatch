@@ -13,8 +13,8 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251117225455_init")]
-    partial class init
+    [Migration("20251118010100_removed_servings")]
+    partial class removed_servings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -513,9 +513,6 @@ namespace inzynierka.Migrations
 
                     b.Property<decimal>("Protein")
                         .HasColumnType("numeric");
-
-                    b.Property<int>("Servings")
-                        .HasColumnType("integer");
 
                     b.Property<int>("Source")
                         .HasColumnType("integer");

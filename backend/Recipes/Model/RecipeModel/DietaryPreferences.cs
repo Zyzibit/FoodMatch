@@ -8,7 +8,6 @@ public class DietaryPreferences
     public bool IsLactoseFree { get; set; } 
     public List<string> Allergies { get; set; } = new();
     public List<string> DislikedIngredients { get; set; } = new();
-    public int? MaxCalories { get; set; }
     
     public int? DailyCalorieGoal { get; set; }
     public int? DailyProteinGoal { get; set; }

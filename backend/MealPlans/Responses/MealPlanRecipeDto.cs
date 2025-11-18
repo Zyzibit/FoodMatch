@@ -9,7 +9,6 @@ public class MealPlanRecipeDto
     public decimal ProteinPer100G { get; set; }
     public decimal CarbohydratesPer100G { get; set; }
     public decimal FatsPer100G { get; set; }
-    public int Servings { get; set; }
     public int PreparationTimeMinutes { get; set; }
 }
 

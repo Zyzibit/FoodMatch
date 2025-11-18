@@ -16,13 +16,14 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
         List<string> userProvidedIngredientNames,
         List<GeneratedRecipeIngredient> allIngredients)
     {
+        // Zwracamy wszystkie składniki, które nie mają przypisanego ProductId
+        // To znaczy, że nie znaleziono dla nich produktu w bazie danych
+        // i muszą być utworzone jako nowe produkty AI
         var additionalIngredients = allIngredients
-            .Where(ai => !userProvidedIngredientNames.Any(userIng =>
-                ai.Name.ToLowerInvariant().Contains(userIng) ||
-                userIng.Contains(ai.Name.ToLowerInvariant())))
+            .Where(ai => !ai.ProductId.HasValue)
             .ToList();
 
-        _logger.LogInformation("Found {AdditionalCount} additional ingredients not in user products",
+        _logger.LogInformation("Found {AdditionalCount} additional ingredients not in user products (without ProductId)",
             additionalIngredients.Count);
 
         return additionalIngredients;

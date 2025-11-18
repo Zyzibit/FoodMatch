@@ -11,7 +11,6 @@ public class RecipeBuilder
     private string? _title;
     private string? _description;
     private string? _instructions;
-    private int _servings;
     private int _preparationTimeMinutes;
     private int _totalWeightGrams;
     private decimal? _calories;
@@ -49,12 +48,6 @@ public class RecipeBuilder
     public RecipeBuilder WithInstructions(string instructions)
     {
         _instructions = instructions;
-        return this;
-    }
-
-    public RecipeBuilder WithServings(int servings)
-    {
-        _servings = servings;
         return this;
     }
 
@@ -153,7 +146,6 @@ public class RecipeBuilder
             Title = _title,
             Description = _description ?? string.Empty,
             Instructions = _instructions,
-            Servings = _servings,
             PreparationTimeMinutes = _preparationTimeMinutes,
             TotalWeightGrams = _totalWeightGrams,
             Calories = _calories.Value,

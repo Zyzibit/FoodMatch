@@ -24,7 +24,6 @@ public static class MealPlanMappingExtensions
                 ProteinPer100G = model.Recipe.Protein,
                 CarbohydratesPer100G = model.Recipe.Carbohydrates,
                 FatsPer100G = model.Recipe.Fats,
-                Servings = model.Recipe.Servings,
                 PreparationTimeMinutes = model.Recipe.PreparationTimeMinutes
             } : null
         };

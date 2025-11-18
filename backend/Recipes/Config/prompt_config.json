@@ -1,5 +1,5 @@
 {
-  "systemMessage": "Jesteś ekspertem kulinarnym i dietetykiem. Twoje zadanie to tworzenie DOKŁADNYCH i SPÓJNYCH przepisów. Odpowiadaj WYŁĄCZNIE w formacie JSON. Całość po polsku. Bezwzględnie przestrzegaj wszystkich instrukcji i formatów.",
+  "systemMessage": "Jesteś ekspertem kulinarnym i dietetykiem. Twoje zadanie to tworzenie DOKŁADNYCH i SPÓJNYCH przepisów dietetycznych. SPóJNY przepis będzie wtedy gdy instrukcje i składniki nie bedą się róznić i danie będzie miało sens. Odpowiadaj WYŁĄCZNIE w formacie JSON. Całość po polsku. Bezwzględnie przestrzegaj wszystkich instrukcji i formatów.",
   "sections": [
     {
       "title": "📦 DOSTĘPNE SKŁADNIKI UŻYTKOWNIKA (MUSISZ ICH UŻYĆ):",
@@ -20,6 +20,7 @@
         "3. OBLICZENIA: Wartości w GŁÓWNYM OBIEKCIE JSON muszą być DOKŁADNĄ SUMĄ wartości WSZYSTKICH składników z listy. totalWeightGrams to suma normalizedQuantityInGrams.",
         "4. CZAS: preparationTimeMinutes musi być realistyczną SUMĄ czasów podanych w instrukcjach.",
         "5. INSTUKCJE: Instrukcje MUSZĄ być szczegółowe, w jednym stringu z użyciem '\\n' do podziału na kroki.",
+        "6. SKŁADNIKI: KAŻDY SKŁADNIK, który jest wymagany i wymieniony w instrukcjach musi być obecny na liście składników i odwrotnie.",
         "6. WYJŚCIE: Odpowiedz TYLKO czystym JSON-em, bez ```json, bez tekstu przed/po."
       ]
     },
@@ -34,23 +35,13 @@
         { "field": "isVegetarian", "text": "✓ WEGETARIAŃSKI (bez mięsa/ryb) - MUSISZ USUNĄĆ BOCZEK I INNE MIĘSA!" },
         { "field": "isGlutenFree", "text": "✓ BEZGLUTENOWY" },
         { "field": "isLactoseFree", "text": "✓ BEZLAKTOZOWY" },
-        { "field": "mealType", "template": "🍴 TYP POSIŁKU: {value}" },
-        { "field": "maxCalories", "template": "⚡ LIMIT KALORII: Maksymalnie {value} kcal (NIE PRZEKRACZAJ!)" },
+        { "field": "mealType", "template": "🍴 TYP POSIŁKU: {value} - posiłek powinien być urozmaicony tak aby był smaczny i pasujący do odpowiedniej pory dnia i spełniał kryteria dla tego typu posiłku" },
         { "field": "allergies", "template": "⚠️ ALERGENY - BEZWZGLĘDNIE NIE UŻYWAJ: {value}" },
         { "field": "dislikedIngredients", "template": "❌ NIECHCIANE SKŁADNIKI - NIE UŻYWAJ: {value}" },
         { "field": "cuisineType", "template": "🌍 Preferowana kuchnia: {value}" },
         { "field": "desiredServings", "template": "👥 Liczba porcji: {value}" },
         { "field": "maxPreparationTimeMinutes", "template": "⏱️ Maksymalny czas (ŁĄCZNIE): {value} minut" },
         { "field": "additionalInstructions", "template": "📝 Specjalne wymagania: {value}" }
-      ]
-    },
-    {
-      "title": "📊 CELE ŻYWIENIOWE - DZIENNE (suma wszystkich posiłków):",
-      "conditionalFields": [
-        { "field": "dailyCalorieGoal", "template": "📈 Dzienny cel kaloryczny: {value} kcal" },
-        { "field": "dailyProteinGoal", "template": "💪 Dzienny cel białka: {value}g" },
-        { "field": "dailyCarbohydrateGoal", "template": "🌾 Dzienny cel węglowodanów: {value}g" },
-        { "field": "dailyFatGoal", "template": "🥑 Dzienny cel tłuszczów: {value}g" }
       ]
     },
     {
@@ -69,7 +60,6 @@
       "jsonSchema": {
         "title": "string",
         "description": "string (spójny z preferencjami!)",
-        "servings": "integer",
         "preparationTimeMinutes": "integer (realny czas z instrukcji)",
         "totalWeightGrams": "integer (SUMA normalizedQuantityInGrams)",
         "estimatedCalories": "decimal (SUMA kalorii składników)",

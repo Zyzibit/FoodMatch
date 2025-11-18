@@ -35,7 +35,6 @@ public static class RecipeExtensions
             Title = recipe.Title,
             Description = recipe.Description,
             Instructions = recipe.Instructions,
-            Servings = recipe.Servings,
             PreparationTimeMinutes = recipe.PreparationTimeMinutes,
             TotalWeightGrams = recipe.TotalWeightGrams,
             Calories = recipe.Calories,

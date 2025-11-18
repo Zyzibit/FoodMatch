@@ -147,7 +147,6 @@ public class RecipeService : IRecipeService
                 .WithTitle(request.Title)
                 .WithDescription(request.Description)
                 .WithInstructions(request.Instructions)
-                .WithServings(request.Servings)
                 .WithPreparationTime(request.PreparationTimeMinutes)
                 .WithTotalWeightGrams(request.TotalWeightGrams)
                 .WithMacros(
@@ -322,7 +321,6 @@ public class RecipeService : IRecipeService
                 ProductIds = request.ProductIds,
                 Preferences = preferences,
                 CuisineType = request.CuisineType,
-                DesiredServings = request.DesiredServings,
                 MaxPreparationTimeMinutes = request.MaxPreparationTimeMinutes,
                 AdditionalInstructions = request.AdditionalInstructions
             };
@@ -457,7 +455,6 @@ public class RecipeService : IRecipeService
                 .WithTitle(generatedRecipe.Title)
                 .WithDescription(generatedRecipe.Description)
                 .WithInstructions(generatedRecipe.Instructions)
-                .WithServings(generatedRecipe.Servings)
                 .WithPreparationTime(generatedRecipe.PreparationTimeMinutes)
                 .WithTotalWeightGrams(generatedRecipe.TotalWeightGrams)
                 .WithMacros(
@@ -509,7 +506,6 @@ public class RecipeService : IRecipeService
             IsLactoseFree = userPreferences.HasLactoseIntolerance ?? false,
             Allergies = userPreferences.Allergies ?? new List<string>(),
             DislikedIngredients = new List<string>(),
-            MaxCalories = userPreferences.DailyCalorieGoal,
             
             DailyCalorieGoal = userPreferences.DailyCalorieGoal,
             DailyProteinGoal = userPreferences.DailyProteinGoal,
