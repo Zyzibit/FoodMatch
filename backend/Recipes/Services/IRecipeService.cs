@@ -9,5 +9,8 @@ public interface IRecipeService
     Task<RecipeDto?> GetRecipeAsync(int id);
     Task<RecipeListResult> Recipes(int limit = 50, int offset = 0);
     Task<RecipeListResult> GetUserRecipesAsync(string userId, int limit = 50, int offset = 0);
-    Task<CreateRecipeResult> GenerateRecipeWithAiAsync(string userId, GenerateRecipeRequest request);
+    
+    Task<GenerateRecipePreviewResult> GenerateRecipePreviewAsync(string userId, GenerateRecipeRequest request);
+    Task<CreateRecipeResult> SaveGeneratedRecipeAsync(string userId, SaveGeneratedRecipeRequest request);
+    
 }
