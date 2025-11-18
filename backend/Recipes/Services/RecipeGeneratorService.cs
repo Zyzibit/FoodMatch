@@ -74,6 +74,63 @@ namespace inzynierka.Recipes.Services;
                 
                 var recipe = ParseRecipeFromJson(result.Value, products);
                 
+
+                // check if macros need adjustment based on user targets
+                var targetCalories = request.Preferences?.TargetMealCalories;
+                var targetProtein = request.Preferences?.TargetMealProtein;
+                var targetCarbs = request.Preferences?.TargetMealCarbohydrates;
+                var targetFat = request.Preferences?.TargetMealFat;
+
+                bool NeedsCalorieAdjustment(decimal actual, decimal? target, decimal tolerancePct) =>
+                    target.HasValue && target.Value > 0 && Math.Abs(actual - target.Value) / target.Value > tolerancePct;
+
+                var needsCaloriesFix = NeedsCalorieAdjustment(recipe.EstimatedCalories, targetCalories, 0.075m);
+                var needsProteinFix = NeedsCalorieAdjustment(recipe.EstimatedProtein, targetProtein, 0.15m);
+                var needsCarbFix = NeedsCalorieAdjustment(recipe.EstimatedCarbohydrates, targetCarbs, 0.20m);
+                var needsFatFix = NeedsCalorieAdjustment(recipe.EstimatedFats, targetFat, 0.20m);
+
+                if (needsCaloriesFix || needsProteinFix || needsCarbFix || needsFatFix)
+                {
+                    _logger.LogInformation(
+                        "Korekta proporcji: aktualne makra [kcal={K}, b={P}g, w={C}g, t={F}g] odchodzą od celu [kcal={TK}, b={TP}g, w={TC}g, t={TF}g].",
+                        recipe.EstimatedCalories, recipe.EstimatedProtein, recipe.EstimatedCarbohydrates, recipe.EstimatedFats,
+                        targetCalories, targetProtein, targetCarbs, targetFat);
+
+                    var previousJson = JsonSerializer.Serialize(result.Value);
+                    messages.Add(new OpenAIMessage("assistant", previousJson));
+
+                    var correctionBuilder = new System.Text.StringBuilder();
+                    correctionBuilder.AppendLine("KOREKTA: Poprzednia odpowiedź nie trafia wystarczająco w cele makro.");
+                    if (targetCalories.HasValue)
+                        correctionBuilder.AppendLine($"Dopasuj KALORIE do ok. {targetCalories.Value} kcal (tolerancja ±7.5%).");
+                    if (targetProtein.HasValue)
+                        correctionBuilder.AppendLine($"Dopasuj BIAŁKO do ok. {targetProtein.Value} g (tolerancja ±15%).");
+                    if (targetCarbs.HasValue)
+                        correctionBuilder.AppendLine($"Dopasuj WĘGLOWODANY do ok. {targetCarbs.Value} g (tolerancja ±20%).");
+                    if (targetFat.HasValue)
+                        correctionBuilder.AppendLine($"Dopasuj TŁUSZCZE do ok. {targetFat.Value} g (tolerancja ±20%).");
+                    correctionBuilder.AppendLine("Zachowaj SENS dania: nie skaluj przypraw i ziół, modyfikuj główne składniki (np. kasza/ryż/makaron/pieczywo, źródło białka, warzywa) oraz w razie potrzeby niewielkie ilości tłuszczu (np. oliwa). Wszystkie ilości, jednostki i makra muszą być spójne, a sumy makro równają się sumie składników.");
+                    correctionBuilder.AppendLine("Zwróć kompletny, ZAKTUALIZOWANY JSON przepisu z poprawionymi ilościami i makrami.");
+
+                    messages.Add(new OpenAIMessage("user", correctionBuilder.ToString()));
+
+                    _logger.LogDebug("Sending correction prompt to OpenAI with {MessageCount} messages", messages.Count);
+                    var corrected = await _openAiClient.SendPromptForJsonAsync(messages);
+
+                    if (corrected != null)
+                    {
+                        try
+                        {
+                            var correctedRecipe = ParseRecipeFromJson(corrected.Value, products);
+                            recipe = correctedRecipe;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Błąd parsowania poprawionej odpowiedzi AI – pozostaję przy pierwszej wersji.");
+                        }
+                    }
+                }
+                
                 return new GenerateRecipeResponse
                 {
                     Success = true,
