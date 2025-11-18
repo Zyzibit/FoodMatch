@@ -14,4 +14,7 @@ export const API_ENDPOINTS = {
     SESSIONS: "/auth/sessions",
     REVOKE_ALL_TOKENS: "/auth/revoke-all-tokens",
   },
+  PRODUCTS: {
+    SEARCH: "/products/search",
+  },
 } as const;

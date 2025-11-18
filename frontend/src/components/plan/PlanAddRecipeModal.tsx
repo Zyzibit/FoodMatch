@@ -1,10 +1,4 @@
-import {
-  Add,
-  AutoAwesome,
-  Close,
-  Delete,
-  MenuBook,
-} from "@mui/icons-material";
+import { Add, AutoAwesome, Close, Delete, MenuBook } from "@mui/icons-material";
 import {
   Autocomplete,
   Box,
@@ -21,9 +15,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { allergenOptions } from "../../constants/allergens";
 import type { PlanMeal } from "../../types/plan";
+import { searchProducts, type ProductDto } from "../../services/productService";
 
 type AddMode = "recipes" | "ai";
 
@@ -48,15 +43,6 @@ type AiProduct = {
 };
 
 const recipeSuggestions: RecipeSuggestion[] = [];
-
-const suggestedProducts = [
-  "Płatki owsiane",
-  "Jogurt grecki",
-  "Jabłko",
-  "Masło orzechowe",
-  "Szpinak",
-  "Komosa ryżowa",
-];
 
 const modeOptions: {
   key: AddMode;
@@ -87,6 +73,36 @@ export default function PlanAddRecipeModal({
   const [productName, setProductName] = useState("");
   const [products, setProducts] = useState<AiProduct[]>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [productSuggestions, setProductSuggestions] = useState<ProductDto[]>(
+    []
+  );
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const handleSearchProducts = useCallback(async (query: string) => {
+    if (!query || query.trim().length < 2) {
+      setProductSuggestions([]);
+      return;
+    }
+
+    setIsLoadingProducts(true);
+    try {
+      const results = await searchProducts(query, 10);
+      setProductSuggestions(results);
+    } catch (error) {
+      console.error("Error searching products:", error);
+      setProductSuggestions([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearchProducts(productName);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [productName, handleSearchProducts]);
 
   useEffect(() => {
     if (!open) {
@@ -95,6 +111,7 @@ export default function PlanAddRecipeModal({
       setProductName("");
       setProducts([]);
       setSelectedAllergens([]);
+      setProductSuggestions([]);
     }
   }, [open]);
 
@@ -102,15 +119,15 @@ export default function PlanAddRecipeModal({
 
   const handleAddProduct = () => {
     if (!canAddProduct) return;
-      setProducts((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          name: productName.trim(),
-        },
-      ]);
-      setProductName("");
-    };
+    setProducts((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: productName.trim(),
+      },
+    ]);
+    setProductName("");
+  };
 
   const handleRemoveProduct = (id: string) => {
     setProducts((prev) => prev.filter((item) => item.id !== id));
@@ -196,11 +213,29 @@ export default function PlanAddRecipeModal({
       >
         <Autocomplete
           freeSolo
-          options={suggestedProducts}
+          options={productSuggestions}
+          getOptionLabel={(option) =>
+            typeof option === "string" ? option : option.name
+          }
           value={productName}
           onInputChange={(_, value) => setProductName(value)}
+          loading={isLoadingProducts}
           renderInput={(params) => (
             <TextField {...params} label="Składnik" placeholder="np. banan" />
+          )}
+          renderOption={(props, option) => (
+            <li {...props}>
+              <Box>
+                <Typography variant="body2">
+                  {typeof option === "string" ? option : option.name}
+                </Typography>
+                {typeof option !== "string" && option.brand && (
+                  <Typography variant="caption" color="text.secondary">
+                    {option.brand}
+                  </Typography>
+                )}
+              </Box>
+            </li>
           )}
           sx={{ flex: 2 }}
         />
@@ -215,7 +250,10 @@ export default function PlanAddRecipeModal({
         </Button>
       </Stack>
 
-      <Paper variant="outlined" sx={{ maxHeight: 220, overflowY: "auto", p: 2 }}>
+      <Paper
+        variant="outlined"
+        sx={{ maxHeight: 220, overflowY: "auto", p: 2 }}
+      >
         {products.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             Dodaj składniki, które AI ma wykorzystać w przepisie.
@@ -303,7 +341,11 @@ export default function PlanAddRecipeModal({
           overflow: { md: "hidden" },
         }}
       >
-        <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ height: "100%" }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={3}
+          sx={{ height: "100%" }}
+        >
           <Stack spacing={1.5} sx={{ width: { xs: "100%", md: 260 } }}>
             {modeOptions.map((option) => {
               const isActive = mode === option.key;
@@ -355,11 +397,7 @@ export default function PlanAddRecipeModal({
         <Button onClick={onClose} sx={{ textTransform: "none" }}>
           Anuluj
         </Button>
-        <Button
-          variant="contained"
-          sx={{ textTransform: "none" }}
-          disabled
-        >
+        <Button variant="contained" sx={{ textTransform: "none" }} disabled>
           Dodaj do planu (wkrótce)
         </Button>
       </DialogActions>
