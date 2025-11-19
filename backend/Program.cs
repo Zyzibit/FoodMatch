@@ -85,7 +85,6 @@ builder.Services.AddProductsServices();
 builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
-builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();

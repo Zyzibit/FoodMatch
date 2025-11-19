@@ -13,7 +13,7 @@ public class Recipe {
     [Required]
     public RecipeSource Source { get; set; } = RecipeSource.User;
     
-    public ICollection<RecipeIngredient> Ingredients { get; set; }
+    public required ICollection<RecipeIngredient> Ingredients { get; set; }
     
     public List <string>? AdditionalProducts { get; set; }
     
