@@ -1,5 +1,5 @@
 import { Alert, Box, Divider, Paper, Typography } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import type { MealPlanDay, MacroEntry, PlanMeal } from "../types/plan";
 import PlanDayHeader from "../components/plan/PlanDayHeader";
@@ -8,7 +8,7 @@ import PlanMacroSummary from "../components/plan/PlanMacroSummary";
 import PlanAddRecipeModal, {
   type RecipeAddedPayload,
 } from "../components/plan/PlanAddRecipeModal";
-import type { GeneratedRecipe } from "../services/recipeService";
+import { getRecipeById, type GeneratedRecipe } from "../services/recipeService";
 import {
   getMealPlansForDate,
   type MealPlanDto,
@@ -72,9 +72,13 @@ const macroLabels: Record<
   carbs: "Węglowodany",
 };
 
-const formatIngredientLabel = (
-  ingredient: GeneratedRecipe["ingredients"][number]
-) => {
+type IngredientForDisplay = {
+  productName: string;
+  quantity?: number;
+  unitName?: string | null;
+};
+
+const formatIngredientLabel = (ingredient: IngredientForDisplay) => {
   const quantity =
     typeof ingredient.quantity === "number"
       ? Math.round(ingredient.quantity * 10) / 10
@@ -258,6 +262,57 @@ export default function PlanPage() {
     setExpandedMealId(null);
   }, [selectedDate]);
 
+  const fetchMealDetails = useCallback(
+    async (mealId: string, recipeId: number) => {
+      setPlan((prev) => ({
+        ...prev,
+        meals: prev.meals.map((planMeal) =>
+          planMeal.id === mealId
+            ? { ...planMeal, isDetailsLoading: true, detailsError: null }
+            : planMeal
+        ),
+      }));
+
+      try {
+        const recipe = await getRecipeById(recipeId);
+        setPlan((prev) => ({
+          ...prev,
+          meals: prev.meals.map((planMeal) =>
+            planMeal.id === mealId
+              ? {
+                  ...planMeal,
+                  products: recipe.ingredients.map((ingredient) =>
+                    formatIngredientLabel(ingredient)
+                  ),
+                  instructions: recipe.instructions,
+                  isDetailsLoading: false,
+                  detailsError: null,
+                }
+              : planMeal
+          ),
+        }));
+      } catch (error) {
+        console.error("Failed to load recipe details", error);
+        setPlan((prev) => ({
+          ...prev,
+          meals: prev.meals.map((planMeal) =>
+            planMeal.id === mealId
+              ? {
+                  ...planMeal,
+                  isDetailsLoading: false,
+                  detailsError:
+                    error instanceof Error
+                      ? error.message
+                      : "Nie udało się pobrać szczegółów przepisu.",
+                }
+              : planMeal
+          ),
+        }));
+      }
+    },
+    [setPlan]
+  );
+
   const handleAddRecipe = (meal: PlanMeal) => {
     setMealForModal(meal);
   };
@@ -286,12 +341,37 @@ export default function PlanPage() {
           products: payload.recipe.ingredients.map((ingredient) =>
             formatIngredientLabel(ingredient)
           ),
+          instructions: payload.recipe.instructions,
+          isDetailsLoading: false,
+          detailsError: null,
           mealPlanId: payload.mealPlanId,
           recipeId: payload.recipeId,
         };
       }),
     }));
     setMealForModal(null);
+  };
+
+  const handleExpandMeal = (meal: PlanMeal) => {
+    const isExpanding = expandedMealId !== meal.id;
+    setExpandedMealId(isExpanding ? meal.id : null);
+
+    if (
+      !isExpanding ||
+      meal.isPlaceholder ||
+      !meal.recipeId ||
+      meal.isDetailsLoading
+    ) {
+      return;
+    }
+
+    const hasProducts = Boolean(meal.products?.length);
+    const hasInstructions = Boolean(meal.instructions);
+    const shouldRefetch = Boolean(meal.detailsError);
+
+    if (!hasProducts || !hasInstructions || shouldRefetch) {
+      void fetchMealDetails(meal.id, meal.recipeId);
+    }
   };
 
   const macroEntries = Object.entries(plan.summary.macros) as [
@@ -346,11 +426,7 @@ export default function PlanPage() {
           meals={plan.meals}
           onAddRecipe={handleAddRecipe}
           expandedMealId={expandedMealId}
-          onExpandMeal={(meal) =>
-            setExpandedMealId((current) =>
-              current === meal.id ? null : meal.id
-            )
-          }
+          onExpandMeal={handleExpandMeal}
         />
       </Paper>
 

@@ -6,6 +6,9 @@ export type PlanMeal = {
   calories: number;
   description?: string;
   products?: string[];
+  instructions?: string;
+  isDetailsLoading?: boolean;
+  detailsError?: string | null;
   macros: { protein: number; fat: number; carbs: number };
   isPlaceholder?: boolean;
   mealPlanId?: number;
