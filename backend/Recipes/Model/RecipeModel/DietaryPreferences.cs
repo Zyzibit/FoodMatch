@@ -14,10 +14,10 @@ public class DietaryPreferences
     public int? DailyCarbohydrateGoal { get; set; }
     public int? DailyFatGoal { get; set; }
     
-    public string? MealType { get; set; } // "Breakfast", "Lunch", "Dinner", "Snack"
-    public int? TargetMealCalories { get; set; } // Docelowe kalorie dla tego konkretnego posiłku
-    public int? TargetMealProtein { get; set; } // Docelowe białko dla tego konkretnego posiłku (g)
-    public int? TargetMealCarbohydrates { get; set; } // Docelowe węglowodany dla tego konkretnego posiłku (g)
-    public int? TargetMealFat { get; set; } // Docelowe tłuszcze dla tego konkretnego posiłku (g)
+    public string? MealType { get; set; } 
+    public int? TargetMealCalories { get; set; }
+    public int? TargetMealProtein { get; set; } 
+    public int? TargetMealCarbohydrates { get; set; }
+    public int? TargetMealFat { get; set; } 
 }
 

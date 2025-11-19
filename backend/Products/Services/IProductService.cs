@@ -19,4 +19,7 @@ public interface IProductService
     Task<IEnumerable<ProductDto>> GetProductsByIdsAsync(IEnumerable<int> ids);
     Task<ProductResult> AddAiProductAsync(GeneratedRecipeIngredient ingredient);
     Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient);
+    (decimal calories, decimal protein, decimal carbohydrates, decimal fats) CalculateNutritionalValues(
+        ProductDto product, decimal normalizedQuantityInGrams);
+    string GetProductDisplayName(ProductDto product);
 }

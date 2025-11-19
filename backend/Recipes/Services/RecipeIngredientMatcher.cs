@@ -1,4 +1,5 @@
 using inzynierka.Products.Dto;
+using inzynierka.Products.Services;
 using inzynierka.Recipes.Model.RecipeModel;
 
 namespace inzynierka.Recipes.Services;
@@ -6,19 +7,35 @@ namespace inzynierka.Recipes.Services;
 public class RecipeIngredientMatcher : IRecipeIngredientMatcher
 {
     private readonly ILogger<RecipeIngredientMatcher> _logger;
+    private readonly IProductService _productService;
 
-    public RecipeIngredientMatcher(ILogger<RecipeIngredientMatcher> logger)
+    public RecipeIngredientMatcher(ILogger<RecipeIngredientMatcher> logger, IProductService productService)
     {
         _logger = logger;
+        _productService = productService;
+    }
+    
+    public List<string> PrepareIngredientNames(List<ProductDto> products, List<string> availableIngredients)
+    {
+        var ingredientNames = new List<string>();
+
+        if (products.Any())
+        {
+            ingredientNames.AddRange(products.Select(p => _productService.GetProductDisplayName(p)));
+        }
+
+        if (availableIngredients.Any())
+        {
+            ingredientNames.AddRange(availableIngredients);
+        }
+
+        return ingredientNames;
     }
     
     public List<GeneratedRecipeIngredient> GetAdditionalIngredients(
         List<string> userProvidedIngredientNames,
         List<GeneratedRecipeIngredient> allIngredients)
     {
-        // Zwracamy wszystkie składniki, które nie mają przypisanego ProductId
-        // To znaczy, że nie znaleziono dla nich produktu w bazie danych
-        // i muszą być utworzone jako nowe produkty AI
         var additionalIngredients = allIngredients
             .Where(ai => !ai.ProductId.HasValue)
             .ToList();
@@ -43,7 +60,7 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
         if (matchingProducts.Count < availableProducts.Count)
         {
             var unusedProducts = availableProducts.Except(matchingProducts)
-                .Select(GetProductDisplayName);
+                .Select(p => _productService.GetProductDisplayName(p));
             _logger.LogInformation(
                 "Matched {MatchedCount}/{TotalCount} products. Unused: {UnusedProducts}",
                 matchingProducts.Count, availableProducts.Count, string.Join(", ", unusedProducts));
@@ -58,25 +75,10 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
     {
         var matchingIngredient = recipeIngredients.FirstOrDefault(ai =>
             IsProductMatchingIngredient(product, ai));
-
-        if (matchingIngredient == null)
-        {
-            _logger.LogWarning("No matching recipe ingredient found for product: {ProductName}",
-                GetProductDisplayName(product));
-        }
-
         return matchingIngredient;
     }
     
-    public string GetProductDisplayName(ProductDto product)
-    {
-        return !string.IsNullOrWhiteSpace(product.Name)
-            ? product.Name
-            : (!string.IsNullOrWhiteSpace(product.Brand)
-                ? product.Brand
-                : $"Product {product.Id}");
-    }
-    
+
     private bool IsProductMatchingIngredient(ProductDto product, GeneratedRecipeIngredient ingredient)
     {
         var ingredientNameLower = ingredient.Name.ToLowerInvariant();

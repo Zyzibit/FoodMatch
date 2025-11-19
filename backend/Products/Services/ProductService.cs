@@ -430,4 +430,24 @@ public class ProductService : IProductService
             throw new InvalidOperationException($"Failed to create product for ingredient '{ingredient.Name}'", ex);
         }
     }
+
+    public (decimal calories, decimal protein, decimal carbohydrates, decimal fats) CalculateNutritionalValues(
+        ProductDto product, decimal normalizedQuantityInGrams)
+    {
+        var calories = (decimal)(product.Nutrition?.Calories ?? 0) * (normalizedQuantityInGrams / 100m);
+        var protein = (decimal)(product.Nutrition?.Proteins ?? 0) * (normalizedQuantityInGrams / 100m);
+        var carbohydrates = (decimal)(product.Nutrition?.Carbohydrates ?? 0) * (normalizedQuantityInGrams / 100m);
+        var fats = (decimal)(product.Nutrition?.Fat ?? 0) * (normalizedQuantityInGrams / 100m);
+
+        return (calories, protein, carbohydrates, fats);
+    }
+
+    public string GetProductDisplayName(ProductDto product)
+    {
+        return !string.IsNullOrWhiteSpace(product.Name)
+            ? product.Name
+            : (!string.IsNullOrWhiteSpace(product.Brand)
+                ? product.Brand
+                : $"Product {product.Id}");
+    }
 }

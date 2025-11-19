@@ -5,6 +5,8 @@ namespace inzynierka.Recipes.Services;
 
 public interface IRecipeIngredientMatcher
 {
+    List<string> PrepareIngredientNames(List<ProductDto> products, List<string> availableIngredients);
+    
     List<GeneratedRecipeIngredient> GetAdditionalIngredients(
         List<string> userProvidedIngredientNames,
         List<GeneratedRecipeIngredient> allIngredients);
@@ -16,6 +18,4 @@ public interface IRecipeIngredientMatcher
     GeneratedRecipeIngredient? FindMatchingRecipeIngredient(
         ProductDto product,
         List<GeneratedRecipeIngredient> recipeIngredients);
-    
-    string GetProductDisplayName(ProductDto product);
 }
