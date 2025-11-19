@@ -10,15 +10,20 @@ public static class ProductDtoExtensions
     {
         var scaleFactor = normalizedQuantityInGrams / 100m;
         
+        var calories = product.Nutrition?.EstimatedCalories ?? (decimal?)product.Nutrition?.Calories ?? 0m;
+        var proteins = product.Nutrition?.EstimatedProteins ?? (decimal?)product.Nutrition?.Proteins ?? 0m;
+        var carbohydrates = product.Nutrition?.EstimatedCarbohydrates ?? (decimal?)product.Nutrition?.Carbohydrates ?? 0m;
+        var fats = product.Nutrition?.EstimatedFats ?? (decimal?)product.Nutrition?.Fat ?? 0m;
+        
         return new RecipeIngredientProductDto
         {
             ProductId = int.TryParse(product.Id, out var id) ? id : 0,
             ProductName = GetDisplayName(product),
             Source = product.Source,
-            Calories = (decimal)(product.Nutrition?.Calories ?? 0) * scaleFactor,
-            Proteins = (decimal)(product.Nutrition?.Proteins ?? 0) * scaleFactor,
-            Carbohydrates = (decimal)(product.Nutrition?.Carbohydrates ?? 0) * scaleFactor,
-            Fats = (decimal)(product.Nutrition?.Fat ?? 0) * scaleFactor
+            Calories = calories * scaleFactor,
+            Proteins = proteins * scaleFactor,
+            Carbohydrates = carbohydrates * scaleFactor,
+            Fats = fats * scaleFactor
         };
     }
     
