@@ -7,7 +7,7 @@ namespace inzynierka.Recipes.Extensions;
 
 public static class RecipeExtensions
 {
-    public static RecipeDto ToDto(this Recipe recipe, IProductMapper productMapper)
+    public static RecipeDto ToDto(this Recipe recipe)
     {
         return new RecipeDto
         {
@@ -18,10 +18,8 @@ public static class RecipeExtensions
             {
                 var quantityInGrams = i.NormalizedQuantityInGrams ?? 100m;
                 
-                // Używamy ProductMapper do konwersji Product -> ProductDto
-                var productDto = productMapper.MapToProductInfo(i.Product);
+                var productDto = i.Product.ToProductDto();
                 
-                // Następnie używamy extension method z warstwy Products
                 var productInfo = productDto.ToRecipeIngredientProduct(quantityInGrams);
                 
                 return new RecipeIngredientReadDto
@@ -52,7 +50,7 @@ public static class RecipeExtensions
         };
     }
 
-    public static IEnumerable<RecipeDto> ToDtoList(this IEnumerable<Recipe> recipes, IProductMapper productMapper)
-        => recipes.Select(r => r.ToDto(productMapper));
+    public static IEnumerable<RecipeDto> ToDtoList(this IEnumerable<Recipe> recipes)
+        => recipes.Select(r => r.ToDto());
 }
 

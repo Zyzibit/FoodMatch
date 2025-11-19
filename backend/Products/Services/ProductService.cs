@@ -12,18 +12,15 @@ public class ProductService : IProductService
     private readonly IProductRepository _productRepository;
     private readonly IProductImportService _productImportService;
     private readonly ILogger<ProductService> _logger;
-    private readonly IProductMapper _productMapper;
 
     public ProductService(
         IProductRepository productRepository,
         IProductImportService productImportService,
-        ILogger<ProductService> logger,
-        IProductMapper productMapper)
+        ILogger<ProductService> logger)
     {
         _productRepository = productRepository;
         _productImportService = productImportService;
         _logger = logger;
-        _productMapper = productMapper;
     }
 
     public async Task<ProductResult> GetProductAsync(string productId)
@@ -54,7 +51,7 @@ public class ProductService : IProductService
             return new ProductResult
             {
                 Success = true,
-                Product = _productMapper.MapToProductInfo(product)
+                Product = product.ToProductDto()
             };
         }
         catch (Exception ex)
@@ -89,7 +86,7 @@ public class ProductService : IProductService
                 limit: dto.Limit,
                 offset: dto.Offset);
 
-            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
+            var productInfos = products.ToProductDtoList().ToList();
 
 
 
@@ -118,7 +115,7 @@ public class ProductService : IProductService
             var totalCount = await _productRepository.GetTotalProductsCountAsync();
             var products = await _productRepository.GetProductsWithDetailsAsync(limit, offset);
 
-            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
+            var productInfos = products.ToProductDtoList().ToList();
 
             return new ProductSearchResult
             {
@@ -145,7 +142,7 @@ public class ProductService : IProductService
             var totalCount = await _productRepository.GetProductsCountByCategoryAsync(category);
             var products = await _productRepository.GetProductsByCategoryAsync(category, limit, offset);
 
-            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
+            var productInfos = products.ToProductDtoList().ToList();
 
             return new ProductCategoryResult
             {
@@ -258,7 +255,7 @@ public class ProductService : IProductService
             }
             
 
-            var nutritionInfo = _productMapper.MapToNutritionInfo(product);
+            var nutritionInfo = product.ToNutritionInfoDto();
 
             return new ProductNutritionResult
             {
@@ -290,7 +287,7 @@ public class ProductService : IProductService
             var products = await _productRepository.GetProductsByIdsAsync(idList);
             if (products == null) return Enumerable.Empty<ProductDto>();
 
-            var productInfos = _productMapper.MapToProductInfoList(products).ToList();
+            var productInfos = products.ToProductDtoList().ToList();
 
             return productInfos;
         }
