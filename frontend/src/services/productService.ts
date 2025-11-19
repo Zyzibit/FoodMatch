@@ -1,8 +1,9 @@
 import { API_BASE_URL, API_ENDPOINTS } from "../config";
 
 export type ProductDto = {
-  productId: number;
-  name: string;
+  productId?: number;
+  id?: number | string;
+  name?: string;
   brand?: string;
   category?: string;
 };

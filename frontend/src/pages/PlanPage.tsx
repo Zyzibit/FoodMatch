@@ -1,11 +1,18 @@
-import { Box, Divider, Paper, Typography } from "@mui/material";
+import { Alert, Box, Divider, Paper, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import type { MealPlanDay, MacroEntry, PlanMeal } from "../types/plan";
 import PlanDayHeader from "../components/plan/PlanDayHeader";
 import PlanMealList from "../components/plan/PlanMealList";
 import PlanMacroSummary from "../components/plan/PlanMacroSummary";
-import PlanAddRecipeModal from "../components/plan/PlanAddRecipeModal";
+import PlanAddRecipeModal, {
+  type RecipeAddedPayload,
+} from "../components/plan/PlanAddRecipeModal";
+import type { GeneratedRecipe } from "../services/recipeService";
+import {
+  getMealPlansForDate,
+  type MealPlanDto,
+} from "../services/mealPlanService";
 
 const parseDateKey = (key?: string) => {
   if (!key?.startsWith("date-")) return null;
@@ -25,6 +32,13 @@ const defaultMealSlots = [
   { id: "meal-lunch", label: "Obiad", time: "14:30" },
   { id: "meal-dinner", label: "Kolacja", time: "19:00" },
 ];
+
+const englishToPolishMealName: Record<string, string> = {
+  Breakfast: "Śniadanie",
+  Snack: "Drugie śniadanie",
+  Lunch: "Obiad",
+  Dinner: "Kolacja",
+};
 
 const buildEmptyPlan = (isoDate: string): MealPlanDay => ({
   date: isoDate,
@@ -58,6 +72,134 @@ const macroLabels: Record<
   carbs: "Węglowodany",
 };
 
+const formatIngredientLabel = (
+  ingredient: GeneratedRecipe["ingredients"][number]
+) => {
+  const quantity =
+    typeof ingredient.quantity === "number"
+      ? Math.round(ingredient.quantity * 10) / 10
+      : undefined;
+  const unit = ingredient.unitName?.trim();
+
+  if (quantity && unit) {
+    return `${ingredient.productName} (${quantity} ${unit})`;
+  }
+
+  if (quantity) {
+    return `${ingredient.productName} (${quantity})`;
+  }
+
+  return ingredient.productName;
+};
+
+const defaultSlotLookup = defaultMealSlots.reduce<
+  Record<string, (typeof defaultMealSlots)[number]>
+>((acc, slot) => {
+  acc[slot.label] = slot;
+  return acc;
+}, {});
+
+const slotOrder = defaultMealSlots.map((slot) => slot.label);
+
+const roundStat = (value: number) => Math.round(Number(value) || 0);
+
+const mergeMealPlansFromApi = (
+  basePlan: MealPlanDay,
+  apiMeals: MealPlanDto[]
+): MealPlanDay => {
+  if (!apiMeals.length) {
+    return basePlan;
+  }
+
+  const apiMealsByLabel = new Map<string, MealPlanDto>();
+  apiMeals.forEach((mealPlan) => {
+    const label = englishToPolishMealName[mealPlan.name] ?? mealPlan.name;
+    apiMealsByLabel.set(label, mealPlan);
+  });
+
+  const updatedMeals = basePlan.meals.map((meal) => {
+    const apiMeal = apiMealsByLabel.get(meal.type);
+    if (!apiMeal || !apiMeal.recipe) {
+      return meal;
+    }
+
+    const recipe = apiMeal.recipe;
+    return {
+      ...meal,
+      isPlaceholder: false,
+      title: recipe.title,
+      description: recipe.description,
+      calories: roundStat(recipe.calories),
+      macros: {
+        protein: roundStat(recipe.proteins),
+        fat: roundStat(recipe.fats),
+        carbs: roundStat(recipe.carbohydrates),
+      },
+      mealPlanId: apiMeal.id,
+      recipeId: recipe.id,
+    };
+  });
+
+  const additionalMeals: PlanMeal[] = [];
+  apiMealsByLabel.forEach((apiMeal, label) => {
+    if (!apiMeal.recipe) {
+      return;
+    }
+    const alreadyIncluded = updatedMeals.some((meal) => meal.type === label);
+    if (alreadyIncluded) {
+      return;
+    }
+
+    const slotInfo = defaultSlotLookup[label];
+    let time = slotInfo?.time;
+    if (!time) {
+      const apiDate = new Date(apiMeal.date);
+      time = Number.isNaN(apiDate.getTime())
+        ? "00:00"
+        : apiDate.toLocaleTimeString("pl-PL", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+    }
+
+    additionalMeals.push({
+      id: `api-${apiMeal.id}`,
+      type: label,
+      time,
+      title: apiMeal.recipe.title,
+      description: apiMeal.recipe.description,
+      calories: roundStat(apiMeal.recipe.calories),
+      macros: {
+        protein: roundStat(apiMeal.recipe.proteins),
+        fat: roundStat(apiMeal.recipe.fats),
+        carbs: roundStat(apiMeal.recipe.carbohydrates),
+      },
+      products: [],
+      isPlaceholder: false,
+      mealPlanId: apiMeal.id,
+      recipeId: apiMeal.recipe.id,
+    });
+  });
+
+  const mergedMeals = [...updatedMeals, ...additionalMeals];
+
+  mergedMeals.sort((a, b) => {
+    const indexA = slotOrder.indexOf(a.type);
+    const indexB = slotOrder.indexOf(b.type);
+    if (indexA === -1 && indexB === -1) {
+      return a.time.localeCompare(b.time);
+    }
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
+  return {
+    ...basePlan,
+    meals: mergedMeals,
+  };
+};
+
 export default function PlanPage() {
   const { activeTab } = useDashboardContext();
   const selectedDate = useMemo(
@@ -70,9 +212,46 @@ export default function PlanPage() {
   );
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null);
   const [mealForModal, setMealForModal] = useState<PlanMeal | null>(null);
+  const [isPlanLoading, setIsPlanLoading] = useState(false);
+  const [planLoadError, setPlanLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    setPlan(buildEmptyPlan(selectedDate));
+    let isCancelled = false;
+
+    const loadPlan = async () => {
+      const emptyPlan = buildEmptyPlan(selectedDate);
+      setPlan(emptyPlan);
+      setPlanLoadError(null);
+      setIsPlanLoading(true);
+
+      try {
+        const apiMeals = await getMealPlansForDate(selectedDate);
+        if (isCancelled) {
+          return;
+        }
+        const mergedPlan = mergeMealPlansFromApi(emptyPlan, apiMeals);
+        setPlan(mergedPlan);
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+        setPlanLoadError(
+          error instanceof Error
+            ? error.message
+            : "Nie udało się pobrać planu posiłków."
+        );
+      } finally {
+        if (!isCancelled) {
+          setIsPlanLoading(false);
+        }
+      }
+    };
+
+    void loadPlan();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [selectedDate]);
 
   useEffect(() => {
@@ -84,6 +263,36 @@ export default function PlanPage() {
   };
 
   const handleCloseModal = () => setMealForModal(null);
+
+  const handleRecipeAddedToPlan = (payload: RecipeAddedPayload) => {
+    setPlan((prev) => ({
+      ...prev,
+      meals: prev.meals.map((planMeal) => {
+        if (planMeal.id !== payload.meal.id) {
+          return planMeal;
+        }
+
+        return {
+          ...planMeal,
+          isPlaceholder: false,
+          title: payload.recipe.title,
+          description: payload.recipe.description,
+          calories: roundStat(payload.recipe.calories),
+          macros: {
+            protein: roundStat(payload.recipe.proteins),
+            fat: roundStat(payload.recipe.fats),
+            carbs: roundStat(payload.recipe.carbohydrates),
+          },
+          products: payload.recipe.ingredients.map((ingredient) =>
+            formatIngredientLabel(ingredient)
+          ),
+          mealPlanId: payload.mealPlanId,
+          recipeId: payload.recipeId,
+        };
+      }),
+    }));
+    setMealForModal(null);
+  };
 
   const macroEntries = Object.entries(plan.summary.macros) as [
     keyof MealPlanDay["summary"]["macros"],
@@ -121,6 +330,18 @@ export default function PlanPage() {
 
         <Divider sx={{ mb: 2 }} />
 
+        {planLoadError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {planLoadError}
+          </Alert>
+        )}
+
+        {isPlanLoading && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Ładowanie planu...
+          </Typography>
+        )}
+
         <PlanMealList
           meals={plan.meals}
           onAddRecipe={handleAddRecipe}
@@ -143,7 +364,9 @@ export default function PlanPage() {
       <PlanAddRecipeModal
         open={Boolean(mealForModal)}
         meal={mealForModal}
+        planDate={plan.date}
         onClose={handleCloseModal}
+        onRecipeAdded={handleRecipeAddedToPlan}
       />
     </Box>
   );

@@ -8,6 +8,8 @@ export type PlanMeal = {
   products?: string[];
   macros: { protein: number; fat: number; carbs: number };
   isPlaceholder?: boolean;
+  mealPlanId?: number;
+  recipeId?: number;
 };
 
 export type MacroEntry = {
