@@ -4,9 +4,6 @@ namespace inzynierka.Products.Extensions;
 
 public static class ProductDtoExtensions
 {
-    /// <summary>
-    /// Konwertuje ProductDto na reprezentację dla składnika przepisu z obliczonymi wartościami odżywczymi
-    /// </summary>
     public static RecipeIngredientProductDto ToRecipeIngredientProduct(
         this ProductDto product, 
         decimal normalizedQuantityInGrams)
@@ -35,9 +32,6 @@ public static class ProductDtoExtensions
     }
 }
 
-/// <summary>
-/// DTO zawierające informacje o produkcie dla składnika przepisu
-/// </summary>
 public class RecipeIngredientProductDto
 {
     public int ProductId { get; set; }

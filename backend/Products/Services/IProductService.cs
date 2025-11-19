@@ -17,9 +17,9 @@ public interface IProductService
     Task<List<string>> GetIngredientsAsync();
     Task<ProductNutritionResult> GetNutritionInfoAsync(string productId);
     Task<IEnumerable<ProductDto>> GetProductsByIdsAsync(IEnumerable<int> ids);
-    Task<ProductResult> AddAiProductAsync(GeneratedRecipeIngredient ingredient);
     Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient);
-    (decimal calories, decimal protein, decimal carbohydrates, decimal fats) CalculateNutritionalValues(
-        ProductDto product, decimal normalizedQuantityInGrams);
     string GetProductDisplayName(ProductDto product);
+    bool IsProductMatchingIngredient(ProductDto product, ProductDto ingredient);
+    ProductDto? FindMatchingProduct(ProductDto ingredient, List<ProductDto> availableProducts);
+    List<ProductDto> GetMatchingProducts(List<ProductDto> availableProducts, List<ProductDto> ingredients);
 }

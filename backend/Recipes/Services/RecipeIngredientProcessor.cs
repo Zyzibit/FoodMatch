@@ -1,6 +1,7 @@
 using inzynierka.Products.Dto;
 using inzynierka.Products.Model;
 using inzynierka.Products.Services;
+using inzynierka.Recipes.Extensions;
 using inzynierka.Recipes.Model.RecipeModel;
 using inzynierka.Recipes.Responses;
 using inzynierka.Units.Services;
@@ -11,18 +12,15 @@ public class RecipeIngredientProcessor : IRecipeIngredientProcessor
 {
     private readonly ILogger<RecipeIngredientProcessor> _logger;
     private readonly IProductService _productService;
-    private readonly IRecipeIngredientMatcher _ingredientMatcher;
     private readonly IUnitService _unitService;
 
     public RecipeIngredientProcessor(
         ILogger<RecipeIngredientProcessor> logger,
         IProductService productService,
-        IRecipeIngredientMatcher ingredientMatcher,
         IUnitService unitService)
     {
         _logger = logger;
         _productService = productService;
-        _ingredientMatcher = ingredientMatcher;
         _unitService = unitService;
     }
 
@@ -36,14 +34,20 @@ public class RecipeIngredientProcessor : IRecipeIngredientProcessor
         foreach (var product in distinctProducts)
         {
             var productName = _productService.GetProductDisplayName(product);
-            var aiIngredient = _ingredientMatcher.FindMatchingRecipeIngredient(product, aiIngredients);
+            var matchingIngredient = _productService.FindMatchingProduct(
+                product, 
+                aiIngredients.MapToProductDtoList());
 
+            if (matchingIngredient == null)
+            {
+                throw new InvalidOperationException($"No matching AI ingredient found for product: {productName}");
+            }
+
+            var aiIngredient = aiIngredients.FirstOrDefault(ai => ai.Name == matchingIngredient.Name);
             if (aiIngredient == null)
             {
                 throw new InvalidOperationException($"No matching AI ingredient found for product: {productName}");
             }
-            var quantity = GetQuantityForIngredient(productName, aiIngredients);
-
 
             try
             {
@@ -56,28 +60,16 @@ public class RecipeIngredientProcessor : IRecipeIngredientProcessor
                 var units = await _unitService.GetAllUnitsAsync();
                 var unitName = units.FirstOrDefault(u => u.UnitId == unitId)?.Name ?? aiIngredient.Unit;
 
-                var normalizedQuantityInGrams = aiIngredient.NormalizedQuantityInGrams ?? 0;
+                var previewIngredient = aiIngredient.ToPreviewIngredientDto(
+                    productId,
+                    productName,
+                    unitId,
+                    unitName,
+                    aiIngredient.Quantity,
+                    ProductSource.User
+                );
 
-
-                var calories = aiIngredient.EstimatedCalories;
-                var protein = aiIngredient.EstimatedProteins;
-                var carbohydrates = aiIngredient.EstimatedCarbohydrates;
-                var fats = aiIngredient.EstimatedFats;
-
-                previewIngredients.Add(new PreviewRecipeIngredientDto
-                {
-                    ProductId = productId,
-                    ProductName = productName,
-                    UnitId = unitId,
-                    UnitName = unitName,
-                    Quantity = quantity,
-                    NormalizedQuantityInGrams = normalizedQuantityInGrams,
-                    Source = ProductSource.User,
-                    Calories = calories,
-                    Protein = protein,
-                    Carbohydrates = carbohydrates,
-                    Fats = fats
-                });
+                previewIngredients.Add(previewIngredient);
             }
             catch (Exception ex)
             {
@@ -103,27 +95,16 @@ public class RecipeIngredientProcessor : IRecipeIngredientProcessor
                 var units = await _unitService.GetAllUnitsAsync();
                 var unitName = units.FirstOrDefault(u => u.UnitId == unitId)?.Name ?? additionalIngredient.Unit;
 
-                var normalizedQuantityInGrams = additionalIngredient.NormalizedQuantityInGrams ?? 0;
-                
-                var calories = additionalIngredient.EstimatedCalories;
-                var protein = additionalIngredient.EstimatedProteins;
-                var carbohydrates = additionalIngredient.EstimatedCarbohydrates;
-                var fats = additionalIngredient.EstimatedFats;
+                var previewIngredient = additionalIngredient.ToPreviewIngredientDto(
+                    aiGeneratedProduct.Id,
+                    additionalIngredient.Name,
+                    unitId,
+                    unitName,
+                    additionalIngredient.Quantity,
+                    ProductSource.AI
+                );
 
-                previewIngredients.Add(new PreviewRecipeIngredientDto
-                {
-                    ProductId = aiGeneratedProduct.Id,
-                    ProductName = additionalIngredient.Name,
-                    UnitId = unitId,
-                    UnitName = unitName,
-                    Quantity = additionalIngredient.Quantity,
-                    NormalizedQuantityInGrams = normalizedQuantityInGrams,
-                    Source = ProductSource.AI,
-                    Calories = calories,
-                    Protein = protein,
-                    Carbohydrates = carbohydrates,
-                    Fats = fats
-                });
+                previewIngredients.Add(previewIngredient);
             }
             catch (Exception ex)
             {
@@ -179,24 +160,6 @@ public class RecipeIngredientProcessor : IRecipeIngredientProcessor
         }
     }
 
-    private decimal GetQuantityForIngredient(string? productName, List<GeneratedRecipeIngredient> aiIngredients)
-    {
-        if (string.IsNullOrEmpty(productName))
-        {
-            throw new ArgumentException("Product name cannot be null or empty", nameof(productName));
-        }
-
-        var matchingIngredient = aiIngredients
-            .FirstOrDefault(ai => productName.Contains(ai.Name, StringComparison.OrdinalIgnoreCase) ||
-                                  ai.Name.Contains(productName, StringComparison.OrdinalIgnoreCase));
-
-        if (matchingIngredient == null)
-        {
-            throw new InvalidOperationException($"No matching ingredient found for product: {productName}");
-        }
-
-        return matchingIngredient.Quantity;
-    }
 
 }
 

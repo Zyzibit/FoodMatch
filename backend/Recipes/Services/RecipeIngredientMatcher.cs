@@ -1,5 +1,6 @@
 using inzynierka.Products.Dto;
 using inzynierka.Products.Services;
+using inzynierka.Recipes.Extensions;
 using inzynierka.Recipes.Model.RecipeModel;
 
 namespace inzynierka.Recipes.Services;
@@ -48,61 +49,25 @@ public class RecipeIngredientMatcher : IRecipeIngredientMatcher
 
 
     public List<ProductDto> GetMatchingProducts(
-        
         List<ProductDto> availableProducts,
         List<GeneratedRecipeIngredient> recipeIngredients)
     {
-        var matchingProducts = availableProducts
-            .Where(p => recipeIngredients.Any(ai =>
-                IsProductMatchingIngredient(p, ai)))
-            .ToList();
-
-        if (matchingProducts.Count < availableProducts.Count)
-        {
-            var unusedProducts = availableProducts.Except(matchingProducts)
-                .Select(p => _productService.GetProductDisplayName(p));
-            _logger.LogInformation(
-                "Matched {MatchedCount}/{TotalCount} products. Unused: {UnusedProducts}",
-                matchingProducts.Count, availableProducts.Count, string.Join(", ", unusedProducts));
-        }
-
-        return matchingProducts;
+        var ingredientDtos = recipeIngredients.MapToProductDtoList();
+        return _productService.GetMatchingProducts(availableProducts, ingredientDtos);
     }
     
     public GeneratedRecipeIngredient? FindMatchingRecipeIngredient(
         ProductDto product,
         List<GeneratedRecipeIngredient> recipeIngredients)
     {
-        var matchingIngredient = recipeIngredients.FirstOrDefault(ai =>
-            IsProductMatchingIngredient(product, ai));
-        return matchingIngredient;
-    }
-    
-
-    private bool IsProductMatchingIngredient(ProductDto product, GeneratedRecipeIngredient ingredient)
-    {
-        var ingredientNameLower = ingredient.Name.ToLowerInvariant();
-
-        if (!string.IsNullOrWhiteSpace(product.Name))
+        var ingredientDtos = recipeIngredients.MapToProductDtoList();
+        var matchingIngredientDto = _productService.FindMatchingProduct(product, ingredientDtos);
+        
+        if (matchingIngredientDto == null)
         {
-            var productNameLower = product.Name.ToLowerInvariant();
-            if (ingredientNameLower.Contains(productNameLower) ||
-                productNameLower.Contains(ingredientNameLower))
-            {
-                return true;
-            }
+            return null;
         }
 
-        if (!string.IsNullOrWhiteSpace(product.Brand))
-        {
-            var brandLower = product.Brand.ToLowerInvariant();
-            if (ingredientNameLower.Contains(brandLower) ||
-                brandLower.Contains(ingredientNameLower))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return recipeIngredients.FirstOrDefault(ri => ri.Name == matchingIngredientDto.Name);
     }
 }

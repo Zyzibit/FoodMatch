@@ -300,71 +300,6 @@ public class ProductService : IProductService
             return Enumerable.Empty<ProductDto>();
         }
     }
-
-
-    public async Task<ProductResult> AddAiProductAsync(GeneratedRecipeIngredient ingredient)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(ingredient.Name))
-            {
-                return new ProductResult
-                {
-                    Success = false,
-                    ErrorMessage = "Product name cannot be empty"
-                };
-            }
-
-            var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
-            
-            if (existingProduct != null)
-            {
-                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
-                    ingredient.Name, existingProduct.Id);
-                
-                return new ProductResult
-                {
-                    Success = true,
-                    Product = _productMapper.MapToProductInfo(existingProduct)
-                };
-            }
-
-            var aiProduct = new Product
-            {
-                Code = $"AI-GENERATED-{Guid.NewGuid()}",
-                ProductName = ingredient.Name.Trim(),
-                Language = "pl",
-                estimatedCalories = ingredient.EstimatedCalories,
-                estimatedProteins = ingredient.EstimatedProteins,
-                estimatedCarbohydrates = ingredient.EstimatedCarbohydrates,
-                estimatedFats = ingredient.EstimatedFats,
-                LastUpdated = DateTime.UtcNow,
-                Source = ProductSource.AI
-            };
-
-            var createdProduct = await _productRepository.AddProductAsync(aiProduct);
-            await _productRepository.SaveChangesAsync();
-
-            _logger.LogInformation("Created new AI-generated product: {ProductName} with ID: {ProductId}", ingredient.Name,
-                createdProduct.Id);
-
-            return new ProductResult
-            {
-                Success = true,
-                Product = _productMapper.MapToProductInfo(createdProduct)
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient.Name);
-            return new ProductResult
-            {
-                Success = false,
-                ErrorMessage = ex.Message
-            };
-        }
-    }
-    
     public async Task<Product> CreateAiGeneratedProductAsync(GeneratedRecipeIngredient ingredient)
     {
         if (string.IsNullOrWhiteSpace(ingredient.Name))
@@ -430,18 +365,6 @@ public class ProductService : IProductService
             throw new InvalidOperationException($"Failed to create product for ingredient '{ingredient.Name}'", ex);
         }
     }
-
-    public (decimal calories, decimal protein, decimal carbohydrates, decimal fats) CalculateNutritionalValues(
-        ProductDto product, decimal normalizedQuantityInGrams)
-    {
-        var calories = (decimal)(product.Nutrition?.Calories ?? 0) * (normalizedQuantityInGrams / 100m);
-        var protein = (decimal)(product.Nutrition?.Proteins ?? 0) * (normalizedQuantityInGrams / 100m);
-        var carbohydrates = (decimal)(product.Nutrition?.Carbohydrates ?? 0) * (normalizedQuantityInGrams / 100m);
-        var fats = (decimal)(product.Nutrition?.Fat ?? 0) * (normalizedQuantityInGrams / 100m);
-
-        return (calories, protein, carbohydrates, fats);
-    }
-
     public string GetProductDisplayName(ProductDto product)
     {
         return !string.IsNullOrWhiteSpace(product.Name)
@@ -449,5 +372,58 @@ public class ProductService : IProductService
             : (!string.IsNullOrWhiteSpace(product.Brand)
                 ? product.Brand
                 : $"Product {product.Id}");
+    }
+
+    public bool IsProductMatchingIngredient(ProductDto product, ProductDto ingredient)
+    {
+        var ingredientNameLower = ingredient.Name.ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(product.Name))
+        {
+            var productNameLower = product.Name.ToLowerInvariant();
+            if (ingredientNameLower.Contains(productNameLower) ||
+                productNameLower.Contains(ingredientNameLower))
+            {
+                return true;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(product.Brand))
+        {
+            var brandLower = product.Brand.ToLowerInvariant();
+            if (ingredientNameLower.Contains(brandLower) ||
+                brandLower.Contains(ingredientNameLower))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public ProductDto? FindMatchingProduct(ProductDto ingredient, List<ProductDto> availableProducts)
+    {
+        var matchingProduct = availableProducts.FirstOrDefault(p =>
+            IsProductMatchingIngredient(p, ingredient));
+        return matchingProduct;
+    }
+
+    public List<ProductDto> GetMatchingProducts(List<ProductDto> availableProducts, List<ProductDto> ingredients)
+    {
+        var matchingProducts = availableProducts
+            .Where(p => ingredients.Any(ingredient =>
+                IsProductMatchingIngredient(p, ingredient)))
+            .ToList();
+
+        if (matchingProducts.Count < availableProducts.Count)
+        {
+            var unusedProducts = availableProducts.Except(matchingProducts)
+                .Select(p => GetProductDisplayName(p));
+            _logger.LogInformation(
+                "Matched {MatchedCount}/{TotalCount} products. Unused: {UnusedProducts}",
+                matchingProducts.Count, availableProducts.Count, string.Join(", ", unusedProducts));
+        }
+
+        return matchingProducts;
     }
 }
