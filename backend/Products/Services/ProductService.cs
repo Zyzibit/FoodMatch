@@ -2,7 +2,7 @@ using inzynierka.Products.Dto;
 using inzynierka.Products.Responses;
 using inzynierka.Products.Repositories;
 using inzynierka.Products.Model;
-using inzynierka.Products.Mappings;
+using inzynierka.Products.Extensions;
 using inzynierka.Recipes.Model.RecipeModel;
 
 namespace inzynierka.Products.Services;
@@ -277,15 +277,12 @@ public class ProductService : IProductService
 
     public async Task<IEnumerable<ProductDto>> GetProductsByIdsAsync(IEnumerable<int> ids)
     {
-        if (ids == null) return Enumerable.Empty<ProductDto>();
-
         var idList = ids.Where(id => id > 0).Distinct().ToList();
         if (!idList.Any()) return Enumerable.Empty<ProductDto>();
 
         try
         {
             var products = await _productRepository.GetProductsByIdsAsync(idList);
-            if (products == null) return Enumerable.Empty<ProductDto>();
 
             var productInfos = products.ToProductDtoList().ToList();
 

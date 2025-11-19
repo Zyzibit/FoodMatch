@@ -1,9 +1,67 @@
 using inzynierka.Products.Dto;
+using inzynierka.Products.Model;
 
 namespace inzynierka.Products.Extensions;
 
 public static class ProductDtoExtensions
 {
+    public static ProductDto ToProductDto(this Product product)
+    {
+        if (product == null)
+            throw new ArgumentNullException(nameof(product));
+
+        return new ProductDto
+        {
+            Id = product.Id.ToString(),
+            Name = product.ProductName ?? string.Empty,
+            Brand = product.Brands ?? string.Empty,
+            Barcode = product.Code ?? string.Empty,
+            ImageUrl = product.ImageUrl ?? string.Empty,
+            Categories = product.ProductCategoryTags
+                .Select(ct => ct.CategoryTag.Name)
+                .ToList(),
+            Ingredients = product.ProductIngredientTags
+                .Select(it => it.IngredientTag.Name)
+                .ToList(),
+            Allergens = product.ProductAllergenTags
+                .Select(at => at.AllergenTag.Name)
+                .ToList(),
+            Countries = product.ProductCountryTags
+                .Select(ct => ct.CountryTag.Name)
+                .ToList(),
+            Nutrition = product.ToNutritionInfoDto(),
+            NutritionGrade = product.NutritionGrade,
+            EcoScoreGrade = product.EcoScoreGrade,
+            Source = product.Source.ToString()
+        };
+    }
+
+    public static NutritionInfoDto ToNutritionInfoDto(this Product product)
+    {
+        if (product == null)
+            throw new ArgumentNullException(nameof(product));
+
+        return new NutritionInfoDto
+        {
+            Calories = product.EnergyKcal100g,
+            Fat = product.Fat100g,
+            Carbohydrates = product.Carbohydrates100g,
+            Proteins = product.Proteins100g,
+            EstimatedCalories = product.estimatedCalories,
+            EstimatedProteins = product.estimatedProteins,
+            EstimatedCarbohydrates = product.estimatedCarbohydrates,
+            EstimatedFats = product.estimatedFats
+        };
+    }
+
+    public static IEnumerable<ProductDto> ToProductDtoList(this IEnumerable<Product> products)
+    {
+        if (products == null)
+            throw new ArgumentNullException(nameof(products));
+
+        return products.Select(p => p.ToProductDto());
+    }
+
     public static RecipeIngredientProductDto ToRecipeIngredientProduct(
         this ProductDto product, 
         decimal normalizedQuantityInGrams)

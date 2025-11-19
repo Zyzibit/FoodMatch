@@ -1,4 +1,3 @@
-using inzynierka.Products.Mappings;
 using inzynierka.Products.Extensions;
 using inzynierka.Recipes.Model;
 using inzynierka.Recipes.Responses;
