@@ -6,5 +6,5 @@ namespace inzynierka.MealPlans.Services;
 public interface IMealPlanService
 {
     public Task<AddMealPlanResponse> AddMealPlanAsync(string userId, CreateMealPlanRequest request);
-    public Task<GetMealPlansResponse> GetMealPlansForDateAsync(string userId, DateTime date);
+    public Task<GetMealPlansForDateResponse> GetMealPlansForDateAsync(string userId, DateTime date);
 }

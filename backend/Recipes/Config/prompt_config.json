@@ -59,6 +59,7 @@
         { "field": "desiredServings", "template": "👥 Liczba porcji: {value}" },
         { "field": "maxPreparationTimeMinutes", "template": "⏱️ Maksymalny czas (ŁĄCZNIE): {value} minut" },
         { "field": "additionalInstructions", "template": "📝 Specjalne wymagania: {value}" }
+        
       ]
     },
     {

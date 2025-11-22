@@ -1,55 +1,54 @@
-using System;
 using inzynierka.MealPlans.Model;
 using inzynierka.MealPlans.Constants;
+using inzynierka.MealPlans.Responses;
 
 namespace inzynierka.MealPlans.Extensions;
 
 public static class MealPlanExtensions
 {
-    /// <summary>
-    /// Zwraca DateTime z wartością w UTC (jeśli data ma Kind=Unspecified, traktuje ją jako UTC).
-    /// </summary>
     public static DateTime GetUtcDate(this MealPlan mealPlan)
     {
-        if (mealPlan == null) throw new ArgumentNullException(nameof(mealPlan));
+        ArgumentNullException.ThrowIfNull(mealPlan);
         var date = mealPlan.Date;
         return date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(date, DateTimeKind.Utc) : date.ToUniversalTime();
     }
-
-    /// <summary>
-    /// Sprawdza czy plan dotyczy tego samego dnia (porównanie daty w UTC, tylko część daty)
-    /// </summary>
     public static bool IsForDate(this MealPlan mealPlan, DateTime date)
     {
-        if (mealPlan == null) throw new ArgumentNullException(nameof(mealPlan));
+        ArgumentNullException.ThrowIfNull(mealPlan);
         var planDate = mealPlan.GetUtcDate().Date;
         var otherDate = (date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(date, DateTimeKind.Utc) : date.ToUniversalTime()).Date;
         return planDate == otherDate;
     }
-
-    /// <summary>
-    /// Zwraca sformatowaną nazwę posiłku. Jeśli nazwa jest pusta zwraca pusty string.
-    /// Normalizuje wielkość liter i waliduje przeciwko MealPlanConstants.AllowedMealNames — jeśli niepoprawna, zwraca oryginalną nazwę.
-    /// </summary>
-    public static string GetDisplayName(this MealPlan mealPlan)
+    
+    public static GetMealPlansForDateResponse ToGetMealPlansForDateResponse(
+        this IEnumerable<MealPlanDto> mealPlanDtos, 
+        DateTime date)
     {
-        if (mealPlan == null) throw new ArgumentNullException(nameof(mealPlan));
-        var name = mealPlan.Name ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+        ArgumentNullException.ThrowIfNull(mealPlanDtos);
 
-        // Normalizacja: pierwsza litera wielka, reszta małe
-        var normalized = char.ToUpperInvariant(name[0]) + (name.Length > 1 ? name.Substring(1).ToLowerInvariant() : string.Empty);
+        var mealPlanList = mealPlanDtos.ToList();
 
-        // Jeśli lista dozwolonych nazw jest dostępna, zwróć tę z listy (dokładne dopasowanie ignorujące wielkość liter)
-        if (MealNames.AllowedMealNames != null)
+        return new GetMealPlansForDateResponse
         {
-            foreach (var allowed in MealNames.AllowedMealNames)
-            {
-                if (string.Equals(allowed, name, StringComparison.OrdinalIgnoreCase))
-                    return allowed; // zachowaj oryginalną wersję z constants (np. "śniadanie")
-            }
-        }
-
-        return normalized;
+            Success = true,
+            MealPlans = mealPlanList,
+            TotalCalories = mealPlanList.Sum(mp => mp.Recipe.Calories),
+            TotalProteins = mealPlanList.Sum(mp => mp.Recipe.Proteins),
+            TotalCarbohydrates = mealPlanList.Sum(mp => mp.Recipe.Carbohydrates),
+            TotalFats = mealPlanList.Sum(mp => mp.Recipe.Fats),
+            Message = $"Found {mealPlanList.Count} meal plan(s) for {date:yyyy-MM-dd}"
+        };
+    }
+    
+    public static AddMealPlanResponse ToAddMealPlanResponse(this MealPlan mealPlan, string message = "Meal plan added successfully")
+    {
+        ArgumentNullException.ThrowIfNull(mealPlan);
+        
+        return new AddMealPlanResponse
+        {
+            Success = true,
+            MealPlanId = mealPlan.Id,
+            Message = message
+        };
     }
 }
