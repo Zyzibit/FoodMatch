@@ -53,14 +53,6 @@ namespace inzynierka.Recipes.Services;
                     new OpenAIMessage("user", userPrompt)
                 };
                 
-                _logger.LogInformation("==================== PROMPT WYSYŁANY DO AI ====================");
-                _logger.LogInformation("SYSTEM MESSAGE:\n{SystemMessage}", config.SystemMessage);
-                _logger.LogInformation("==============================================================");
-                _logger.LogInformation("USER PROMPT:\n{UserPrompt}", userPrompt);
-                _logger.LogInformation("==============================================================");
-                
-                _logger.LogDebug("Sending prompt to OpenAI with {MessageCount} messages", messages.Count);
-
                 var result = await _openAiClient.SendPromptForJsonAsync(messages);
                 
                 if (result == null)
@@ -158,22 +150,21 @@ namespace inzynierka.Recipes.Services;
                 
                 var aiTotalWeight = GetIntProperty(jsonElement, "totalWeightGrams");
                 var aiTotalCalories = GetDecimalProperty(jsonElement, "estimatedCalories");
-                if (aiTotalWeight > 0 && Math.Abs(aiTotalWeight - actualTotalWeight) > 1m)
-                {
-                    _logger.LogWarning(
-                        "AI provided totalWeightGrams ({AIWeight}g) differs from actual sum ({ActualWeight}g). Using AI provided weight.",
-                        aiTotalWeight, actualTotalWeight);
-                }
+                // if (aiTotalWeight > 0 && Math.Abs(aiTotalWeight - actualTotalWeight) > 1m)
+                // {
+                //     _logger.LogWarning(
+                //         "AI provided totalWeightGrams ({AIWeight}g) differs from actual sum ({ActualWeight}g). Using AI provided weight.",
+                //         aiTotalWeight, actualTotalWeight);
+                // }
                 
-                if (aiTotalCalories > 0 && Math.Abs(aiTotalCalories - actualTotalCalories) > 10m)
-                {
-                    _logger.LogWarning(
-                        "AI provided estimatedCalories ({AICalories} kcal) differs from actual sum ({ActualCalories} kcal). Using actual values.",
-                        aiTotalCalories, actualTotalCalories);
-                }
-                
-                recipe.TotalWeightGrams = aiTotalWeight > 0 ? aiTotalWeight : (int)Math.Round(actualTotalWeight);
-                
+                // if (aiTotalCalories > 0 && Math.Abs(aiTotalCalories - actualTotalCalories) > 10m)
+                // {
+                //     _logger.LogWarning(
+                //         "AI provided estimatedCalories ({AICalories} kcal) differs from actual sum ({ActualCalories} kcal). Using actual values.",
+                //         aiTotalCalories, actualTotalCalories);
+                // }
+                _logger.LogWarning("AI total weight: {AIWeight}g, Actual total weight: {ActualWeight}g", aiTotalWeight, actualTotalWeight);
+                recipe.TotalWeightGrams = aiTotalWeight;
                 recipe.EstimatedCalories = actualTotalCalories;
                 recipe.EstimatedProtein = actualTotalProtein;
                 recipe.EstimatedCarbohydrates = actualTotalCarbs;

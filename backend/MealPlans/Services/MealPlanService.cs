@@ -5,7 +5,6 @@ using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
 using inzynierka.Recipes.Services;
-using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.MealPlans.Services;
 
@@ -62,12 +61,7 @@ public class MealPlanService: IMealPlanService
                 existingPlan.Date = dateUtc;
                 await _mealPlanRepository.UpdateMealPlanAsync(existingPlan);
                 
-                return new AddMealPlanResponse
-                {
-                    Success = true,
-                    MealPlanId = existingPlan.Id,
-                    Message = "Meal plan updated successfully"
-                };
+                return existingPlan.ToAddMealPlanResponse("Meal plan updated successfully");
             }
             
             var mealPlan = new MealPlan
@@ -80,12 +74,7 @@ public class MealPlanService: IMealPlanService
             
             await _mealPlanRepository.AddMealPlanAsync(mealPlan);
             
-            return new AddMealPlanResponse
-            {
-                Success = true,
-                MealPlanId = mealPlan.Id,
-                Message = "Meal plan added successfully"
-            };
+            return mealPlan.ToAddMealPlanResponse();
         }
         catch (Exception ex)
         {
@@ -97,7 +86,7 @@ public class MealPlanService: IMealPlanService
         }
     }
 
-    public async Task<GetMealPlansResponse> GetMealPlansForDateAsync(string userId, DateTime date)
+    public async Task<GetMealPlansForDateResponse> GetMealPlansForDateAsync(string userId, DateTime date)
     {
         try
         {
@@ -112,16 +101,11 @@ public class MealPlanService: IMealPlanService
             
             var mealPlanDtos = mealPlans.Select(mp => mp.ToDto()).ToList();
             
-            return new GetMealPlansResponse
-            {
-                Success = true,
-                MealPlans = mealPlanDtos,
-                Message = $"Found {mealPlanDtos.Count} meal plan(s) for {date:yyyy-MM-dd}"
-            };
+            return mealPlanDtos.ToGetMealPlansForDateResponse(date);
         }
         catch (Exception ex)
         {
-            return new GetMealPlansResponse
+            return new GetMealPlansForDateResponse
             {
                 Success = false,
                 MealPlans = new List<MealPlanDto>(),

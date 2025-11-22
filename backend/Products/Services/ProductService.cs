@@ -283,7 +283,7 @@ public class ProductService : IProductService
         try
         {
             var products = await _productRepository.GetProductsByIdsAsync(idList);
-
+            
             var productInfos = products.ToProductDtoList().ToList();
 
             return productInfos;
@@ -303,13 +303,10 @@ public class ProductService : IProductService
 
         try
         {
-            // Check if product already exists
             var existingProduct = await _productRepository.GetProductByNameAsync(ingredient.Name.Trim());
             
             if (existingProduct != null)
             {
-                _logger.LogInformation("Product with name '{ProductName}' already exists with ID: {ProductId}",
-                    ingredient.Name, existingProduct.Id);
                 return existingProduct;
             }
 

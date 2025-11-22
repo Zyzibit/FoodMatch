@@ -31,7 +31,6 @@ public class OpenAIClient : IOpenAIClient {
 
         var response = await _httpClient.PostAsync(_configuration["AI:ApiLink"], content);
         
-        // Handle 429 (Too Many Requests) error
         if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
@@ -79,14 +78,12 @@ public class OpenAIClient : IOpenAIClient {
             return null;
         }
         
-        _logger.LogInformation("OpenAI content before cleanup: {Content}", jsonText);
         
-        // Clean up markdown code blocks if present
         var cleanedJson = jsonText.Trim();
         if (cleanedJson.StartsWith("```json"))
         {
-            cleanedJson = cleanedJson.Substring(7); // Remove ```json
-            var endIndex = cleanedJson.LastIndexOf("```");
+            cleanedJson = cleanedJson.Substring(7); 
+            var endIndex = cleanedJson.LastIndexOf("```", StringComparison.Ordinal);
             if (endIndex > 0)
             {
                 cleanedJson = cleanedJson.Substring(0, endIndex);
@@ -94,8 +91,8 @@ public class OpenAIClient : IOpenAIClient {
         }
         else if (cleanedJson.StartsWith("```"))
         {
-            cleanedJson = cleanedJson.Substring(3); // Remove ```
-            var endIndex = cleanedJson.LastIndexOf("```");
+            cleanedJson = cleanedJson.Substring(3); 
+            var endIndex = cleanedJson.LastIndexOf("```", StringComparison.Ordinal);
             if (endIndex > 0)
             {
                 cleanedJson = cleanedJson.Substring(0, endIndex);
@@ -104,10 +101,8 @@ public class OpenAIClient : IOpenAIClient {
         
         cleanedJson = cleanedJson.Trim();
         
-        // Remove trailing commas before closing braces/brackets (common AI mistake)
         cleanedJson = System.Text.RegularExpressions.Regex.Replace(cleanedJson, @",(\s*[}\]])", "$1");
         
-        _logger.LogInformation("OpenAI content after cleanup: {Content}", cleanedJson);
         
         try 
         {
