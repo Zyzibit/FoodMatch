@@ -1,5 +1,6 @@
 using inzynierka.Recipes.Model;
 using inzynierka.Recipes.Model.RecipeModel;
+using inzynierka.Users.Extensions;
 using inzynierka.Users.Responses;
 
 namespace inzynierka.Recipes.Extensions;
@@ -17,9 +18,7 @@ public static class DietaryPreferencesExtensions
         {
             return false;
         }
-
-        preferences.MealType = mealType;
-
+        
         var mealGoals = parsedMealType.Value.GetNutritionalGoals(userPreferences);
         
         preferences.TargetMealCalories ??= mealGoals.Calories;
@@ -33,6 +32,47 @@ public static class DietaryPreferencesExtensions
         preferences.DailyFatGoal ??= userPreferences.DailyFatGoal;
 
         return true;
+    }
+    
+    public static DietaryPreferences MergeWithUserPreferences(
+        this DietaryPreferences? requestPreferences,
+        FoodPreferencesDto? userPreferences)
+    {
+        var userDietaryPrefs = userPreferences.ToDietaryPreferences();
+        
+        if (requestPreferences == null)
+        {
+            return userDietaryPrefs ?? new DietaryPreferences();
+        }
+
+        if (userDietaryPrefs == null)
+        {
+            return requestPreferences;
+        }
+
+        
+        var merged = new DietaryPreferences
+        {
+            IsVegetarian = requestPreferences.IsVegetarian || userDietaryPrefs.IsVegetarian,
+            IsVegan = requestPreferences.IsVegan || userDietaryPrefs.IsVegan,
+            IsGlutenFree = requestPreferences.IsGlutenFree || userDietaryPrefs.IsGlutenFree,
+            IsLactoseFree = requestPreferences.IsLactoseFree || userDietaryPrefs.IsLactoseFree,
+            Allergies = requestPreferences.Allergies.Any() 
+                ? requestPreferences.Allergies 
+                : userDietaryPrefs.Allergies,
+            DislikedIngredients = requestPreferences.DislikedIngredients.Any() 
+                ? requestPreferences.DislikedIngredients 
+                : userDietaryPrefs.DislikedIngredients,
+            DailyCalorieGoal = requestPreferences.DailyCalorieGoal ?? userDietaryPrefs.DailyCalorieGoal,
+            DailyProteinGoal = requestPreferences.DailyProteinGoal ?? userDietaryPrefs.DailyProteinGoal,
+            DailyCarbohydrateGoal = requestPreferences.DailyCarbohydrateGoal ?? userDietaryPrefs.DailyCarbohydrateGoal,
+            DailyFatGoal = requestPreferences.DailyFatGoal ?? userDietaryPrefs.DailyFatGoal,
+            TargetMealCalories = requestPreferences.TargetMealCalories ?? userDietaryPrefs.TargetMealCalories,
+            TargetMealProtein = requestPreferences.TargetMealProtein ?? userDietaryPrefs.TargetMealProtein,
+            TargetMealCarbohydrates = requestPreferences.TargetMealCarbohydrates ?? userDietaryPrefs.TargetMealCarbohydrates,
+            TargetMealFat = requestPreferences.TargetMealFat ?? userDietaryPrefs.TargetMealFat
+        };
+        return merged;
     }
 }
 

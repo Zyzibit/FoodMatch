@@ -14,7 +14,6 @@ public class DietaryPreferences
     public int? DailyCarbohydrateGoal { get; set; }
     public int? DailyFatGoal { get; set; }
     
-    public string? MealType { get; set; } 
     public int? TargetMealCalories { get; set; }
     public int? TargetMealProtein { get; set; } 
     public int? TargetMealCarbohydrates { get; set; }

@@ -7,7 +7,6 @@ using inzynierka.Recipes.Repositories;
 using inzynierka.Recipes.Requests;
 using inzynierka.Recipes.Responses;
 using inzynierka.Units.Services;
-using inzynierka.Users.Extensions;
 using inzynierka.Users.Services;
 
 namespace inzynierka.Recipes.Services;
@@ -128,17 +127,17 @@ public class RecipeService : IRecipeService
             
             var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
             
-            var preferences = request.Preferences ?? userPreferences.ToDietaryPreferences();
-            
+            var preferences = request.Preferences.MergeWithUserPreferences(userPreferences);
+            preferences.ApplyMealTypeGoals(request.MealType, userPreferences);
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
             var ingredientNames = new List<string>();
 
-            if (productsList.Any())
-            {
-                ingredientNames.AddRange(productsList.Select(p => _productService.GetProductDisplayName(p)));
-            }
+            // if (productsList.Any())
+            // {
+            //     ingredientNames.AddRange(productsList.Select(p => _productService.GetProductDisplayName(p)));
+            // }
 
             if (request.AvailableIngredients.Any())
             {

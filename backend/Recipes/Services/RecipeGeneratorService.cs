@@ -4,6 +4,7 @@ using inzynierka.AI.OpenAI.Model;
 using inzynierka.AI.OpenAI.Services;
 using inzynierka.Products.Model;
 using inzynierka.Products.Repositories;
+using inzynierka.Recipes.Model;
 using inzynierka.Recipes.Model.RecipeModel;
 using inzynierka.Recipes.Requests;
 using inzynierka.Recipes.Responses;
@@ -34,7 +35,6 @@ namespace inzynierka.Recipes.Services;
             try
             {
                 var config = await _promptConfigService.LoadConfigAsync(_configPath);
-                
 
                 var products = new List<Product>();
                 if (request.ProductIds.Any())
@@ -52,6 +52,7 @@ namespace inzynierka.Recipes.Services;
                     new OpenAIMessage("system", config.SystemMessage),
                     new OpenAIMessage("user", userPrompt)
                 };
+                Console.WriteLine("userPrompt: " + userPrompt);
                 
                 var result = await _openAiClient.SendPromptForJsonAsync(messages);
                 
@@ -281,8 +282,7 @@ namespace inzynierka.Recipes.Services;
             }
             
             var availableIngredientsText = request.AvailableIngredients.Any()
-                ? string.Join("\n", request.AvailableIngredients)
-                : (products.Any() ? string.Join("\n", products.Select(p => p.ProductName)) : "");
+                ? string.Join("\n", request.AvailableIngredients) : "";
             
             var data = new Dictionary<string, object?>
             {
@@ -291,9 +291,9 @@ namespace inzynierka.Recipes.Services;
                 ["allowedUnits"] = unitNames,
                 ["cuisineType"] = request.CuisineType,
                 ["maxPreparationTimeMinutes"] = request.MaxPreparationTimeMinutes,
-                ["additionalInstructions"] = request.AdditionalInstructions
+                ["additionalInstructions"] = request.AdditionalInstructions,
             };
-
+            
             if (request.Preferences != null)
             {
                 data["isVegan"] = request.Preferences.IsVegan;
@@ -307,7 +307,7 @@ namespace inzynierka.Recipes.Services;
                     ? string.Join(", ", request.Preferences.DislikedIngredients)
                     : "brak";
                 
-
+                
                 if (request.Preferences.DailyCalorieGoal.HasValue)
                 {
                     data["dailyCalorieGoal"] = request.Preferences.DailyCalorieGoal.Value;
@@ -328,29 +328,59 @@ namespace inzynierka.Recipes.Services;
                     data["dailyFatGoal"] = request.Preferences.DailyFatGoal.Value;
                 }
                 
-                if (!string.IsNullOrEmpty(request.Preferences.MealType))
+                if (!string.IsNullOrEmpty(request.MealType))
                 {
-                    data["mealType"] = request.Preferences.MealType;
+                    data["mealType"] = request.MealType;
+                    var mealTypeLower = request.MealType.ToLower();
+                    if (mealTypeLower == MealType.Breakfast.ToString().ToLower()) {
+                        data["Breakfast"] = request.MealType;
+
+                    }
+                    if (mealTypeLower == MealType.Dinner.ToString().ToLower()) {
+                        data["Dinner"] = request.MealType;
+                    }
+                    if (mealTypeLower == MealType.Lunch.ToString().ToLower()) {
+                        data["Lunch"] = request.MealType;
+                    }
+                    if (mealTypeLower == MealType.Snack.ToString().ToLower()) {
+                        data["Snack"] = request.MealType;
+                    }
                 }
+                else {
+                    throw new Exception("MealType is required");
+                }
+                
                 
                 if (request.Preferences.TargetMealCalories.HasValue)
                 {
                     data["targetMealCalories"] = request.Preferences.TargetMealCalories.Value;
+                }
+                else {
+                    throw new Exception("TargetMealCalories is required in Preferences");
                 }
                 
                 if (request.Preferences.TargetMealProtein.HasValue)
                 {
                     data["targetMealProtein"] = request.Preferences.TargetMealProtein.Value;
                 }
+                else {
+                    throw new Exception("TargetMealProtein is required in Preferences");
+                }
                 
                 if (request.Preferences.TargetMealCarbohydrates.HasValue)
                 {
                     data["targetMealCarbohydrates"] = request.Preferences.TargetMealCarbohydrates.Value;
                 }
+                else {
+                    throw new Exception("TargetMealCarbohydrates is required in Preferences");
+                }
                 
                 if (request.Preferences.TargetMealFat.HasValue)
                 {
                     data["targetMealFat"] = request.Preferences.TargetMealFat.Value;
+                }
+                else {
+                    throw new Exception("TargetMealFat is required in Preferences");
                 }
             }
             return data;
