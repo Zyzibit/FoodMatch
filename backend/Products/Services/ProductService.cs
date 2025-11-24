@@ -345,7 +345,7 @@ public class ProductService : IProductService
 
             _logger.LogInformation(
                 "Created new AI-generated product: {ProductName} with ID: {ProductId}. " +
-                "Normalized from {OriginalGrams}g (Calories: {OriginalCalories}) to 100g (Calories: {NormalizedCalories})", 
+                "Normalized from {OriginalGrams}g (CaloriesGoal: {OriginalCalories}) to 100g (CaloriesGoal: {NormalizedCalories})", 
                 ingredient.Name, createdProduct.Id, normalizedQuantity, ingredient.EstimatedCalories, aiProduct.estimatedCalories);
 
             return createdProduct;

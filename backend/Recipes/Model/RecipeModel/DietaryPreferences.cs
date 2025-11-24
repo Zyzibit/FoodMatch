@@ -9,6 +9,8 @@ public class DietaryPreferences
     public List<string> Allergies { get; set; } = new();
     public List<string> DislikedIngredients { get; set; } = new();
     
+    public string? FitnessGoal { get; set; } // "WeightLoss", "Maintenance", "WeightGain"
+    
     public int? DailyCalorieGoal { get; set; }
     public int? DailyProteinGoal { get; set; }
     public int? DailyCarbohydrateGoal { get; set; }

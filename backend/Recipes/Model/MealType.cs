@@ -21,28 +21,28 @@ public static class MealTypeExtensions
     private static readonly Dictionary<MealType, Func<FoodPreferencesDto, MealNutritionalGoals>> NutritionalGoalsMapper = new()
     {
         [MealType.Breakfast] = prefs => new MealNutritionalGoals(
-            prefs.BreakfastCalories,
-            prefs.BreakfastProteinGoal,
-            prefs.BreakfastCarbohydrateGoal,
-            prefs.BreakfastFatGoal),
+            prefs.Breakfast?.CaloriesGoal,
+            prefs.Breakfast?.ProteinGoal,
+            prefs.Breakfast?.CarbohydrateGoal,
+            prefs.Breakfast?.FatGoal),
         
         [MealType.Lunch] = prefs => new MealNutritionalGoals(
-            prefs.LunchCalories,
-            prefs.LunchProteinGoal,
-            prefs.LunchCarbohydrateGoal,
-            prefs.LunchFatGoal),
+            prefs.Lunch?.CaloriesGoal,
+            prefs.Lunch?.ProteinGoal,
+            prefs.Lunch?.CarbohydrateGoal,
+            prefs.Lunch?.FatGoal),
         
         [MealType.Dinner] = prefs => new MealNutritionalGoals(
-            prefs.DinnerCalories,
-            prefs.DinnerProteinGoal,
-            prefs.DinnerCarbohydrateGoal,
-            prefs.DinnerFatGoal),
+            prefs.Dinner?.CaloriesGoal,
+            prefs.Dinner?.ProteinGoal,
+            prefs.Dinner?.CarbohydrateGoal,
+            prefs.Dinner?.FatGoal),
         
         [MealType.Snack] = prefs => new MealNutritionalGoals(
-            prefs.SnackCalories,
-            prefs.SnackProteinGoal,
-            prefs.SnackCarbohydrateGoal,
-            prefs.SnackFatGoal)
+            prefs.Snack?.CaloriesGoal,
+            prefs.Snack?.ProteinGoal,
+            prefs.Snack?.CarbohydrateGoal,
+            prefs.Snack?.FatGoal)
     };
     
     public static MealNutritionalGoals GetNutritionalGoals(this MealType mealType, FoodPreferencesDto userPreferences)

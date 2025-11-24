@@ -63,6 +63,7 @@ public static class DietaryPreferencesExtensions
             DislikedIngredients = requestPreferences.DislikedIngredients.Any() 
                 ? requestPreferences.DislikedIngredients 
                 : userDietaryPrefs.DislikedIngredients,
+            FitnessGoal = requestPreferences.FitnessGoal ?? userDietaryPrefs.FitnessGoal,
             DailyCalorieGoal = requestPreferences.DailyCalorieGoal ?? userDietaryPrefs.DailyCalorieGoal,
             DailyProteinGoal = requestPreferences.DailyProteinGoal ?? userDietaryPrefs.DailyProteinGoal,
             DailyCarbohydrateGoal = requestPreferences.DailyCarbohydrateGoal ?? userDietaryPrefs.DailyCarbohydrateGoal,
