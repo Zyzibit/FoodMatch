@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { allergenOptions } from "../../constants/allergens";
+import userMeasurementsService from "../../services/userMeasurementsService";
 
 interface FoodPreferences {
   isVegan: boolean;
@@ -35,21 +36,21 @@ export default function UserAllergensManager() {
 
   // Ładowanie preferencji przy montowaniu komponentu
   useEffect(() => {
-    const savedPrefs = localStorage.getItem("userFoodPreferences");
-    if (savedPrefs) {
+    const loadPreferences = async () => {
       try {
-        const parsed = JSON.parse(savedPrefs);
+        const prefs = await userMeasurementsService.getPreferences();
         setPreferences({
-          isVegan: parsed.isVegan || false,
-          isVegetarian: parsed.isVegetarian || false,
-          hasGlutenIntolerance: parsed.hasGlutenIntolerance || false,
-          hasLactoseIntolerance: parsed.hasLactoseIntolerance || false,
-          allergies: parsed.allergies || [],
+          isVegan: prefs.isVegan || false,
+          isVegetarian: prefs.isVegetarian || false,
+          hasGlutenIntolerance: prefs.hasGlutenIntolerance || false,
+          hasLactoseIntolerance: prefs.hasLactoseIntolerance || false,
+          allergies: prefs.allergies || [],
         });
       } catch (error) {
         console.error("Failed to load preferences:", error);
       }
-    }
+    };
+    loadPreferences();
   }, []);
 
   const toggleAllergen = (name: string) => {
@@ -84,18 +85,25 @@ export default function UserAllergensManager() {
     [preferences.allergies]
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (saving) return;
     setSaving(true);
 
-    // Zapisujemy do localStorage jako placeholder
-    localStorage.setItem("userFoodPreferences", JSON.stringify(preferences));
-
-    // Symulujemy zapis do API – docelowo tu trafi wywołanie backendu.
-    setTimeout(() => {
+    try {
+      await userMeasurementsService.updatePreferences({
+        isVegan: preferences.isVegan,
+        isVegetarian: preferences.isVegetarian,
+        hasGlutenIntolerance: preferences.hasGlutenIntolerance,
+        hasLactoseIntolerance: preferences.hasLactoseIntolerance,
+        allergies: preferences.allergies,
+      });
       setLastSavedAt(new Date());
+    } catch (error) {
+      console.error("Failed to save preferences:", error);
+      alert("Błąd podczas zapisywania preferencji. Spróbuj ponownie.");
+    } finally {
       setSaving(false);
-    }, 500);
+    }
   };
 
   return (

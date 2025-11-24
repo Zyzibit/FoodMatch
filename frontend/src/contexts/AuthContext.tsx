@@ -51,13 +51,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Store tokens in state (they're also in httpOnly cookies)
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshTokenValue, setRefreshTokenValue] = useState<string | null>(
-    null
-  );
-  const [tokenExpiresAt, setTokenExpiresAt] = useState<string | null>(null);
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -69,16 +62,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const result = await authService.login(username, password);
 
+      // Backend sets tokens in httpOnly cookies
       setUser(result.user);
-      setAccessToken(result.accessToken);
-      setRefreshTokenValue(result.refreshToken);
-      setTokenExpiresAt(result.expiresAt);
-
-      // Store in localStorage for persistence
-      localStorage.setItem("accessToken", result.accessToken);
-      localStorage.setItem("refreshToken", result.refreshToken);
-      localStorage.setItem("tokenExpiresAt", result.expiresAt);
-      localStorage.setItem("user", JSON.stringify(result.user));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       setError(errorMessage);
@@ -96,16 +81,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         const result = await authService.register(username, email, password);
 
+        // Backend sets tokens in httpOnly cookies
         setUser(result.user);
-        setAccessToken(result.accessToken);
-        setRefreshTokenValue(result.refreshToken);
-        setTokenExpiresAt(result.expiresAt);
-
-        // Store in localStorage for persistence
-        localStorage.setItem("accessToken", result.accessToken);
-        localStorage.setItem("refreshToken", result.refreshToken);
-        localStorage.setItem("tokenExpiresAt", result.expiresAt);
-        localStorage.setItem("user", JSON.stringify(result.user));
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Registration failed";
@@ -120,63 +97,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      // Clear state first to prevent any race conditions
-      setUser(null);
-      setAccessToken(null);
-      setRefreshTokenValue(null);
-      setTokenExpiresAt(null);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("tokenExpiresAt");
-      localStorage.removeItem("user");
-
-      // Then call backend to invalidate tokens
+      // Call backend to invalidate cookies
       await authService.logout();
+      setUser(null);
     } catch (err) {
       console.error("Logout error:", err);
       // Even if backend call fails, ensure local state is cleared
       setUser(null);
-      setAccessToken(null);
-      setRefreshTokenValue(null);
-      setTokenExpiresAt(null);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("tokenExpiresAt");
-      localStorage.removeItem("user");
     }
   }, []);
 
   const refreshToken = useCallback(async () => {
     try {
-      const storedRefreshToken =
-        refreshTokenValue || localStorage.getItem("refreshToken");
-
-      if (!storedRefreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const result = await authService.refreshToken(storedRefreshToken);
-
-      setAccessToken(result.accessToken);
-      setRefreshTokenValue(result.refreshToken);
-      setTokenExpiresAt(result.expiresAt);
-
-      localStorage.setItem("accessToken", result.accessToken);
-      localStorage.setItem("refreshToken", result.refreshToken);
-      localStorage.setItem("tokenExpiresAt", result.expiresAt);
+      // Backend uses refresh token from httpOnly cookie
+      await authService.refreshToken();
     } catch (err) {
       console.error("Token refresh failed:", err);
       // If refresh fails, logout user
       await logout();
       throw err;
     }
-  }, [refreshTokenValue, logout]);
+  }, [logout]);
 
   const getCurrentUser = useCallback(async () => {
     try {
       const userInfo = await authService.getCurrentUser();
       setUser(userInfo);
-      localStorage.setItem("user", JSON.stringify(userInfo));
       return userInfo;
     } catch (err) {
       console.error("Get current user error:", err);
@@ -220,90 +166,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [logout]);
 
-  // Initialize auth state from localStorage
+  // Initialize auth state by checking session with backend
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const storedAccessToken = localStorage.getItem("accessToken");
-        const storedUser = localStorage.getItem("user");
-        const storedRefreshToken = localStorage.getItem("refreshToken");
-
-        if (storedAccessToken && storedUser) {
-          // Validate the token first before setting state
-          try {
-            const validationResult = await authService.validateToken();
-
-            if (validationResult.isValid) {
-              // Token is valid, restore state
-              setAccessToken(storedAccessToken);
-              setRefreshTokenValue(storedRefreshToken);
-              setUser(JSON.parse(storedUser));
-            } else {
-              // Token invalid, clear everything
-              throw new Error("Token validation failed");
-            }
-          } catch (err) {
-            console.log("Token validation failed, attempting refresh...");
-            // Token invalid, try to refresh
-            if (storedRefreshToken) {
-              try {
-                const result =
-                  await authService.refreshToken(storedRefreshToken);
-                setAccessToken(result.accessToken);
-                setRefreshTokenValue(result.refreshToken);
-                setTokenExpiresAt(result.expiresAt);
-                localStorage.setItem("accessToken", result.accessToken);
-                localStorage.setItem("refreshToken", result.refreshToken);
-                localStorage.setItem("tokenExpiresAt", result.expiresAt);
-
-                // Get user info after successful refresh
-                try {
-                  const userInfo = await authService.getCurrentUser();
-                  setUser(userInfo);
-                  localStorage.setItem("user", JSON.stringify(userInfo));
-                } catch (userErr) {
-                  console.error(
-                    "Failed to get user info after refresh:",
-                    userErr
-                  );
-                  throw userErr;
-                }
-              } catch (refreshErr) {
-                console.log("Token refresh failed, clearing auth state");
-                // Refresh failed, clear everything
-                setUser(null);
-                setAccessToken(null);
-                setRefreshTokenValue(null);
-                setTokenExpiresAt(null);
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
-                localStorage.removeItem("tokenExpiresAt");
-                localStorage.removeItem("user");
-              }
-            } else {
-              // No refresh token, clear everything
-              setUser(null);
-              setAccessToken(null);
-              setRefreshTokenValue(null);
-              setTokenExpiresAt(null);
-              localStorage.removeItem("accessToken");
-              localStorage.removeItem("refreshToken");
-              localStorage.removeItem("tokenExpiresAt");
-              localStorage.removeItem("user");
-            }
-          }
-        }
+        // Try to get current user - backend will validate session from httpOnly cookie
+        const userInfo = await authService.getCurrentUser();
+        setUser(userInfo);
       } catch (err) {
-        console.error("Auth initialization error:", err);
-        // Clear everything on any error
+        // No valid session - user needs to login
+        console.log("No active session");
         setUser(null);
-        setAccessToken(null);
-        setRefreshTokenValue(null);
-        setTokenExpiresAt(null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("tokenExpiresAt");
-        localStorage.removeItem("user");
       } finally {
         setIsLoading(false);
       }
@@ -312,31 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Auto-refresh token before it expires based on backend's expiresAt
-  useEffect(() => {
-    if (!accessToken || !tokenExpiresAt) return;
-
-    const expirationTime = new Date(tokenExpiresAt).getTime();
-    const currentTime = Date.now();
-    const timeUntilExpiration = expirationTime - currentTime;
-
-    // Refresh 5 minutes (300000ms) before expiration
-    const refreshBeforeExpiration = 5 * 60 * 1000;
-    const timeUntilRefresh = timeUntilExpiration - refreshBeforeExpiration;
-
-    // If token expires in less than 5 minutes, refresh immediately
-    if (timeUntilRefresh <= 0) {
-      refreshToken().catch(console.error);
-      return;
-    }
-
-    // Schedule refresh before expiration
-    const timeoutId = setTimeout(() => {
-      refreshToken().catch(console.error);
-    }, timeUntilRefresh);
-
-    return () => clearTimeout(timeoutId);
-  }, [accessToken, tokenExpiresAt, refreshToken]);
+  // Note: Token refresh is handled automatically by backend middleware (TokenRefreshMiddleware)
 
   const value: AuthContextType = {
     user,

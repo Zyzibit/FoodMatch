@@ -108,7 +108,7 @@ const parseOptionalNumber = (value: any): number | undefined => {
 const parseRecipeDetailsIngredient = (data: any): RecipeDetailsIngredient => ({
   productId: parseNumber(data?.productId ?? data?.ProductId),
   productName: data?.productName ?? data?.ProductName ?? "",
-  unitId: data?.unitId ?? data?.UnitId,
+  unitId: parseOptionalNumber(data?.unitId ?? data?.UnitId),
   unitName: data?.unitName ?? data?.UnitName,
   quantity: parseNumber(data?.quantity ?? data?.Quantity),
   normalizedQuantityInGrams: parseOptionalNumber(
@@ -132,14 +132,12 @@ const parseRecipeDetails = (data: any): RecipeDetails => ({
   carbohydrates: parseNumber(data?.carbohydrates ?? data?.Carbohydrates),
   fats: parseNumber(data?.fats ?? data?.Fats),
   ingredients: Array.isArray(data?.ingredients ?? data?.Ingredients)
-    ? (data?.ingredients ?? data?.Ingredients).map(
-        parseRecipeDetailsIngredient
-      )
+    ? (data?.ingredients ?? data?.Ingredients).map(parseRecipeDetailsIngredient)
     : [],
   additionalProducts: Array.isArray(
     data?.additionalProducts ?? data?.AdditionalProducts
   )
-    ? data?.additionalProducts ?? data?.AdditionalProducts
+    ? (data?.additionalProducts ?? data?.AdditionalProducts)
     : [],
 });
 
@@ -149,6 +147,7 @@ export const generateRecipePreview = async (
   const response = await fetch(`${API_BASE_URL}/recipes/generate-preview`, {
     method: "POST",
     headers: getAuthHeaders(),
+    credentials: "include",
     body: JSON.stringify(request),
   });
 
@@ -169,6 +168,7 @@ export const saveGeneratedRecipe = async (
   const response = await fetch(`${API_BASE_URL}/recipes/save-generated`, {
     method: "POST",
     headers: getAuthHeaders(),
+    credentials: "include",
     body: JSON.stringify(request),
   });
 
@@ -184,10 +184,13 @@ export const saveGeneratedRecipe = async (
   return { recipeId: data.recipeId };
 };
 
-export const getRecipeById = async (recipeId: number): Promise<RecipeDetails> => {
+export const getRecipeById = async (
+  recipeId: number
+): Promise<RecipeDetails> => {
   const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}`, {
     method: "GET",
     headers: getAuthHeaders(),
+    credentials: "include",
   });
 
   if (!response.ok) {

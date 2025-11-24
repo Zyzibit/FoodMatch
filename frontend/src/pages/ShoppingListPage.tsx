@@ -161,7 +161,7 @@ export default function ShoppingListPage() {
             freeSolo
             options={productSuggestions}
             getOptionLabel={(option) =>
-              typeof option === "string" ? option : option.name
+              typeof option === "string" ? option : (option.name ?? "")
             }
             value={search}
             onInputChange={(_, value) => setSearch(value)}

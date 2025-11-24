@@ -10,14 +10,6 @@ export interface RegisterRequest {
   password: string;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken?: string;
-}
-
-export interface LogoutRequest {
-  refreshToken?: string;
-}
-
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
@@ -34,17 +26,7 @@ export interface UserInfo {
 
 export interface AuthenticationResult {
   success: boolean;
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: string;
   user: UserInfo;
-}
-
-export interface TokenRefreshResult {
-  success: boolean;
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: string;
 }
 
 export interface UserSession {

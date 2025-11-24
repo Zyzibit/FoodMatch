@@ -1,5 +1,13 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Avatar, Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 const LOCAL_STORAGE_KEY = "user_account_settings";
 
@@ -14,8 +22,18 @@ const defaultSettings: StoredSettings = {
 };
 
 const deviceSessions = [
-  { id: "device-1", name: "Chrome · Windows", location: "Warszawa, PL", lastActive: "dzisiaj, 10:24" },
-  { id: "device-2", name: "Safari · iOS", location: "Gdańsk, PL", lastActive: "wczoraj, 21:17" },
+  {
+    id: "device-1",
+    name: "Chrome · Windows",
+    location: "Warszawa, PL",
+    lastActive: "dzisiaj, 10:24",
+  },
+  {
+    id: "device-2",
+    name: "Safari · iOS",
+    location: "Gdańsk, PL",
+    lastActive: "wczoraj, 21:17",
+  },
 ];
 
 const buildPayload = (
@@ -29,8 +47,14 @@ const buildPayload = (
 export default function UserAccountSettings() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [username, setUsername] = useState(defaultSettings.username);
-  const [avatar, setAvatar] = useState<string | null>(defaultSettings.avatar ?? null);
-  const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+  const [avatar, setAvatar] = useState<string | null>(
+    defaultSettings.avatar ?? null
+  );
+  const [passwords, setPasswords] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
   const avatarInitial = username.trim().slice(0, 1).toUpperCase() || "?";
 
   useEffect(() => {
@@ -101,7 +125,10 @@ export default function UserAccountSettings() {
     persist({ avatar: null });
   };
 
-  const handlePasswordField = (field: keyof typeof passwords, value: string) => {
+  const handlePasswordField = (
+    field: keyof typeof passwords,
+    value: string
+  ) => {
     setPasswords((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -137,8 +164,9 @@ export default function UserAccountSettings() {
           Profil użytkownika
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Zarządzaj danymi konta, wyglądem profilu oraz preferencjami bezpieczeństwa.
-          Wszystkie zmiany są zapisywane lokalnie do czasu podpięcia backendu.
+          Zarządzaj danymi konta, wyglądem profilu oraz preferencjami
+          bezpieczeństwa. Wszystkie zmiany są zapisywane lokalnie do czasu
+          podpięcia backendu.
         </Typography>
       </Box>
 
@@ -152,7 +180,10 @@ export default function UserAccountSettings() {
             spacing={3}
             alignItems={{ sm: "center" }}
           >
-            <Avatar src={avatar ?? undefined} sx={{ width: 96, height: 96, fontSize: 32 }}>
+            <Avatar
+              src={avatar ?? undefined}
+              sx={{ width: 96, height: 96, fontSize: 32 }}
+            >
               {avatarInitial}
             </Avatar>
             <Stack spacing={1} sx={{ flex: 1 }}>
@@ -161,13 +192,18 @@ export default function UserAccountSettings() {
                   Zmień zdjęcie
                 </Button>
                 {avatar && (
-                  <Button variant="text" color="error" onClick={handleAvatarReset}>
+                  <Button
+                    variant="text"
+                    color="error"
+                    onClick={handleAvatarReset}
+                  >
                     Usuń zdjęcie
                   </Button>
                 )}
               </Stack>
               <Typography variant="caption" color="text.secondary">
-                Obsługujemy pliki PNG, JPG oraz WEBP do 2 MB. Zdjęcie zostanie zapisane lokalnie.
+                Obsługujemy pliki PNG, JPG oraz WEBP do 2 MB. Zdjęcie zostanie
+                zapisane lokalnie.
               </Typography>
             </Stack>
             <input
@@ -180,14 +216,22 @@ export default function UserAccountSettings() {
           </Stack>
         </Box>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems="flex-start"
+        >
           <TextField
             label="Nazwa użytkownika"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             fullWidth
           />
-          <Button variant="contained" onClick={handleUsernameSave} sx={{ alignSelf: "stretch" }}>
+          <Button
+            variant="contained"
+            onClick={handleUsernameSave}
+            sx={{ alignSelf: "stretch" }}
+          >
             Zapisz nazwę
           </Button>
         </Stack>
@@ -200,8 +244,9 @@ export default function UserAccountSettings() {
           Zmiana hasła
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Po podpięciu API zweryfikujemy bieżące hasło i ustawimy nowe na serwerze.
-          Na razie formularz demonstruje walidację i zachowany przepływ.
+          Po podpięciu API zweryfikujemy bieżące hasło i ustawimy nowe na
+          serwerze. Na razie formularz demonstruje walidację i zachowany
+          przepływ.
         </Typography>
         <Stack spacing={2}>
           <TextField
@@ -240,7 +285,8 @@ export default function UserAccountSettings() {
           Aktywne sesje
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Monitoruj zalogowane urządzenia. Funkcja kończenia sesji zostanie powiązana z backendem.
+          Monitoruj zalogowane urządzenia. Funkcja kończenia sesji zostanie
+          powiązana z backendem.
         </Typography>
         <Stack spacing={1.5}>
           {deviceSessions.map((session) => (

@@ -20,7 +20,8 @@ export default function RegisterPage() {
 
       try {
         await register(data.login, data.email, data.password);
-        navigate("/app/plan", { replace: true });
+        // Przekieruj do onboardingu po udanej rejestracji
+        navigate("/onboarding", { replace: true });
       } catch (err) {
         console.error("Registration error:", err);
         // Error is handled by AuthContext

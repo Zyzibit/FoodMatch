@@ -2,11 +2,8 @@ import { API_BASE_URL, API_ENDPOINTS } from "../config";
 import type {
   LoginRequest,
   RegisterRequest,
-  RefreshTokenRequest,
-  LogoutRequest,
   ChangePasswordRequest,
   AuthenticationResult,
-  TokenRefreshResult,
   UserInfo,
   UserSession,
   ApiError,
@@ -80,21 +77,19 @@ class AuthService {
     });
   }
 
-  async refreshToken(refreshToken?: string): Promise<TokenRefreshResult> {
-    const payload: RefreshTokenRequest = refreshToken ? { refreshToken } : {};
-
-    return this.request<TokenRefreshResult>(API_ENDPOINTS.AUTH.REFRESH_TOKEN, {
+  async refreshToken(): Promise<void> {
+    // Backend reads refresh token from httpOnly cookie
+    return this.request<void>(API_ENDPOINTS.AUTH.REFRESH_TOKEN, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({}),
     });
   }
 
-  async logout(refreshToken?: string): Promise<void> {
-    const payload: LogoutRequest = refreshToken ? { refreshToken } : {};
-
+  async logout(): Promise<void> {
+    // Backend reads refresh token from httpOnly cookie and invalidates it
     return this.request<void>(API_ENDPOINTS.AUTH.LOGOUT, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({}),
     });
   }
 

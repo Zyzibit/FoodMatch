@@ -36,6 +36,7 @@ import {
 } from "../../services/recipeService";
 import { searchProducts, type ProductDto } from "../../services/productService";
 import { createMealPlan } from "../../services/mealPlanService";
+import userMeasurementsService from "../../services/userMeasurementsService";
 
 type AddMode = "recipes" | "ai";
 
@@ -217,23 +218,22 @@ export default function PlanAddRecipeModal({
       });
       setProductSuggestions([]);
     } else {
-      // Przy otwieraniu modala ładujemy preferencje z localStorage jako placeholder
-      // TODO: Pobrać preferencje z backendu przez API
-      const savedPrefs = localStorage.getItem("userFoodPreferences");
-      if (savedPrefs) {
+      // Przy otwieraniu modala ładujemy preferencje z API
+      const loadPreferences = async () => {
         try {
-          const parsed = JSON.parse(savedPrefs);
+          const prefs = await userMeasurementsService.getPreferences();
           setPreferences({
-            isVegan: parsed.isVegan || false,
-            isVegetarian: parsed.isVegetarian || false,
-            hasGlutenIntolerance: parsed.hasGlutenIntolerance || false,
-            hasLactoseIntolerance: parsed.hasLactoseIntolerance || false,
-            allergies: parsed.allergies || [],
+            isVegan: prefs.isVegan || false,
+            isVegetarian: prefs.isVegetarian || false,
+            hasGlutenIntolerance: prefs.hasGlutenIntolerance || false,
+            hasLactoseIntolerance: prefs.hasLactoseIntolerance || false,
+            allergies: prefs.allergies || [],
           });
         } catch (error) {
           console.error("Failed to load preferences:", error);
         }
-      }
+      };
+      loadPreferences();
     }
   }, [open]);
 
@@ -609,502 +609,503 @@ export default function PlanAddRecipeModal({
       <Stack spacing={2}>
         {/* Parametry przepisu */}
         <Box>
-        <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-          Parametry przepisu
-        </Typography>
-        <Stack spacing={2}>
-          <Autocomplete
-            options={cuisineOptions}
-            value={cuisine}
-            onChange={(_, newValue) => setCuisine(newValue || "")}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Kuchnia"
-                placeholder="Wybierz kuchnię"
-              />
-            )}
-            sx={{ flex: 1 }}
-          />
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField
-              label="Czas wykonania (minuty)"
-              type="number"
-              value={preparationTime}
-              onChange={(e) => setPreparationTime(e.target.value)}
-              placeholder="np. 30"
-              inputProps={{ min: 1 }}
-              sx={{ flex: 1 }}
-            />
-            <TextField
-              label="Liczba porcji"
-              type="number"
-              value={servings}
-              onChange={(e) => setServings(e.target.value)}
-              placeholder="np. 4"
-              inputProps={{ min: 1 }}
-              sx={{ flex: 1 }}
-            />
-          </Stack>
-        </Stack>
-      </Box>
-
-      <Divider />
-
-      {/* Składniki */}
-      <Box>
-        <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-          Składniki
-        </Typography>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        alignItems={{ md: "flex-end" }}
-      >
-        <Autocomplete
-          freeSolo
-          options={productSuggestions}
-          value={selectedProductOption}
-          inputValue={productInputValue}
-          getOptionLabel={(option) =>
-            typeof option === "string"
-              ? option
-              : option.name ?? option.brand ?? ""
-          }
-          onInputChange={(_, value, reason) => {
-            setProductInputValue(value);
-            if (reason === "input" || reason === "clear") {
-              setSelectedProductOption(null);
-            }
-          }}
-          onChange={(_, value) => {
-            if (typeof value === "string" || value === null) {
-              setSelectedProductOption(null);
-              if (typeof value === "string") {
-                setProductInputValue(value);
-              }
-            } else {
-              setSelectedProductOption(value);
-              setProductInputValue(value.name ?? value.brand ?? "");
-            }
-          }}
-          loading={isLoadingProducts}
-          renderInput={(params) => (
-            <TextField {...params} label="Składnik" placeholder="np. banan" />
-          )}
-          renderOption={(props, option) => {
-            const optionName =
-              typeof option === "string"
-                ? option
-                : option.name ?? option.brand ?? "";
-            const optionBrand =
-              typeof option !== "string" ? option.brand : undefined;
-            return (
-              <li {...props}>
-                <Box>
-                  <Typography variant="body2">{optionName}</Typography>
-                  {optionBrand && (
-                    <Typography variant="caption" color="text.secondary">
-                      {optionBrand}
-                    </Typography>
-                  )}
-                </Box>
-              </li>
-            );
-          }}
-          sx={{ flex: 2 }}
-        />
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            disabled={!canAddProduct}
-            onClick={handleAddProduct}
-            sx={{ whiteSpace: "nowrap", textTransform: "none" }}
-          >
-            Dodaj
-          </Button>
-        </Stack>
-      </Box>
-
-      <Paper
-        variant="outlined"
-        sx={{ maxHeight: 220, overflowY: "auto", p: 2 }}
-      >
-        {products.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            Dodaj składniki, które AI ma wykorzystać w przepisie.
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Parametry przepisu
           </Typography>
-        ) : (
-          products.map((product) => (
-            <Box
-              key={product.id}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-                py: 1,
-              }}
-            >
-              <Box>
-                <Typography fontWeight={600}>{product.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {product.productId
-                    ? "Produkt z bazy FoodMatch"
-                    : "Własny składnik"}
-                </Typography>
-              </Box>
-              <IconButton onClick={() => handleRemoveProduct(product.id)}>
-                <Delete />
-              </IconButton>
-            </Box>
-          ))
-        )}
-      </Paper>
-
-      <Divider />
-
-      {/* Preferencje żywieniowe */}
-      <Box>
-        <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-          Preferencje żywieniowe
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          AI uwzględni wybrane preferencje przy generowaniu przepisu
-        </Typography>
-        <Stack spacing={1}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={preferences.isVegan}
-                onChange={(e) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    isVegan: e.target.checked,
-                  }))
-                }
-              />
-            }
-            label="Dieta wegańska"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={preferences.isVegetarian}
-                onChange={(e) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    isVegetarian: e.target.checked,
-                  }))
-                }
-              />
-            }
-            label="Dieta wegetariańska"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={preferences.hasGlutenIntolerance}
-                onChange={(e) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    hasGlutenIntolerance: e.target.checked,
-                  }))
-                }
-              />
-            }
-            label="Nietolerancja glutenu"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={preferences.hasLactoseIntolerance}
-                onChange={(e) =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    hasLactoseIntolerance: e.target.checked,
-                  }))
-                }
-              />
-            }
-            label="Nietolerancja laktozy"
-          />
-        </Stack>
-      </Box>
-
-      <Divider />
-
-      <Box>
-        <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-          Alergeny do pominięcia
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Wybierz alergeny, których AI ma unikać w przepisie
-        </Typography>
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          {allergenOptions.map((name) => {
-            const active = preferences.allergies.includes(name);
-            return (
-              <Chip
-                key={name}
-                label={name}
-                color={active ? "secondary" : "default"}
-                variant={active ? "filled" : "outlined"}
-                onClick={() => toggleAllergen(name)}
-              />
-            );
-          })}
-        </Stack>
-      </Box>
-
-      {/* Dodatkowy alergen */}
-      {mode === "ai" && (
-        <>
-          <Box>
-            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-              Dodatkowy alergen
-            </Typography>
+          <Stack spacing={2}>
+            <Autocomplete
+              options={cuisineOptions}
+              value={cuisine}
+              onChange={(_, newValue) => setCuisine(newValue || "")}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Kuchnia"
+                  placeholder="Wybierz kuchnię"
+                />
+              )}
+              sx={{ flex: 1 }}
+            />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
-                label="Nazwa"
-                value={customAllergen}
-                onChange={(e) => setCustomAllergen(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddCustomAllergen();
-                  }
-                }}
-                size="small"
+                label="Czas wykonania (minuty)"
+                type="number"
+                value={preparationTime}
+                onChange={(e) => setPreparationTime(e.target.value)}
+                placeholder="np. 30"
+                inputProps={{ min: 1 }}
                 sx={{ flex: 1 }}
               />
-              <Button
-                variant="contained"
-                onClick={handleAddCustomAllergen}
-                disabled={!customAllergen.trim()}
-                sx={{ textTransform: "none" }}
-              >
-                Dodaj
-              </Button>
+              <TextField
+                label="Liczba porcji"
+                type="number"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+                placeholder="np. 4"
+                inputProps={{ min: 1 }}
+                sx={{ flex: 1 }}
+              />
             </Stack>
-          </Box>
+          </Stack>
+        </Box>
 
-          {preferences.allergies.length > 0 && (
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                Wybrane alergeny
-              </Typography>
-              <Stack direction="row" flexWrap="wrap" gap={1}>
-                {preferences.allergies.map((name) => (
-                  <Chip
-                    key={name}
-                    label={name}
-                    onDelete={() => toggleAllergen(name)}
-                    color="secondary"
-                    sx={{ textTransform: "capitalize" }}
-                  />
-                ))}
-              </Stack>
-              {customAllergens.length > 0 && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 1, display: "block" }}
-                >
-                  Własne alergeny: {customAllergens.join(", ")}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </>
-      )}
+        <Divider />
 
-      <Divider />
-
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={2}
-        alignItems={{ md: "center" }}
-        justifyContent="space-between"
-      >
-        <Typography variant="body2" color="text.secondary">
-          AI wygeneruje propozycję przepisu na podstawie powyższych danych
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={
-            isGeneratingRecipe ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : (
-              <AutoAwesome fontSize="small" />
-            )
-          }
-          disabled={isGeneratingRecipe}
-          onClick={handleGenerateRecipe}
-          sx={{ textTransform: "none" }}
-        >
-          {isGeneratingRecipe ? "Generowanie..." : "Wygeneruj przepis"}
-        </Button>
-      </Stack>
-
-      {generationError && (
-        <Alert severity="error">{generationError}</Alert>
-      )}
-      {isSavingRecipe && (
-        <Alert severity="info">Zapisywanie przepisu w bazie...</Alert>
-      )}
-      {saveRecipeError && (
-        <Alert
-          severity="error"
-          action={
-            <Button color="inherit" size="small" onClick={handleRetrySaveRecipe}>
-              Spróbuj ponownie
-            </Button>
-          }
-        >
-          {saveRecipeError}
-        </Alert>
-      )}
-      {savedRecipeId && !isSavingRecipe && !saveRecipeError && (
-        <Alert severity="success">
-          Przepis zapisany w bazie (ID: {savedRecipeId})
-        </Alert>
-      )}
-      {addToPlanError && (
-        <Alert severity="error">{addToPlanError}</Alert>
-      )}
-
-      {generatedRecipe && (
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                {generatedRecipe.title}
-              </Typography>
-              {generatedRecipe.description && (
-                <Typography variant="body2" color="text.secondary">
-                  {generatedRecipe.description}
-                </Typography>
-              )}
-            </Box>
-
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              {generatedRecipe.preparationTimeMinutes > 0 && (
-                <Chip
-                  label={`${generatedRecipe.preparationTimeMinutes} min przygotowania`}
-                  size="small"
+        {/* Składniki */}
+        <Box>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Składniki
+          </Typography>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.5}
+            alignItems={{ md: "flex-end" }}
+          >
+            <Autocomplete
+              freeSolo
+              options={productSuggestions}
+              value={selectedProductOption}
+              inputValue={productInputValue}
+              getOptionLabel={(option) =>
+                typeof option === "string"
+                  ? option
+                  : (option.name ?? option.brand ?? "")
+              }
+              onInputChange={(_, value, reason) => {
+                setProductInputValue(value);
+                if (reason === "input" || reason === "clear") {
+                  setSelectedProductOption(null);
+                }
+              }}
+              onChange={(_, value) => {
+                if (typeof value === "string" || value === null) {
+                  setSelectedProductOption(null);
+                  if (typeof value === "string") {
+                    setProductInputValue(value);
+                  }
+                } else {
+                  setSelectedProductOption(value);
+                  setProductInputValue(value.name ?? value.brand ?? "");
+                }
+              }}
+              loading={isLoadingProducts}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Składnik"
+                  placeholder="np. banan"
                 />
               )}
-              {generatedRecipe.totalWeightGrams > 0 && (
-                <Chip
-                  label={`${generatedRecipe.totalWeightGrams} g`}
-                  size="small"
-                />
-              )}
-            </Stack>
-
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              flexWrap="wrap"
-            >
-              {macroItems.map((item) => (
-                <Box
-                  key={item.label}
-                  sx={{ minWidth: 120 }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    {item.label}
-                  </Typography>
-                  <Typography variant="h6">{item.value}</Typography>
-                </Box>
-              ))}
-            </Stack>
-
-            <Divider />
-
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700}>
-                Składniki
-              </Typography>
-              {generatedRecipe.ingredients.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  AI nie zwróciło szczegółowych składników.
-                </Typography>
-              ) : (
-                <Stack spacing={1} sx={{ mt: 1 }}>
-                  {generatedRecipe.ingredients.map((ingredient) => (
-                    <Box
-                      key={`${ingredient.productId}-${ingredient.productName}-${ingredient.unitId}`}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 2,
-                        borderBottom: (theme) =>
-                          `1px solid ${theme.palette.divider}`,
-                        pb: 1,
-                      }}
-                    >
-                      <Box>
-                        <Typography fontWeight={600}>
-                          {ingredient.productName}
+              renderOption={(props, option) => {
+                const optionName =
+                  typeof option === "string"
+                    ? option
+                    : (option.name ?? option.brand ?? "");
+                const optionBrand =
+                  typeof option !== "string" ? option.brand : undefined;
+                return (
+                  <li {...props}>
+                    <Box>
+                      <Typography variant="body2">{optionName}</Typography>
+                      {optionBrand && (
+                        <Typography variant="caption" color="text.secondary">
+                          {optionBrand}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {formatQuantity(ingredient.quantity)}{" "}
-                          {ingredient.unitName}
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {Math.round(ingredient.normalizedQuantityInGrams)} g
-                      </Typography>
+                      )}
                     </Box>
+                  </li>
+                );
+              }}
+              sx={{ flex: 2 }}
+            />
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              disabled={!canAddProduct}
+              onClick={handleAddProduct}
+              sx={{ whiteSpace: "nowrap", textTransform: "none" }}
+            >
+              Dodaj
+            </Button>
+          </Stack>
+        </Box>
+
+        <Paper
+          variant="outlined"
+          sx={{ maxHeight: 220, overflowY: "auto", p: 2 }}
+        >
+          {products.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              Dodaj składniki, które AI ma wykorzystać w przepisie.
+            </Typography>
+          ) : (
+            products.map((product) => (
+              <Box
+                key={product.id}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                  py: 1,
+                }}
+              >
+                <Box>
+                  <Typography fontWeight={600}>{product.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {product.productId
+                      ? "Produkt z bazy FoodMatch"
+                      : "Własny składnik"}
+                  </Typography>
+                </Box>
+                <IconButton onClick={() => handleRemoveProduct(product.id)}>
+                  <Delete />
+                </IconButton>
+              </Box>
+            ))
+          )}
+        </Paper>
+
+        <Divider />
+
+        {/* Preferencje żywieniowe */}
+        <Box>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Preferencje żywieniowe
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            AI uwzględni wybrane preferencje przy generowaniu przepisu
+          </Typography>
+          <Stack spacing={1}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preferences.isVegan}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({
+                      ...prev,
+                      isVegan: e.target.checked,
+                    }))
+                  }
+                />
+              }
+              label="Dieta wegańska"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preferences.isVegetarian}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({
+                      ...prev,
+                      isVegetarian: e.target.checked,
+                    }))
+                  }
+                />
+              }
+              label="Dieta wegetariańska"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preferences.hasGlutenIntolerance}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({
+                      ...prev,
+                      hasGlutenIntolerance: e.target.checked,
+                    }))
+                  }
+                />
+              }
+              label="Nietolerancja glutenu"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preferences.hasLactoseIntolerance}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({
+                      ...prev,
+                      hasLactoseIntolerance: e.target.checked,
+                    }))
+                  }
+                />
+              }
+              label="Nietolerancja laktozy"
+            />
+          </Stack>
+        </Box>
+
+        <Divider />
+
+        <Box>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Alergeny do pominięcia
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Wybierz alergeny, których AI ma unikać w przepisie
+          </Typography>
+          <Stack direction="row" flexWrap="wrap" gap={1}>
+            {allergenOptions.map((name) => {
+              const active = preferences.allergies.includes(name);
+              return (
+                <Chip
+                  key={name}
+                  label={name}
+                  color={active ? "secondary" : "default"}
+                  variant={active ? "filled" : "outlined"}
+                  onClick={() => toggleAllergen(name)}
+                />
+              );
+            })}
+          </Stack>
+        </Box>
+
+        {/* Dodatkowy alergen */}
+        {mode === "ai" && (
+          <>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                Dodatkowy alergen
+              </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  label="Nazwa"
+                  value={customAllergen}
+                  onChange={(e) => setCustomAllergen(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCustomAllergen();
+                    }
+                  }}
+                  size="small"
+                  sx={{ flex: 1 }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAddCustomAllergen}
+                  disabled={!customAllergen.trim()}
+                  sx={{ textTransform: "none" }}
+                >
+                  Dodaj
+                </Button>
+              </Stack>
+            </Box>
+
+            {preferences.allergies.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  Wybrane alergeny
+                </Typography>
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {preferences.allergies.map((name) => (
+                    <Chip
+                      key={name}
+                      label={name}
+                      onDelete={() => toggleAllergen(name)}
+                      color="secondary"
+                      sx={{ textTransform: "capitalize" }}
+                    />
                   ))}
                 </Stack>
-              )}
-            </Box>
-
-            <Divider />
-
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700}>
-                Instrukcje
-              </Typography>
-              <Typography
-                variant="body2"
-                whiteSpace="pre-line"
-                sx={{ mt: 1 }}
-              >
-                {generatedRecipe.instructions}
-              </Typography>
-            </Box>
-
-            {generatedRecipe.additionalProducts?.length ? (
-              <>
-                <Divider />
-                <Box>
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    Dodatkowe produkty
-                  </Typography>
-                  <Stack
-                    direction="row"
-                    flexWrap="wrap"
-                    gap={1}
-                    sx={{ mt: 1 }}
+                {customAllergens.length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: "block" }}
                   >
-                    {generatedRecipe.additionalProducts.map((item) => (
-                      <Chip key={item} label={item} size="small" />
+                    Własne alergeny: {customAllergens.join(", ")}
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </>
+        )}
+
+        <Divider />
+
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          alignItems={{ md: "center" }}
+          justifyContent="space-between"
+        >
+          <Typography variant="body2" color="text.secondary">
+            AI wygeneruje propozycję przepisu na podstawie powyższych danych
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={
+              isGeneratingRecipe ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <AutoAwesome fontSize="small" />
+              )
+            }
+            disabled={isGeneratingRecipe}
+            onClick={handleGenerateRecipe}
+            sx={{ textTransform: "none" }}
+          >
+            {isGeneratingRecipe ? "Generowanie..." : "Wygeneruj przepis"}
+          </Button>
+        </Stack>
+
+        {generationError && <Alert severity="error">{generationError}</Alert>}
+        {isSavingRecipe && (
+          <Alert severity="info">Zapisywanie przepisu w bazie...</Alert>
+        )}
+        {saveRecipeError && (
+          <Alert
+            severity="error"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={handleRetrySaveRecipe}
+              >
+                Spróbuj ponownie
+              </Button>
+            }
+          >
+            {saveRecipeError}
+          </Alert>
+        )}
+        {savedRecipeId && !isSavingRecipe && !saveRecipeError && (
+          <Alert severity="success">
+            Przepis zapisany w bazie (ID: {savedRecipeId})
+          </Alert>
+        )}
+        {addToPlanError && <Alert severity="error">{addToPlanError}</Alert>}
+
+        {generatedRecipe && (
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  {generatedRecipe.title}
+                </Typography>
+                {generatedRecipe.description && (
+                  <Typography variant="body2" color="text.secondary">
+                    {generatedRecipe.description}
+                  </Typography>
+                )}
+              </Box>
+
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {generatedRecipe.preparationTimeMinutes > 0 && (
+                  <Chip
+                    label={`${generatedRecipe.preparationTimeMinutes} min przygotowania`}
+                    size="small"
+                  />
+                )}
+                {generatedRecipe.totalWeightGrams > 0 && (
+                  <Chip
+                    label={`${generatedRecipe.totalWeightGrams} g`}
+                    size="small"
+                  />
+                )}
+              </Stack>
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                flexWrap="wrap"
+              >
+                {macroItems.map((item) => (
+                  <Box key={item.label} sx={{ minWidth: 120 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h6">{item.value}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Składniki
+                </Typography>
+                {generatedRecipe.ingredients.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    AI nie zwróciło szczegółowych składników.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1} sx={{ mt: 1 }}>
+                    {generatedRecipe.ingredients.map((ingredient) => (
+                      <Box
+                        key={`${ingredient.productId}-${ingredient.productName}-${ingredient.unitId}`}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          borderBottom: (theme) =>
+                            `1px solid ${theme.palette.divider}`,
+                          pb: 1,
+                        }}
+                      >
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {ingredient.productName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatQuantity(ingredient.quantity)}{" "}
+                            {ingredient.unitName}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {Math.round(ingredient.normalizedQuantityInGrams)} g
+                        </Typography>
+                      </Box>
                     ))}
                   </Stack>
-                </Box>
-              </>
-            ) : null}
-          </Stack>
-        </Paper>
-      )}
+                )}
+              </Box>
 
-      {/* Dodatkowe miejsce na dole */}
-      <Box sx={{ height: 40 }} />
-    </Stack>
+              <Divider />
+
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Instrukcje
+                </Typography>
+                <Typography
+                  variant="body2"
+                  whiteSpace="pre-line"
+                  sx={{ mt: 1 }}
+                >
+                  {generatedRecipe.instructions}
+                </Typography>
+              </Box>
+
+              {generatedRecipe.additionalProducts?.length ? (
+                <>
+                  <Divider />
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Dodatkowe produkty
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      flexWrap="wrap"
+                      gap={1}
+                      sx={{ mt: 1 }}
+                    >
+                      {generatedRecipe.additionalProducts.map((item) => (
+                        <Chip key={item} label={item} size="small" />
+                      ))}
+                    </Stack>
+                  </Box>
+                </>
+              ) : null}
+            </Stack>
+          </Paper>
+        )}
+
+        {/* Dodatkowe miejsce na dole */}
+        <Box sx={{ height: 40 }} />
+      </Stack>
     );
   };
 

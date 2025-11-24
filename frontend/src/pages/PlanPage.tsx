@@ -1,18 +1,24 @@
 import { Alert, Box, Divider, Paper, Typography } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
-import type { MealPlanDay, MacroEntry, PlanMeal } from "../types/plan";
+import type {
+  MealPlanDay,
+  MacroEntry,
+  PlanMeal,
+  PlanMealProduct,
+} from "../types/plan";
 import PlanDayHeader from "../components/plan/PlanDayHeader";
 import PlanMealList from "../components/plan/PlanMealList";
 import PlanMacroSummary from "../components/plan/PlanMacroSummary";
 import PlanAddRecipeModal, {
   type RecipeAddedPayload,
 } from "../components/plan/PlanAddRecipeModal";
-import { getRecipeById, type GeneratedRecipe } from "../services/recipeService";
+import { getRecipeById } from "../services/recipeService";
 import {
   getMealPlansForDate,
   type MealPlanDto,
 } from "../services/mealPlanService";
+import { getAllUnits } from "../services/unitService";
 
 const parseDateKey = (key?: string) => {
   if (!key?.startsWith("date-")) return null;
@@ -63,38 +69,69 @@ const buildEmptyPlan = (isoDate: string): MealPlanDay => ({
   })),
 });
 
-const macroLabels: Record<
-  keyof MealPlanDay["summary"]["macros"],
-  string
-> = {
+const macroLabels: Record<keyof MealPlanDay["summary"]["macros"], string> = {
   protein: "Białko",
   fat: "Tłuszcz",
   carbs: "Węglowodany",
 };
 
+const DEFAULT_WEIGHT_UNIT = "g";
+
 type IngredientForDisplay = {
+  productId?: number | string;
   productName: string;
   quantity?: number;
   unitName?: string | null;
+  unitId?: number;
+  normalizedQuantityInGrams?: number;
 };
 
-const formatIngredientLabel = (ingredient: IngredientForDisplay) => {
-  const quantity =
-    typeof ingredient.quantity === "number"
-      ? Math.round(ingredient.quantity * 10) / 10
-      : undefined;
-  const unit = ingredient.unitName?.trim();
+const formatIngredientQuantityLabel = (
+  ingredient: IngredientForDisplay
+): string | undefined => {
+  const isValidQuantity = (value: unknown): value is number =>
+    typeof value === "number" && !Number.isNaN(value);
 
-  if (quantity && unit) {
-    return `${ingredient.productName} (${quantity} ${unit})`;
+  let unit = ingredient.unitName?.trim();
+  let quantity = ingredient.quantity;
+
+  if (
+    !isValidQuantity(quantity) &&
+    isValidQuantity(ingredient.normalizedQuantityInGrams)
+  ) {
+    quantity = ingredient.normalizedQuantityInGrams;
+    if (!unit) {
+      unit = DEFAULT_WEIGHT_UNIT;
+    }
   }
 
-  if (quantity) {
-    return `${ingredient.productName} (${quantity})`;
+  if (!isValidQuantity(quantity) && !unit) {
+    return undefined;
   }
 
-  return ingredient.productName;
+  if (!isValidQuantity(quantity)) {
+    return unit;
+  }
+
+  const rounded = Math.round(quantity * 10) / 10;
+  const formattedQuantity = Number.isInteger(rounded)
+    ? rounded.toFixed(0)
+    : rounded.toFixed(1);
+  return unit ? `${formattedQuantity} ${unit}` : formattedQuantity;
 };
+
+const mapIngredientToProduct = (
+  ingredient: IngredientForDisplay,
+  index: number,
+  unitNameOverride?: string
+): PlanMealProduct => ({
+  id: `${ingredient.productId ?? ingredient.productName}-${index}`,
+  name: ingredient.productName,
+  quantityLabel: formatIngredientQuantityLabel({
+    ...ingredient,
+    unitName: unitNameOverride ?? ingredient.unitName,
+  }),
+});
 
 const defaultSlotLookup = defaultMealSlots.reduce<
   Record<string, (typeof defaultMealSlots)[number]>
@@ -218,6 +255,38 @@ export default function PlanPage() {
   const [mealForModal, setMealForModal] = useState<PlanMeal | null>(null);
   const [isPlanLoading, setIsPlanLoading] = useState(false);
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
+  const unitNameCacheRef = useRef<Record<number, string>>({});
+
+  const convertIngredientsToProducts = useCallback(
+    (ingredients: IngredientForDisplay[]) =>
+      ingredients.map((ingredient, index) => {
+        const fallbackUnit =
+          typeof ingredient.unitId === "number"
+            ? unitNameCacheRef.current[ingredient.unitId]
+            : undefined;
+        return mapIngredientToProduct(ingredient, index, fallbackUnit);
+      }),
+    []
+  );
+
+  const ensureUnitsLoaded = useCallback(async () => {
+    if (Object.keys(unitNameCacheRef.current).length) {
+      return unitNameCacheRef.current;
+    }
+    try {
+      const units = await getAllUnits();
+      const map = units.reduce<Record<number, string>>((acc, unit) => {
+        if (Number.isFinite(unit.unitId)) {
+          acc[unit.unitId] = unit.name;
+        }
+        return acc;
+      }, {});
+      unitNameCacheRef.current = map;
+    } catch (error) {
+      console.error("Nie udało się pobrać listy jednostek", error);
+    }
+    return unitNameCacheRef.current;
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -274,16 +343,21 @@ export default function PlanPage() {
       }));
 
       try {
+        await ensureUnitsLoaded();
+      } catch (error) {
+        console.error("Failed to prepare units before loading recipe", error);
+      }
+
+      try {
         const recipe = await getRecipeById(recipeId);
+        const products = convertIngredientsToProducts(recipe.ingredients);
         setPlan((prev) => ({
           ...prev,
           meals: prev.meals.map((planMeal) =>
             planMeal.id === mealId
               ? {
                   ...planMeal,
-                  products: recipe.ingredients.map((ingredient) =>
-                    formatIngredientLabel(ingredient)
-                  ),
+                  products,
                   instructions: recipe.instructions,
                   isDetailsLoading: false,
                   detailsError: null,
@@ -310,7 +384,7 @@ export default function PlanPage() {
         }));
       }
     },
-    [setPlan]
+    [convertIngredientsToProducts, ensureUnitsLoaded, setPlan]
   );
 
   const handleAddRecipe = (meal: PlanMeal) => {
@@ -320,6 +394,7 @@ export default function PlanPage() {
   const handleCloseModal = () => setMealForModal(null);
 
   const handleRecipeAddedToPlan = (payload: RecipeAddedPayload) => {
+    const products = convertIngredientsToProducts(payload.recipe.ingredients);
     setPlan((prev) => ({
       ...prev,
       meals: prev.meals.map((planMeal) => {
@@ -338,9 +413,7 @@ export default function PlanPage() {
             fat: roundStat(payload.recipe.fats),
             carbs: roundStat(payload.recipe.carbohydrates),
           },
-          products: payload.recipe.ingredients.map((ingredient) =>
-            formatIngredientLabel(ingredient)
-          ),
+          products,
           instructions: payload.recipe.instructions,
           isDetailsLoading: false,
           detailsError: null,
@@ -376,7 +449,7 @@ export default function PlanPage() {
 
   const macroEntries = Object.entries(plan.summary.macros) as [
     keyof MealPlanDay["summary"]["macros"],
-    { target: number; value: number }
+    { target: number; value: number },
   ][];
   const macroData: MacroEntry[] = macroEntries.map(([key, value]) => ({
     key,

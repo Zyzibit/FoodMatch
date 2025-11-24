@@ -42,7 +42,9 @@ const normalizeDateParam = (date: string): string => {
   return parsed.toISOString();
 };
 
-const parseMealPlanRecipe = (data: any | null | undefined): MealPlanRecipeDto | undefined => {
+const parseMealPlanRecipe = (
+  data: any | null | undefined
+): MealPlanRecipeDto | undefined => {
   if (!data) return undefined;
   return {
     id: Number(data.id ?? data.Id ?? 0),
@@ -71,6 +73,7 @@ export const createMealPlan = async (
   const response = await fetch(`${API_BASE_URL}/mealplans`, {
     method: "POST",
     headers: getAuthHeaders(),
+    credentials: "include",
     body: JSON.stringify(request),
   });
 
@@ -95,6 +98,7 @@ export const getMealPlansForDate = async (
   const response = await fetch(`${API_BASE_URL}/mealplans?${params}`, {
     method: "GET",
     headers: getAuthHeaders(),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -105,7 +109,9 @@ export const getMealPlansForDate = async (
   }
 
   const data = await response.json();
-  const mealPlans = Array.isArray(data.mealPlans) ? data.mealPlans : data.MealPlans;
+  const mealPlans = Array.isArray(data.mealPlans)
+    ? data.mealPlans
+    : data.MealPlans;
 
   if (!mealPlans || !Array.isArray(mealPlans)) {
     return [];

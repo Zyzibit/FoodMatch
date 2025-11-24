@@ -136,16 +136,23 @@ export default function PlanMealCard({
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                   Produkty
                 </Typography>
-                <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
+                <Stack spacing={1}>
                   {meal.products?.map((product) => (
-                    <Typography
-                      key={product}
-                      component="li"
-                      variant="body2"
-                      color="text.secondary"
+                    <Box
+                      key={product.id}
+                      sx={{
+                        borderBottom: (theme) =>
+                          `1px solid ${theme.palette.divider}`,
+                        pb: 1,
+                      }}
                     >
-                      {product}
-                    </Typography>
+                      <Typography fontWeight={700}>{product.name}</Typography>
+                      {product.quantityLabel && (
+                        <Typography variant="body2" color="text.secondary">
+                          {product.quantityLabel}
+                        </Typography>
+                      )}
+                    </Box>
                   ))}
                 </Stack>
               </Box>
