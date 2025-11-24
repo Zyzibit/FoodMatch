@@ -57,6 +57,10 @@ public class FoodPreferencesConfiguration : IEntityTypeConfiguration<User>
                 .IsRequired(false)
                 .HasConversion<string>();
             
+            fp.Property(p => p.FitnessGoal)
+                .IsRequired(false)
+                .HasConversion<string>();
+            
             fp.Property(p => p.DailyProteinGoal)
                 .HasDefaultValue(0);
             
@@ -69,56 +73,37 @@ public class FoodPreferencesConfiguration : IEntityTypeConfiguration<User>
             fp.Property(p => p.DailyCalorieGoal)
                 .HasDefaultValue(0);
             
-            fp.Property(p => p.BreakfastCaloriePercentage)
-                .HasDefaultValue(30);
+            fp.OwnsOne(p => p.Breakfast, breakfast =>
+            {
+                breakfast.Property(b => b.CaloriePercentage).HasDefaultValue(30);
+                breakfast.Property(b => b.ProteinPercentage).HasDefaultValue(25);
+                breakfast.Property(b => b.CarbohydratePercentage).HasDefaultValue(30);
+                breakfast.Property(b => b.FatPercentage).HasDefaultValue(30);
+            });
             
-            fp.Property(p => p.LunchCaloriePercentage)
-                .HasDefaultValue(40);
+            fp.OwnsOne(p => p.Lunch, lunch =>
+            {
+                lunch.Property(l => l.CaloriePercentage).HasDefaultValue(40);
+                lunch.Property(l => l.ProteinPercentage).HasDefaultValue(35);
+                lunch.Property(l => l.CarbohydratePercentage).HasDefaultValue(40);
+                lunch.Property(l => l.FatPercentage).HasDefaultValue(40);
+            });
             
-            fp.Property(p => p.DinnerCaloriePercentage)
-                .HasDefaultValue(25);
+            fp.OwnsOne(p => p.Dinner, dinner =>
+            {
+                dinner.Property(d => d.CaloriePercentage).HasDefaultValue(25);
+                dinner.Property(d => d.ProteinPercentage).HasDefaultValue(35);
+                dinner.Property(d => d.CarbohydratePercentage).HasDefaultValue(25);
+                dinner.Property(d => d.FatPercentage).HasDefaultValue(25);
+            });
             
-            fp.Property(p => p.SnackCaloriePercentage)
-                .HasDefaultValue(5);
-            
-
-            fp.Property(p => p.BreakfastProteinPercentage)
-                .HasDefaultValue(25);
-            
-            fp.Property(p => p.LunchProteinPercentage)
-                .HasDefaultValue(35);
-            
-            fp.Property(p => p.DinnerProteinPercentage)
-                .HasDefaultValue(35);
-            
-            fp.Property(p => p.SnackProteinPercentage)
-                .HasDefaultValue(5);
-            
-
-            fp.Property(p => p.BreakfastCarbohydratePercentage)
-                .HasDefaultValue(30);
-            
-            fp.Property(p => p.LunchCarbohydratePercentage)
-                .HasDefaultValue(40);
-            
-            fp.Property(p => p.DinnerCarbohydratePercentage)
-                .HasDefaultValue(25);
-            
-            fp.Property(p => p.SnackCarbohydratePercentage)
-                .HasDefaultValue(5);
-
-            
-            fp.Property(p => p.BreakfastFatPercentage)
-                .HasDefaultValue(30);
-            
-            fp.Property(p => p.LunchFatPercentage)
-                .HasDefaultValue(40);
-            
-            fp.Property(p => p.DinnerFatPercentage)
-                .HasDefaultValue(25);
-            
-            fp.Property(p => p.SnackFatPercentage)
-                .HasDefaultValue(5);
+            fp.OwnsOne(p => p.Snack, snack =>
+            {
+                snack.Property(s => s.CaloriePercentage).HasDefaultValue(5);
+                snack.Property(s => s.ProteinPercentage).HasDefaultValue(5);
+                snack.Property(s => s.CarbohydratePercentage).HasDefaultValue(5);
+                snack.Property(s => s.FatPercentage).HasDefaultValue(5);
+            });
         });
     }
 }

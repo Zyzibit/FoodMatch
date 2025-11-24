@@ -50,7 +50,7 @@ namespace inzynierka.Recipes.Services;
                 var messages = new List<OpenAIMessage>
                 {
                     new OpenAIMessage("system", config.SystemMessage),
-                    new OpenAIMessage("user", userPrompt)
+                    new OpenAIMessage("user", userPrompt),
                 };
                 Console.WriteLine("userPrompt: " + userPrompt);
                 

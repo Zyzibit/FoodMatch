@@ -273,93 +273,7 @@ public class UserService : IUserService
                 return false;
             }
 
-            if (request.IsVegan.HasValue)
-                user.FoodPreferences.IsVegan = request.IsVegan.Value;
-            if (request.IsVegetarian.HasValue)
-                user.FoodPreferences.IsVegetarian = request.IsVegetarian.Value;
-            if (request.HasGlutenIntolerance.HasValue)
-                user.FoodPreferences.HasGlutenIntolerance = request.HasGlutenIntolerance.Value;
-            if (request.HasLactoseIntolerance.HasValue)
-                user.FoodPreferences.HasLactoseIntolerance = request.HasLactoseIntolerance.Value;
-            if (request.Allergies != null)
-                user.FoodPreferences.Allergies = request.Allergies;
-            
-            if (request.Age.HasValue)
-                user.FoodPreferences.Age = request.Age.Value;
-            
-            if (!string.IsNullOrEmpty(request.Gender))
-            {
-                if (Enum.TryParse<Gender>(request.Gender, ignoreCase: true, out var gender))
-                {
-                    user.FoodPreferences.Gender = gender;
-                }
-                else
-                {
-                    _logger.LogWarning("Invalid Gender value: {Gender}", request.Gender);
-                }
-            }
-            
-            if (request.Weight.HasValue)
-                user.FoodPreferences.Weight = request.Weight.Value;
-            if (request.Height.HasValue)
-                user.FoodPreferences.Height = request.Height.Value;
-            
-            if (!string.IsNullOrEmpty(request.ActivityLevel))
-            {
-                if (Enum.TryParse<PhysicalActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
-                {
-                    user.FoodPreferences.ActivityLevel = activityLevel;
-                }
-                else
-                {
-                    _logger.LogWarning("Invalid ActivityLevel value: {ActivityLevel}", request.ActivityLevel);
-                }
-            }
-            
-            if (request.DailyProteinGoal.HasValue)
-                user.FoodPreferences.DailyProteinGoal = request.DailyProteinGoal.Value;
-            if (request.DailyCarbohydrateGoal.HasValue)
-                user.FoodPreferences.DailyCarbohydrateGoal = request.DailyCarbohydrateGoal.Value;
-            if (request.DailyFatGoal.HasValue)
-                user.FoodPreferences.DailyFatGoal = request.DailyFatGoal.Value;
-            if (request.DailyCalorieGoal.HasValue)
-                user.FoodPreferences.DailyCalorieGoal = request.DailyCalorieGoal.Value;
-            
-            if (request.BreakfastCaloriePercentage.HasValue)
-                user.FoodPreferences.BreakfastCaloriePercentage = request.BreakfastCaloriePercentage.Value;
-            if (request.LunchCaloriePercentage.HasValue)
-                user.FoodPreferences.LunchCaloriePercentage = request.LunchCaloriePercentage.Value;
-            if (request.DinnerCaloriePercentage.HasValue)
-                user.FoodPreferences.DinnerCaloriePercentage = request.DinnerCaloriePercentage.Value;
-            if (request.SnackCaloriePercentage.HasValue)
-                user.FoodPreferences.SnackCaloriePercentage = request.SnackCaloriePercentage.Value;
-            
-            if (request.BreakfastProteinPercentage.HasValue)
-                user.FoodPreferences.BreakfastProteinPercentage = request.BreakfastProteinPercentage.Value;
-            if (request.LunchProteinPercentage.HasValue)
-                user.FoodPreferences.LunchProteinPercentage = request.LunchProteinPercentage.Value;
-            if (request.DinnerProteinPercentage.HasValue)
-                user.FoodPreferences.DinnerProteinPercentage = request.DinnerProteinPercentage.Value;
-            if (request.SnackProteinPercentage.HasValue)
-                user.FoodPreferences.SnackProteinPercentage = request.SnackProteinPercentage.Value;
-            
-            if (request.BreakfastCarbohydratePercentage.HasValue)
-                user.FoodPreferences.BreakfastCarbohydratePercentage = request.BreakfastCarbohydratePercentage.Value;
-            if (request.LunchCarbohydratePercentage.HasValue)
-                user.FoodPreferences.LunchCarbohydratePercentage = request.LunchCarbohydratePercentage.Value;
-            if (request.DinnerCarbohydratePercentage.HasValue)
-                user.FoodPreferences.DinnerCarbohydratePercentage = request.DinnerCarbohydratePercentage.Value;
-            if (request.SnackCarbohydratePercentage.HasValue)
-                user.FoodPreferences.SnackCarbohydratePercentage = request.SnackCarbohydratePercentage.Value;
-            
-            if (request.BreakfastFatPercentage.HasValue)
-                user.FoodPreferences.BreakfastFatPercentage = request.BreakfastFatPercentage.Value;
-            if (request.LunchFatPercentage.HasValue)
-                user.FoodPreferences.LunchFatPercentage = request.LunchFatPercentage.Value;
-            if (request.DinnerFatPercentage.HasValue)
-                user.FoodPreferences.DinnerFatPercentage = request.DinnerFatPercentage.Value;
-            if (request.SnackFatPercentage.HasValue)
-                user.FoodPreferences.SnackFatPercentage = request.SnackFatPercentage.Value;
+            user.FoodPreferences.UpdateFrom(request, _logger);
 
             user.UpdatedAt = DateTime.UtcNow;
             var result = await _userManager.UpdateAsync(user);
@@ -380,6 +294,7 @@ public class UserService : IUserService
             return false;
         }
     }
+
 
     private async Task<bool> EnsureRoleAssignedAsync(User user, string role)
     {

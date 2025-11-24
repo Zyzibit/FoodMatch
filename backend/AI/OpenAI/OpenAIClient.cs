@@ -102,11 +102,12 @@ public class OpenAIClient : IOpenAIClient {
         cleanedJson = cleanedJson.Trim();
         
         cleanedJson = System.Text.RegularExpressions.Regex.Replace(cleanedJson, @",(\s*[}\]])", "$1");
-        
-        
+
+        Console.WriteLine("Cleaned JSON: " + cleanedJson);
         try 
         {
             var resultDoc = JsonDocument.Parse(cleanedJson);
+            
             return resultDoc.RootElement.Clone();
         }
         catch (JsonException ex)
