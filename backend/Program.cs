@@ -94,8 +94,8 @@ builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
 builder.Services.AddScoped<inzynierka.MealPlans.Services.IMealPlanService, inzynierka.MealPlans.Services.MealPlanService>();
 builder.Services.AddScoped<inzynierka.MealPlans.Repositories.IMealPlanRepository, inzynierka.MealPlans.Repositories.MealPlanRepository>();
 
-builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
-builder.Services.AddSingleton<OpenAIClient>();
+// Rejestracja OpenAI Client używającego oficjalnej biblioteki
+builder.Services.AddScoped<IAiClient, inzynierka.AI.OpenAI.AiClient>();
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
