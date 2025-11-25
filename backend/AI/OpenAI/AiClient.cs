@@ -73,7 +73,7 @@ public class AiClient : IAiClient
 
             try
             {
-                var resultDoc = JsonDocument.Parse(jsonText);
+                using var resultDoc = JsonDocument.Parse(jsonText);
                 return resultDoc.RootElement.Clone();
             }
             catch (JsonException ex)
