@@ -1,6 +1,5 @@
 using System.Text.Json;
 using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.Model;
 using inzynierka.AI.OpenAI.Services;
 using inzynierka.Products.Model;
 using inzynierka.Products.Repositories;
@@ -13,7 +12,7 @@ using inzynierka.Units.Services;
 namespace inzynierka.Recipes.Services;
 
     public class RecipeGeneratorService(
-        IOpenAIClient openAiClient,
+        IAiClient aiClient,
         ILogger<RecipeGeneratorService> logger,
         IPromptConfigService promptConfigService,
         IUnitService unitService,
@@ -21,7 +20,7 @@ namespace inzynierka.Recipes.Services;
         IConfiguration configuration)
         : IRecipeGeneratorService
     {
-        private readonly IOpenAIClient _openAiClient = openAiClient;
+        private readonly IAiClient _aiClient = aiClient;
         private readonly ILogger<RecipeGeneratorService> _logger = logger;
         private readonly IPromptConfigService _promptConfigService = promptConfigService;
         private readonly IUnitService _unitService = unitService;
@@ -47,14 +46,9 @@ namespace inzynierka.Recipes.Services;
                 var data = await PreparePromptDataAsync(request, products);
                 var userPrompt = _promptConfigService.RenderPrompt(config, data);
                 
-                var messages = new List<OpenAIMessage>
-                {
-                    new OpenAIMessage("system", config.SystemMessage),
-                    new OpenAIMessage("user", userPrompt),
-                };
-                Console.WriteLine("userPrompt: " + userPrompt);
+                _logger.LogDebug("Generated user prompt: {UserPrompt}", userPrompt);
                 
-                var result = await _openAiClient.SendPromptForJsonAsync(messages);
+                var result = await _aiClient.SendPromptForJsonAsync(config.SystemMessage, userPrompt);
                 
                 if (result == null)
                 {
@@ -150,7 +144,6 @@ namespace inzynierka.Recipes.Services;
                 var actualTotalFats = recipe.Ingredients.Sum(i => i.EstimatedFats);
                 
                 var aiTotalWeight = GetIntProperty(jsonElement, "totalWeightGrams");
-                var aiTotalCalories = GetDecimalProperty(jsonElement, "estimatedCalories");
                 // if (aiTotalWeight > 0 && Math.Abs(aiTotalWeight - actualTotalWeight) > 1m)
                 // {
                 //     _logger.LogWarning(
