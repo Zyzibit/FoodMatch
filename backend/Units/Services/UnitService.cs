@@ -71,6 +71,20 @@ public class UnitService : IUnitService
         }
     }
 
+    public async Task<UnitDto?> GetUnitByNameAsync(string name)
+    {
+        try
+        {
+            var unit = await _unitRepository.GetUnitByNameAsync(name);
+            return unit?.ToDto();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting unit by name {UnitName}", name);
+            return null;
+        }
+    }
+
     public async Task<List<UnitDto>> GetAllUnitsAsync()
     {
         try

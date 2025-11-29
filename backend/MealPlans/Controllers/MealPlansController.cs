@@ -38,12 +38,7 @@ public class MealPlansController : ControllerBase
                 return BadRequest(new { message = result.Message });
             }
 
-            return Ok(new 
-            { 
-                success = true, 
-                mealPlanId = result.MealPlanId,
-                message = result.Message
-            });
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -71,12 +66,7 @@ public class MealPlansController : ControllerBase
                 return BadRequest(new { message = result.Message });
             }
 
-            return Ok(new 
-            { 
-                success = true, 
-                mealPlans = result.MealPlans,
-                message = result.Message
-            });
+            return Ok(result);
         }
         catch (Exception ex)
         {

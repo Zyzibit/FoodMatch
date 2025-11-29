@@ -1,4 +1,6 @@
-﻿namespace inzynierka.Recipes.Responses;
+﻿using inzynierka.Products.Extensions;
+
+namespace inzynierka.Recipes.Responses;
 
 public class RecipeDto
 {
@@ -22,15 +24,16 @@ public class RecipeDto
 
 public class RecipeIngredientReadDto
 {
-    public int ProductId { get; set; }
     public int UnitId { get; set; }
     public decimal Quantity { get; set; }
     public decimal? NormalizedQuantityInGrams { get; set; }
+    
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public decimal Calories { get; set; }
     public decimal Proteins { get; set; }
     public decimal Carbohydrates { get; set; }
     public decimal Fats { get; set; }
-    public string ProductName { get; set; } = string.Empty;
 }
 

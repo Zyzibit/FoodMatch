@@ -1,23 +1,20 @@
+using inzynierka.Recipes.Model;
+
 namespace inzynierka.MealPlans.Constants;
 
 public static class MealNames
 {
-    public const string Breakfast = "Breakfast";
-    public const string Lunch = "Lunch";
-    public const string Dinner = "Dinner";
-    public const string Snack = "Snack";
+    public static string Breakfast => MealType.Breakfast.GetName();
+    public static string Lunch => MealType.Lunch.GetName();
+    public static string Dinner => MealType.Dinner.GetName();
+    public static string Snack => MealType.Snack.GetName();
     
-    public static readonly HashSet<string> AllowedMealNames = new()
-    {
-        Breakfast,
-        Lunch,
-        Dinner,
-        Snack
-    };
+    public static readonly HashSet<string> AllowedMealNames = 
+        MealTypeExtensions.GetAllNames().ToHashSet();
     
     public static bool IsValidMealName(string name)
     {
-        return AllowedMealNames.Contains(name);
+        return MealTypeExtensions.IsValid(name);
     }
 }
 

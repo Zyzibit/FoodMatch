@@ -85,7 +85,6 @@ builder.Services.AddProductsServices();
 builder.Services.AddHostedService<TokenCleanupService>();
 
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
-builder.Services.AddScoped<IRecipeIngredientMatcher, RecipeIngredientMatcher>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IUnitRepository, UnitRepository>();
 builder.Services.AddScoped<IUnitService, UnitService>();
@@ -95,8 +94,8 @@ builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
 builder.Services.AddScoped<inzynierka.MealPlans.Services.IMealPlanService, inzynierka.MealPlans.Services.MealPlanService>();
 builder.Services.AddScoped<inzynierka.MealPlans.Repositories.IMealPlanRepository, inzynierka.MealPlans.Repositories.MealPlanRepository>();
 
-builder.Services.AddHttpClient<IOpenAIClient,OpenAIClient>();
-builder.Services.AddSingleton<OpenAIClient>();
+// Rejestracja OpenAI Client używającego oficjalnej biblioteki
+builder.Services.AddScoped<IAiClient, inzynierka.AI.OpenAI.AiClient>();
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
