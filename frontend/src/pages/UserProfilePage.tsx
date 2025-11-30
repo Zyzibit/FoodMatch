@@ -14,6 +14,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useRef } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import userMeasurementsService, {
   type FoodPreferencesResponse,
@@ -88,50 +89,6 @@ const formatNumber = (value: number) => {
   return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
 };
 
-const GOAL_MACRO_RATIOS: Record<
-  FitnessGoal | "Maintenance",
-  { proteinRatio: number; fatRatio: number; carbRatio: number }
-> = {
-  WeightLoss: { proteinRatio: 0.35, fatRatio: 0.25, carbRatio: 0.4 },
-  Maintenance: { proteinRatio: 0.3, fatRatio: 0.3, carbRatio: 0.4 },
-  WeightGain: { proteinRatio: 0.25, fatRatio: 0.25, carbRatio: 0.5 },
-};
-
-const calculateBmrPreview = (
-  weight: number | null,
-  height: number | null,
-  age: number | null,
-  gender: Gender | ""
-) => {
-  if (
-    weight === null ||
-    height === null ||
-    age === null ||
-    gender === ""
-  ) {
-    return null;
-  }
-  const genderAdjustment = gender === "male" ? 5 : -161;
-  return Math.round(10 * weight + 6.25 * height - 5 * age + genderAdjustment);
-};
-
-const calculateMacroPreview = (
-  calories: number | null,
-  goal: FitnessGoal
-) => {
-  if (calories === null) {
-    return null;
-  }
-  const config = GOAL_MACRO_RATIOS[goal] ?? GOAL_MACRO_RATIOS.Maintenance;
-  const protein = Math.round((calories * config.proteinRatio) / 4);
-  const fat = Math.round((calories * config.fatRatio) / 9);
-  const carbs = Math.max(
-    0,
-    Math.round((calories * config.carbRatio) / 4)
-  );
-  return { calories, protein, fat, carbs };
-};
-
 const backendActivityToLocalMap: Record<string, ActivityLevel> = {
   Sedentary: "very_low",
   LightlyActive: "low",
@@ -142,12 +99,13 @@ const backendActivityToLocalMap: Record<string, ActivityLevel> = {
 
 const mapBackendActivityToLocal = (
   backendActivity?: string
-): ActivityLevel => backendActivityToLocalMap[backendActivity || ""] || "medium";
+): ActivityLevel | "" =>
+  backendActivity ? backendActivityToLocalMap[backendActivity] ?? "" : "";
 
-const mapBackendGenderToLocal = (backendGender?: string): Gender => {
+const mapBackendGenderToLocal = (backendGender?: string): Gender | "" => {
   if (backendGender === "Male") return "male";
   if (backendGender === "Female") return "female";
-  return "male";
+  return "";
 };
 
 const mapLocalActivityToBackend = (
@@ -173,15 +131,12 @@ const isFitnessGoalValue = (value?: string): value is FitnessGoal =>
   !!value &&
   FITNESS_GOAL_OPTIONS.some((goalOption) => goalOption.value === value);
 
-const selectGoalValue = (value?: number | null): number | null => {
-  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-    return Math.round(value);
-  }
-  return null;
-};
+const toNumberOrNull = (value?: number | null): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 export default function UserProfilePage() {
   const { activeTab } = useDashboardContext();
+  const latestPreferencesRequest = useRef(0);
   const [age, setAge] = useState<number | "">("");
   const [weight, setWeight] = useState<number | "">("");
   const [height, setHeight] = useState<number | "">("");
@@ -206,6 +161,8 @@ export default function UserProfilePage() {
     fat: null,
     carbs: null,
   });
+  const [persistedPreferences, setPersistedPreferences] =
+    useState<FoodPreferencesResponse | null>(null);
 
   const isAgeValid =
     age === "" || (age >= AGE_RANGE.min && age <= AGE_RANGE.max);
@@ -219,81 +176,91 @@ export default function UserProfilePage() {
   const showHeightError = height !== "" && !isHeightValid;
   const hasValidationError = showAgeError || showWeightError || showHeightError;
 
-  const numericAge = typeof age === "number" ? age : null;
-  const numericWeight = typeof weight === "number" ? weight : null;
-  const numericHeight = typeof height === "number" ? height : null;
-  const canCalculate =
-    numericAge !== null &&
-    numericWeight !== null &&
-    numericHeight !== null &&
-    gender !== "" &&
-    activity !== "" &&
-    !hasValidationError;
-
   const applyPreferencesFromApi = useCallback(
     (prefs: FoodPreferencesResponse) => {
-      if (typeof prefs.age === "number") setAge(prefs.age);
-      if (typeof prefs.weight === "number") setWeight(prefs.weight);
-      if (typeof prefs.height === "number") setHeight(prefs.height);
-      if (prefs.gender) setGender(mapBackendGenderToLocal(prefs.gender));
-      if (prefs.activityLevel)
-        setActivity(mapBackendActivityToLocal(prefs.activityLevel));
-      if (isFitnessGoalValue(prefs.fitnessGoal)) {
-        setFitnessGoal(prefs.fitnessGoal);
-      }
-      setCalculatedBMR(
-        typeof prefs.calculatedBMR === "number" ? prefs.calculatedBMR : null
+      const calorieGoal =
+        toNumberOrNull(prefs.calculatedDailyCalories) ??
+        toNumberOrNull(prefs.dailyCalorieGoal);
+
+      setPersistedPreferences(prefs);
+      setAge(toNumberOrNull(prefs.age) ?? "");
+      setWeight(toNumberOrNull(prefs.weight) ?? "");
+      setHeight(toNumberOrNull(prefs.height) ?? "");
+      setGender(mapBackendGenderToLocal(prefs.gender));
+      setActivity(mapBackendActivityToLocal(prefs.activityLevel));
+      setFitnessGoal(
+        isFitnessGoalValue(prefs.fitnessGoal)
+          ? prefs.fitnessGoal
+          : "Maintenance"
       );
-      setCalculatedDailyCalories(
-        typeof prefs.calculatedDailyCalories === "number"
-          ? prefs.calculatedDailyCalories
-          : null
-      );
+      setCalculatedBMR(toNumberOrNull(prefs.calculatedBMR));
+      setCalculatedDailyCalories(toNumberOrNull(prefs.calculatedDailyCalories));
 
       setMacroGoals({
-        calories:
-          selectGoalValue(prefs.dailyCalorieGoal) ??
-          selectGoalValue(prefs.calculatedDailyCalories),
-        protein: selectGoalValue(prefs.dailyProteinGoal),
-        fat: selectGoalValue(prefs.dailyFatGoal),
-        carbs: selectGoalValue(prefs.dailyCarbohydrateGoal),
+        calories: calorieGoal,
+        protein: toNumberOrNull(prefs.dailyProteinGoal),
+        fat: toNumberOrNull(prefs.dailyFatGoal),
+        carbs: toNumberOrNull(prefs.dailyCarbohydrateGoal),
       });
     },
     []
   );
 
-  useEffect(() => {
-    // Załaduj dane z API
-    const loadFromApi = async () => {
-      try {
-        const prefs = await userMeasurementsService.getPreferences();
-        applyPreferencesFromApi(prefs);
-      } catch (error) {
-        console.error("Failed to load preferences from API:", error);
-      }
-    };
-
-    loadFromApi();
+  const loadPreferences = useCallback(async () => {
+    const requestId = Date.now();
+    latestPreferencesRequest.current = requestId;
+    const prefs = await userMeasurementsService.getPreferences();
+    if (latestPreferencesRequest.current === requestId) {
+      applyPreferencesFromApi(prefs);
+    }
+    return prefs;
   }, [applyPreferencesFromApi]);
 
-  const selectedActivityOption =
-    activity !== ""
-      ? ACTIVITY_OPTIONS.find((option) => option.value === activity)
-      : undefined;
+  useEffect(() => {
+    void loadPreferences().catch((error) =>
+      console.error("Failed to load preferences from API:", error)
+    );
+  }, [loadPreferences]);
 
-  const palValue = activity !== "" ? PAL_VALUES[activity] : null;
-  const palDisplay = palValue !== null ? formatNumber(palValue) : null;
-  const previewBmr = calculateBmrPreview(
-    numericWeight,
-    numericHeight,
-    numericAge,
-    gender
+  useEffect(() => {
+    if (activeTab === "pomiary" || activeTab === "zapotrzebowanie") {
+      void loadPreferences().catch((error) =>
+        console.error("Failed to refresh preferences on tab change:", error)
+      );
+    }
+  }, [activeTab, loadPreferences]);
+
+  const persistedActivity = mapBackendActivityToLocal(
+    persistedPreferences?.activityLevel
   );
-  const previewTdee =
-    previewBmr !== null && palValue !== null
-      ? Math.round(previewBmr * palValue)
+  const persistedActivityOption =
+    persistedActivity !== ""
+      ? ACTIVITY_OPTIONS.find((option) => option.value === persistedActivity)
+      : undefined;
+  const palValue =
+    persistedActivity && persistedActivity !== ""
+      ? PAL_VALUES[persistedActivity]
       : null;
-  const previewMacroGoals = calculateMacroPreview(previewTdee, fitnessGoal);
+  const palDisplay = palValue !== null ? formatNumber(palValue) : null;
+  const calorieTarget = macroGoals.calories ?? calculatedDailyCalories;
+  const rawTdee =
+    palValue !== null && calculatedBMR !== null
+      ? Math.round(calculatedBMR * palValue)
+      : null;
+  const isCalorieTargetAdjusted =
+    rawTdee !== null &&
+    calorieTarget !== null &&
+    calorieTarget !== rawTdee;
+  const isTargetBelowBmr =
+    calorieTarget !== null &&
+    calculatedBMR !== null &&
+    calorieTarget < calculatedBMR;
+  const hasPersistedMeasurements =
+    typeof persistedPreferences?.age === "number" &&
+    typeof persistedPreferences?.weight === "number" &&
+    typeof persistedPreferences?.height === "number" &&
+    !!persistedPreferences?.gender &&
+    !!persistedPreferences?.activityLevel;
 
   const persistProfile = async (message: string) => {
     try {
@@ -311,8 +278,7 @@ export default function UserProfilePage() {
       });
 
       // Po zapisaniu pobierz zaktualizowane obliczenia
-      const prefs = await userMeasurementsService.getPreferences();
-      applyPreferencesFromApi(prefs);
+      await loadPreferences();
 
       alert(message);
     } catch (error) {
@@ -471,27 +437,26 @@ export default function UserProfilePage() {
   );
 
   const renderMacroGoals = () => {
-    const source = previewMacroGoals ?? macroGoals;
     const macroItems = [
       {
         key: "calories",
         label: "Dzienne kalorie",
-        value: source.calories,
+        value: macroGoals.calories,
         unit: "kcal",
       },
       {
         key: "protein",
         label: "Białko",
-        value: source.protein,
+        value: macroGoals.protein,
         unit: "g",
       },
       {
         key: "carbs",
         label: "Węglowodany",
-        value: source.carbs,
+        value: macroGoals.carbs,
         unit: "g",
       },
-      { key: "fat", label: "Tłuszcze", value: source.fat, unit: "g" },
+      { key: "fat", label: "Tłuszcze", value: macroGoals.fat, unit: "g" },
     ];
     const hasMacroData = macroItems.some((item) => item.value !== null);
 
@@ -542,113 +507,141 @@ export default function UserProfilePage() {
     );
   };
 
-  const renderDemandCard = () => (
-    <Paper sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Zapotrzebowanie energetyczne
-      </Typography>
-      <Stack spacing={1.5} sx={{ mb: 3 }}>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => setShowCalculationDetails((prev) => !prev)}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          {showCalculationDetails
-            ? "Ukryj sposób obliczania"
-            : "Sposób obliczania"}
-        </Button>
+  const renderDemandCard = () => {
+    const hasCalculatedValues =
+      calculatedBMR !== null && calculatedDailyCalories !== null;
+    const persistedGender = mapBackendGenderToLocal(
+      persistedPreferences?.gender
+    );
+    const genderOffsetLabel =
+      persistedGender === "female"
+        ? "−161"
+        : persistedGender === "male"
+          ? "+5"
+          : "+5/−161";
+    const activityLabel = persistedActivityOption?.label;
 
-        <Collapse in={showCalculationDetails}>
-          <Stack spacing={1.5}>
-            <Typography variant="body2" color="text.secondary">
-              Podstawowa przemiana materii (BMR, Basal Metabolic Rate) obliczamy
-              ze wzoru Mifflin-St Jeor: BMR = (10×W + 6.25×H − 5×A + S), gdzie W
-              to masa ciała w kilogramach, H wzrost w centymetrach, A wiek w
-              latach, a S to stała zależna od płci (+5 dla mężczyzn, −161 dla
-              kobiet).
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Całkowite dzienne zapotrzebowanie energetyczne (TDEE, Total Daily
-              Energy Expenditure) uwzględnia poziom aktywności fizycznej: TDEE =
-              BMR × PAL, gdzie PAL (Physical Activity Level) to współczynnik
-              aktywności fizycznej w zakresie 1.2–1.9.
-            </Typography>
-            {canCalculate &&
-              (previewBmr !== null || calculatedBMR !== null) && (
+    return (
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Zapotrzebowanie energetyczne
+        </Typography>
+        <Stack spacing={1.5} sx={{ mb: 3 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setShowCalculationDetails((prev) => !prev)}
+            sx={{ alignSelf: "flex-start" }}
+          >
+            {showCalculationDetails
+              ? "Ukryj sposób obliczania"
+              : "Sposób obliczania"}
+          </Button>
+
+          <Collapse in={showCalculationDetails}>
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                Podstawowa przemiana materii (BMR, Basal Metabolic Rate)
+                obliczana jest ze wzoru Mifflin-St Jeor: BMR = (10×W + 6.25×H −
+                5×A + S), gdzie W to masa ciała w kilogramach, H wzrost w
+                centymetrach, A wiek w latach, a S to stała zależna od płci (+5
+                dla mężczyzn, −161 dla kobiet).
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Backend mnoży BMR przez PAL, a następnie dostosowuje kalorie do
+                wybranego celu (redukcja/utrzymanie/masa). Docelowe kalorie mogą
+                więc być niższe od BMR przy redukcji.
+              </Typography>
+              {hasPersistedMeasurements && hasCalculatedValues && (
                 <>
                   <Typography variant="body2" color="text.secondary">
-                    Dla Twoich danych: BMR = (10×{numericWeight} + 6.25×
-                    {numericHeight} − 5×{numericAge} +{" "}
-                    {gender === "male" ? "+5" : "−161"}) ={" "}
-                    {previewBmr ?? calculatedBMR} kcal.
+                    BMR z backendu: {calculatedBMR} kcal.
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    TDEE = BMR × PAL = {previewBmr ?? calculatedBMR} ×{" "}
-                    {palDisplay} = {previewTdee ?? calculatedDailyCalories}{" "}
-                    kcal/dzień.
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Przyjęto: PAL {palDisplay} (
-                    {selectedActivityOption?.label ?? "poziom aktywności"}).
-                  </Typography>
+                  {rawTdee !== null && (
+                    <Typography variant="body2" color="text.secondary">
+                      TDEE (BMR × PAL) przed uwzględnieniem celu: {rawTdee} kcal/dzień.
+                    </Typography>
+                  )}
+                  {calorieTarget !== null && (
+                    <Typography variant="body2" color="text.secondary">
+                      Kalorie zapisane po uwzględnieniu celu: {calorieTarget} kcal/dzień.
+                    </Typography>
+                  )}
+                  {palDisplay && (
+                    <Typography variant="body2" color="text.secondary">
+                      Przyjęty PAL: {palDisplay}
+                      {activityLabel ? ` (${activityLabel})` : ""}
+                    </Typography>
+                  )}
+                  {isTargetBelowBmr && (
+                    <Typography variant="body2" color="warning.main">
+                      Cel kaloryczny jest niższy niż BMR (deficyt z wybranego celu).
+                    </Typography>
+                  )}
                 </>
               )}
-          </Stack>
-        </Collapse>
-      </Stack>
-      {!canCalculate ? (
-        <Alert severity="info">
-          Uzupełnij sekcję „Pomiary", aby zobaczyć wyliczone zapotrzebowanie.
-        </Alert>
-      ) : calculatedBMR === null || calculatedDailyCalories === null ? (
-        <Alert severity="warning">
-          Zapisz pomiary, aby obliczyć zapotrzebowanie energetyczne.
-        </Alert>
-      ) : (
-        <Stack spacing={3}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <Box
-              sx={(theme) => ({
-                flex: 1,
-                p: 2,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`,
-              })}
-            >
-              <Typography variant="subtitle2" color="text.secondary">
-                BMR – Mifflin–St Jeor
-              </Typography>
-              <Typography variant="h4" fontWeight={900}>
-                {previewBmr ?? calculatedBMR ?? "—"} kcal
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                10×W + 6.25×H − 5×A + {gender === "male" ? "+5" : "−161"}
-              </Typography>
-            </Box>
-            <Box
-              sx={(theme) => ({
-                flex: 1,
-                p: 2,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`,
-              })}
-            >
-              <Typography variant="subtitle2" color="text.secondary">
-                TDEE – całkowite zapotrzebowanie
-              </Typography>
-              <Typography variant="h4" fontWeight={900} color="secondary.main">
-                {previewTdee ?? calculatedDailyCalories ?? "—"} kcal
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                PAL {palDisplay} ({selectedActivityOption?.label})
-              </Typography>
-            </Box>
-          </Stack>
+            </Stack>
+          </Collapse>
         </Stack>
-      )}
-    </Paper>
-  );
+        {!hasPersistedMeasurements ? (
+          <Alert severity="info">
+            Uzupełnij sekcję „Pomiary”, aby zobaczyć dane zapisane w bazie.
+          </Alert>
+        ) : !hasCalculatedValues ? (
+          <Alert severity="warning">
+            Zapisz pomiary, aby backend przeliczył zapotrzebowanie energetyczne.
+          </Alert>
+        ) : (
+          <Stack spacing={3}>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <Box
+                sx={(theme) => ({
+                  flex: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                })}
+              >
+                <Typography variant="subtitle2" color="text.secondary">
+                  BMR – Mifflin–St Jeor
+                </Typography>
+                <Typography variant="h4" fontWeight={900}>
+                  {calculatedBMR ?? "—"} kcal
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  10×W + 6.25×H − 5×A + {genderOffsetLabel}
+                </Typography>
+              </Box>
+              <Box
+                sx={(theme) => ({
+                  flex: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                })}
+              >
+                <Typography variant="subtitle2" color="text.secondary">
+                  Kalorie po uwzględnieniu celu
+                </Typography>
+                <Typography variant="h4" fontWeight={900} color="secondary.main">
+                  {calorieTarget ?? "—"} kcal
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isCalorieTargetAdjusted && rawTdee !== null
+                    ? `TDEE przed celem: ${rawTdee} kcal`
+                    : palDisplay
+                      ? `PAL ${palDisplay}${
+                          activityLabel ? ` (${activityLabel})` : ""
+                        }`
+                      : activityLabel ?? "Poziom aktywności z profilu"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Stack>
+        )}
+      </Paper>
+    );
+  };
 
   const renderAllergens = () => (
     <Paper sx={{ p: 3 }}>

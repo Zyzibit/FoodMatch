@@ -386,30 +386,25 @@ export default function PlanPage() {
           return;
         }
 
-        const selectGoalValue = (
-          value?: number | null,
-          fallback?: number
-        ): number => {
-          if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-            return Math.round(value);
-          }
-          return fallback ?? 0;
-        };
+        const normalizeGoal = (value?: number | null, fallback?: number): number =>
+          typeof value === "number" && Number.isFinite(value)
+            ? value
+            : fallback ?? 0;
 
         const nextTargets: MacroTargets = {
-          calories: selectGoalValue(
+          calories: normalizeGoal(
             prefs.dailyCalorieGoal ?? prefs.calculatedDailyCalories,
             DEFAULT_MACRO_TARGETS.calories
           ),
-          protein: selectGoalValue(
+          protein: normalizeGoal(
             prefs.dailyProteinGoal,
             DEFAULT_MACRO_TARGETS.protein
           ),
-          fat: selectGoalValue(
+          fat: normalizeGoal(
             prefs.dailyFatGoal,
             DEFAULT_MACRO_TARGETS.fat
           ),
-          carbs: selectGoalValue(
+          carbs: normalizeGoal(
             prefs.dailyCarbohydrateGoal,
             DEFAULT_MACRO_TARGETS.carbs
           ),

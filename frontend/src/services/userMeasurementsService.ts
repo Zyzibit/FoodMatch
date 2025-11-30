@@ -82,13 +82,17 @@ class UserMeasurementsService {
   }
 
   async getPreferences(): Promise<FoodPreferencesResponse> {
-    const response = await fetch(`${this.baseUrl}/users/preferences`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${this.baseUrl}/users/preferences?t=${Date.now()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        credentials: "include",
+      }
+    );
 
     if (!response.ok) {
       const error = await response
