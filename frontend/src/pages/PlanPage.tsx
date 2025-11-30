@@ -19,6 +19,7 @@ import {
   type MealPlanDto,
 } from "../services/mealPlanService";
 import { getAllUnits } from "../services/unitService";
+import userMeasurementsService from "../services/userMeasurementsService";
 
 const parseDateKey = (key?: string) => {
   if (!key?.startsWith("date-")) return null;
@@ -46,16 +47,33 @@ const englishToPolishMealName: Record<string, string> = {
   Dinner: "Kolacja",
 };
 
-const buildEmptyPlan = (isoDate: string): MealPlanDay => ({
+type MacroTargets = {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+};
+
+const DEFAULT_MACRO_TARGETS: MacroTargets = {
+  calories: 2000,
+  protein: 120,
+  fat: 70,
+  carbs: 260,
+};
+
+const buildEmptyPlan = (
+  isoDate: string,
+  targets: MacroTargets
+): MealPlanDay => ({
   date: isoDate,
   consumedCalories: 0,
-  targetCalories: 0,
+  targetCalories: roundStat(targets.calories),
   summary: {
-    calorieTarget: 2000,
+    calorieTarget: roundStat(targets.calories),
     macros: {
-      protein: { target: 120, value: 0 },
-      fat: { target: 70, value: 0 },
-      carbs: { target: 260, value: 0 },
+      protein: { target: roundStat(targets.protein), value: 0 },
+      fat: { target: roundStat(targets.fat), value: 0 },
+      carbs: { target: roundStat(targets.carbs), value: 0 },
     },
   },
   meals: defaultMealSlots.map((slot) => ({
@@ -143,6 +161,36 @@ const defaultSlotLookup = defaultMealSlots.reduce<
 const slotOrder = defaultMealSlots.map((slot) => slot.label);
 
 const roundStat = (value: number) => Math.round(Number(value) || 0);
+
+const withUpdatedSummary = (
+  plan: MealPlanDay,
+  targets: MacroTargets
+): MealPlanDay => {
+  const totals = plan.meals.reduce(
+    (acc, meal) => {
+      acc.calories += roundStat(meal.calories || 0);
+      acc.protein += roundStat(meal.macros?.protein || 0);
+      acc.fat += roundStat(meal.macros?.fat || 0);
+      acc.carbs += roundStat(meal.macros?.carbs || 0);
+      return acc;
+    },
+    { calories: 0, protein: 0, fat: 0, carbs: 0 }
+  );
+
+  return {
+    ...plan,
+    consumedCalories: totals.calories,
+    targetCalories: roundStat(targets.calories),
+    summary: {
+      calorieTarget: roundStat(targets.calories),
+      macros: {
+        protein: { target: roundStat(targets.protein), value: totals.protein },
+        fat: { target: roundStat(targets.fat), value: totals.fat },
+        carbs: { target: roundStat(targets.carbs), value: totals.carbs },
+      },
+    },
+  };
+};
 
 const mergeMealPlansFromApi = (
   basePlan: MealPlanDay,
@@ -249,13 +297,14 @@ export default function PlanPage() {
   );
 
   const [plan, setPlan] = useState<MealPlanDay>(() =>
-    buildEmptyPlan(selectedDate)
+    buildEmptyPlan(selectedDate, DEFAULT_MACRO_TARGETS)
   );
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null);
   const [mealForModal, setMealForModal] = useState<PlanMeal | null>(null);
   const [isPlanLoading, setIsPlanLoading] = useState(false);
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const unitNameCacheRef = useRef<Record<number, string>>({});
+  const macroTargetsRef = useRef<MacroTargets>(DEFAULT_MACRO_TARGETS);
 
   const convertIngredientsToProducts = useCallback(
     (ingredients: IngredientForDisplay[]) =>
@@ -292,7 +341,7 @@ export default function PlanPage() {
     let isCancelled = false;
 
     const loadPlan = async () => {
-      const emptyPlan = buildEmptyPlan(selectedDate);
+      const emptyPlan = buildEmptyPlan(selectedDate, macroTargetsRef.current);
       setPlan(emptyPlan);
       setPlanLoadError(null);
       setIsPlanLoading(true);
@@ -303,7 +352,7 @@ export default function PlanPage() {
           return;
         }
         const mergedPlan = mergeMealPlansFromApi(emptyPlan, apiMeals);
-        setPlan(mergedPlan);
+        setPlan(withUpdatedSummary(mergedPlan, macroTargetsRef.current));
       } catch (error) {
         if (isCancelled) {
           return;
@@ -326,6 +375,59 @@ export default function PlanPage() {
       isCancelled = true;
     };
   }, [selectedDate]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadNutritionTargets = async () => {
+      try {
+        const prefs = await userMeasurementsService.getPreferences();
+        if (isCancelled) {
+          return;
+        }
+
+        const selectGoalValue = (
+          value?: number | null,
+          fallback?: number
+        ): number => {
+          if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return Math.round(value);
+          }
+          return fallback ?? 0;
+        };
+
+        const nextTargets: MacroTargets = {
+          calories: selectGoalValue(
+            prefs.dailyCalorieGoal ?? prefs.calculatedDailyCalories,
+            DEFAULT_MACRO_TARGETS.calories
+          ),
+          protein: selectGoalValue(
+            prefs.dailyProteinGoal,
+            DEFAULT_MACRO_TARGETS.protein
+          ),
+          fat: selectGoalValue(
+            prefs.dailyFatGoal,
+            DEFAULT_MACRO_TARGETS.fat
+          ),
+          carbs: selectGoalValue(
+            prefs.dailyCarbohydrateGoal,
+            DEFAULT_MACRO_TARGETS.carbs
+          ),
+        };
+
+        macroTargetsRef.current = nextTargets;
+        setPlan((prev) => withUpdatedSummary(prev, nextTargets));
+      } catch (error) {
+        console.error("Nie udało się obliczyć makr użytkownika", error);
+      }
+    };
+
+    void loadNutritionTargets();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     setExpandedMealId(null);
@@ -395,9 +497,8 @@ export default function PlanPage() {
 
   const handleRecipeAddedToPlan = (payload: RecipeAddedPayload) => {
     const products = convertIngredientsToProducts(payload.recipe.ingredients);
-    setPlan((prev) => ({
-      ...prev,
-      meals: prev.meals.map((planMeal) => {
+    setPlan((prev) => {
+      const updatedMeals = prev.meals.map((planMeal) => {
         if (planMeal.id !== payload.meal.id) {
           return planMeal;
         }
@@ -420,8 +521,16 @@ export default function PlanPage() {
           mealPlanId: payload.mealPlanId,
           recipeId: payload.recipeId,
         };
-      }),
-    }));
+      });
+
+      return withUpdatedSummary(
+        {
+          ...prev,
+          meals: updatedMeals,
+        },
+        macroTargetsRef.current
+      );
+    });
     setMealForModal(null);
   };
 

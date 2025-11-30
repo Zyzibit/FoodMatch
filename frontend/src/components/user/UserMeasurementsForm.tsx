@@ -8,7 +8,7 @@ import {
   ActivityLevelField,
   GoalField,
   type ActivityLevel,
-  type Goal,
+  type FitnessGoal,
 } from "../inputs";
 
 export interface UserMeasurementsFormData {
@@ -17,7 +17,7 @@ export interface UserMeasurementsFormData {
   weight: number | "";
   height: number | "";
   activityLevel: ActivityLevel;
-  goal?: Goal;
+  fitnessGoal?: FitnessGoal;
 }
 
 interface UserMeasurementsFormProps {
@@ -43,7 +43,7 @@ export function UserMeasurementsForm({
     weight: initialData?.weight ?? "",
     height: initialData?.height ?? "",
     activityLevel: initialData?.activityLevel ?? "ModeratelyActive",
-    goal: initialData?.goal ?? "maintain",
+    fitnessGoal: initialData?.fitnessGoal ?? "Maintenance",
   });
 
   const updateField = <K extends keyof UserMeasurementsFormData>(
@@ -140,9 +140,10 @@ export function UserMeasurementsForm({
 
       {showGoal && (
         <GoalField
-          value={formData.goal ?? "maintain"}
-          onChange={(value) => updateField("goal", value)}
+          value={formData.fitnessGoal ?? "Maintenance"}
+          onChange={(value) => updateField("fitnessGoal", value)}
           disabled={disabled}
+          showDetails
         />
       )}
     </Stack>
@@ -180,8 +181,8 @@ export function validateMeasurements(
   if (!data.activityLevel) {
     return "Wybierz poziom aktywności";
   }
-  if (requireGoal && !data.goal) {
-    return "Wybierz swój cel żywieniowy";
+  if (requireGoal && !data.fitnessGoal) {
+    return "Wybierz swój cel fitness";
   }
   return null;
 }

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Collapse,
   FormControl,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Paper,
@@ -14,7 +15,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useDashboardContext } from "../layouts/DashboardLayout";
-import userMeasurementsService from "../services/userMeasurementsService";
+import userMeasurementsService, {
+  type FoodPreferencesResponse,
+} from "../services/userMeasurementsService";
+import {
+  FITNESS_GOAL_OPTIONS,
+  type FitnessGoal,
+} from "../constants/fitnessGoals";
 
 const ACTIVITY_LEVEL_VALUES = [
   "very_low",
@@ -81,6 +88,98 @@ const formatNumber = (value: number) => {
   return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
 };
 
+const GOAL_MACRO_RATIOS: Record<
+  FitnessGoal | "Maintenance",
+  { proteinRatio: number; fatRatio: number; carbRatio: number }
+> = {
+  WeightLoss: { proteinRatio: 0.35, fatRatio: 0.25, carbRatio: 0.4 },
+  Maintenance: { proteinRatio: 0.3, fatRatio: 0.3, carbRatio: 0.4 },
+  WeightGain: { proteinRatio: 0.25, fatRatio: 0.25, carbRatio: 0.5 },
+};
+
+const calculateBmrPreview = (
+  weight: number | null,
+  height: number | null,
+  age: number | null,
+  gender: Gender | ""
+) => {
+  if (
+    weight === null ||
+    height === null ||
+    age === null ||
+    gender === ""
+  ) {
+    return null;
+  }
+  const genderAdjustment = gender === "male" ? 5 : -161;
+  return Math.round(10 * weight + 6.25 * height - 5 * age + genderAdjustment);
+};
+
+const calculateMacroPreview = (
+  calories: number | null,
+  goal: FitnessGoal
+) => {
+  if (calories === null) {
+    return null;
+  }
+  const config = GOAL_MACRO_RATIOS[goal] ?? GOAL_MACRO_RATIOS.Maintenance;
+  const protein = Math.round((calories * config.proteinRatio) / 4);
+  const fat = Math.round((calories * config.fatRatio) / 9);
+  const carbs = Math.max(
+    0,
+    Math.round((calories * config.carbRatio) / 4)
+  );
+  return { calories, protein, fat, carbs };
+};
+
+const backendActivityToLocalMap: Record<string, ActivityLevel> = {
+  Sedentary: "very_low",
+  LightlyActive: "low",
+  ModeratelyActive: "medium",
+  VeryActive: "high",
+  ExtraActive: "very_high",
+};
+
+const mapBackendActivityToLocal = (
+  backendActivity?: string
+): ActivityLevel => backendActivityToLocalMap[backendActivity || ""] || "medium";
+
+const mapBackendGenderToLocal = (backendGender?: string): Gender => {
+  if (backendGender === "Male") return "male";
+  if (backendGender === "Female") return "female";
+  return "male";
+};
+
+const mapLocalActivityToBackend = (
+  localActivity: ActivityLevel | ""
+): string => {
+  const activityMap: Record<ActivityLevel, string> = {
+    very_low: "Sedentary",
+    low: "LightlyActive",
+    medium: "ModeratelyActive",
+    high: "VeryActive",
+    very_high: "ExtraActive",
+  };
+  return localActivity ? activityMap[localActivity] : "ModeratelyActive";
+};
+
+const mapLocalGenderToBackend = (localGender: Gender | ""): string => {
+  if (localGender === "male") return "Male";
+  if (localGender === "female") return "Female";
+  return "Male";
+};
+
+const isFitnessGoalValue = (value?: string): value is FitnessGoal =>
+  !!value &&
+  FITNESS_GOAL_OPTIONS.some((goalOption) => goalOption.value === value);
+
+const selectGoalValue = (value?: number | null): number | null => {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.round(value);
+  }
+  return null;
+};
+
 export default function UserProfilePage() {
   const { activeTab } = useDashboardContext();
   const [age, setAge] = useState<number | "">("");
@@ -88,13 +187,25 @@ export default function UserProfilePage() {
   const [height, setHeight] = useState<number | "">("");
   const [activity, setActivity] = useState<ActivityLevel | "">("");
   const [gender, setGender] = useState<Gender | "">("");
+  const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal>(
+    "Maintenance"
+  );
   const [showCalculationDetails, setShowCalculationDetails] = useState(false);
-
-  // Dane z backendu
   const [calculatedBMR, setCalculatedBMR] = useState<number | null>(null);
   const [calculatedDailyCalories, setCalculatedDailyCalories] = useState<
     number | null
   >(null);
+  const [macroGoals, setMacroGoals] = useState<{
+    calories: number | null;
+    protein: number | null;
+    fat: number | null;
+    carbs: number | null;
+  }>({
+    calories: null,
+    protein: null,
+    fat: null,
+    carbs: null,
+  });
 
   const isAgeValid =
     age === "" || (age >= AGE_RANGE.min && age <= AGE_RANGE.max);
@@ -119,50 +230,51 @@ export default function UserProfilePage() {
     activity !== "" &&
     !hasValidationError;
 
-  // Mapowanie ActivityLevel z backendu do lokalnego typu
-  const mapBackendActivityToLocal = (
-    backendActivity?: string
-  ): ActivityLevel => {
-    const activityMap: Record<string, ActivityLevel> = {
-      Sedentary: "very_low",
-      LightlyActive: "low",
-      ModeratelyActive: "medium",
-      VeryActive: "high",
-      ExtraActive: "very_high",
-    };
-    return activityMap[backendActivity || ""] || "medium";
-  };
+  const applyPreferencesFromApi = useCallback(
+    (prefs: FoodPreferencesResponse) => {
+      if (typeof prefs.age === "number") setAge(prefs.age);
+      if (typeof prefs.weight === "number") setWeight(prefs.weight);
+      if (typeof prefs.height === "number") setHeight(prefs.height);
+      if (prefs.gender) setGender(mapBackendGenderToLocal(prefs.gender));
+      if (prefs.activityLevel)
+        setActivity(mapBackendActivityToLocal(prefs.activityLevel));
+      if (isFitnessGoalValue(prefs.fitnessGoal)) {
+        setFitnessGoal(prefs.fitnessGoal);
+      }
+      setCalculatedBMR(
+        typeof prefs.calculatedBMR === "number" ? prefs.calculatedBMR : null
+      );
+      setCalculatedDailyCalories(
+        typeof prefs.calculatedDailyCalories === "number"
+          ? prefs.calculatedDailyCalories
+          : null
+      );
 
-  // Mapowanie Gender z backendu do lokalnego typu
-  const mapBackendGenderToLocal = (backendGender?: string): Gender => {
-    if (backendGender === "Male") return "male";
-    if (backendGender === "Female") return "female";
-    return "male";
-  };
+      setMacroGoals({
+        calories:
+          selectGoalValue(prefs.dailyCalorieGoal) ??
+          selectGoalValue(prefs.calculatedDailyCalories),
+        protein: selectGoalValue(prefs.dailyProteinGoal),
+        fat: selectGoalValue(prefs.dailyFatGoal),
+        carbs: selectGoalValue(prefs.dailyCarbohydrateGoal),
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     // Załaduj dane z API
     const loadFromApi = async () => {
       try {
         const prefs = await userMeasurementsService.getPreferences();
-        if (prefs.age) setAge(prefs.age);
-        if (prefs.weight) setWeight(prefs.weight);
-        if (prefs.height) setHeight(prefs.height);
-        if (prefs.gender) setGender(mapBackendGenderToLocal(prefs.gender));
-        if (prefs.activityLevel)
-          setActivity(mapBackendActivityToLocal(prefs.activityLevel));
-
-        // Ustaw obliczone wartości z backendu
-        if (prefs.calculatedBMR) setCalculatedBMR(prefs.calculatedBMR);
-        if (prefs.calculatedDailyCalories)
-          setCalculatedDailyCalories(prefs.calculatedDailyCalories);
+        applyPreferencesFromApi(prefs);
       } catch (error) {
         console.error("Failed to load preferences from API:", error);
       }
     };
 
     loadFromApi();
-  }, []);
+  }, [applyPreferencesFromApi]);
 
   const selectedActivityOption =
     activity !== ""
@@ -171,27 +283,17 @@ export default function UserProfilePage() {
 
   const palValue = activity !== "" ? PAL_VALUES[activity] : null;
   const palDisplay = palValue !== null ? formatNumber(palValue) : null;
-
-  // Mapowanie lokalnego ActivityLevel do formatu backendu
-  const mapLocalActivityToBackend = (
-    localActivity: ActivityLevel | ""
-  ): string => {
-    const activityMap: Record<ActivityLevel, string> = {
-      very_low: "Sedentary",
-      low: "LightlyActive",
-      medium: "ModeratelyActive",
-      high: "VeryActive",
-      very_high: "ExtraActive",
-    };
-    return localActivity ? activityMap[localActivity] : "ModeratelyActive";
-  };
-
-  // Mapowanie lokalnego Gender do formatu backendu
-  const mapLocalGenderToBackend = (localGender: Gender | ""): string => {
-    if (localGender === "male") return "Male";
-    if (localGender === "female") return "Female";
-    return "Male";
-  };
+  const previewBmr = calculateBmrPreview(
+    numericWeight,
+    numericHeight,
+    numericAge,
+    gender
+  );
+  const previewTdee =
+    previewBmr !== null && palValue !== null
+      ? Math.round(previewBmr * palValue)
+      : null;
+  const previewMacroGoals = calculateMacroPreview(previewTdee, fitnessGoal);
 
   const persistProfile = async (message: string) => {
     try {
@@ -205,13 +307,12 @@ export default function UserProfilePage() {
         activityLevel: activity
           ? (mapLocalActivityToBackend(activity) as any)
           : undefined,
+        fitnessGoal,
       });
 
       // Po zapisaniu pobierz zaktualizowane obliczenia
       const prefs = await userMeasurementsService.getPreferences();
-      if (prefs.calculatedBMR) setCalculatedBMR(prefs.calculatedBMR);
-      if (prefs.calculatedDailyCalories)
-        setCalculatedDailyCalories(prefs.calculatedDailyCalories);
+      applyPreferencesFromApi(prefs);
 
       alert(message);
     } catch (error) {
@@ -327,6 +428,34 @@ export default function UserProfilePage() {
             ))}
           </Select>
         </FormControl>
+
+        <FormControl>
+          <InputLabel id="fitness-goal-label">Cel fitness</InputLabel>
+          <Select
+            labelId="fitness-goal-label"
+            label="Cel fitness"
+            value={fitnessGoal}
+            onChange={(e) => setFitnessGoal(e.target.value as FitnessGoal)}
+          >
+            {FITNESS_GOAL_OPTIONS.map(
+              ({ value, label, description, adjustmentNote }) => (
+                <MenuItem key={value} value={value}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {label}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {description} · {adjustmentNote}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )
+            )}
+          </Select>
+          <FormHelperText>
+            Wybierz cel, aby przeliczyć kalorie i makroskładniki.
+          </FormHelperText>
+        </FormControl>
       </Box>
 
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
@@ -340,6 +469,78 @@ export default function UserProfilePage() {
       </Box>
     </Paper>
   );
+
+  const renderMacroGoals = () => {
+    const source = previewMacroGoals ?? macroGoals;
+    const macroItems = [
+      {
+        key: "calories",
+        label: "Dzienne kalorie",
+        value: source.calories,
+        unit: "kcal",
+      },
+      {
+        key: "protein",
+        label: "Białko",
+        value: source.protein,
+        unit: "g",
+      },
+      {
+        key: "carbs",
+        label: "Węglowodany",
+        value: source.carbs,
+        unit: "g",
+      },
+      { key: "fat", label: "Tłuszcze", value: source.fat, unit: "g" },
+    ];
+    const hasMacroData = macroItems.some((item) => item.value !== null);
+
+    return (
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Dzienne makroskładniki
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Wartości pochodzą z Twojego celu fitness i posłużą do planowania posiłków.
+        </Typography>
+        {hasMacroData ? (
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: { sm: "repeat(2, minmax(0, 1fr))", xs: "1fr" },
+            }}
+          >
+            {macroItems.map((item) => (
+              <Box
+                key={item.key}
+                sx={(theme) => ({
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 2,
+                  p: 2,
+                })}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {item.label}
+                </Typography>
+                <Typography
+                  variant="h5"
+                  fontWeight={700}
+                  color={item.value !== null ? "text.primary" : "text.disabled"}
+                >
+                  {item.value !== null ? `${item.value} ${item.unit}` : "—"}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Alert severity="info">
+            Zapisz pomiary i wybierz cel fitness, aby zobaczyć wyliczone wartości makro.
+          </Alert>
+        )}
+      </Paper>
+    );
+  };
 
   const renderDemandCard = () => (
     <Paper sx={{ p: 3 }}>
@@ -374,17 +575,18 @@ export default function UserProfilePage() {
               aktywności fizycznej w zakresie 1.2–1.9.
             </Typography>
             {canCalculate &&
-              calculatedBMR !== null &&
-              calculatedDailyCalories !== null && (
+              (previewBmr !== null || calculatedBMR !== null) && (
                 <>
                   <Typography variant="body2" color="text.secondary">
                     Dla Twoich danych: BMR = (10×{numericWeight} + 6.25×
                     {numericHeight} − 5×{numericAge} +{" "}
-                    {gender === "male" ? "+5" : "−161"}) = {calculatedBMR} kcal.
+                    {gender === "male" ? "+5" : "−161"}) ={" "}
+                    {previewBmr ?? calculatedBMR} kcal.
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    TDEE = BMR × PAL = {calculatedBMR} × {palDisplay} ={" "}
-                    {calculatedDailyCalories} kcal/dzień.
+                    TDEE = BMR × PAL = {previewBmr ?? calculatedBMR} ×{" "}
+                    {palDisplay} = {previewTdee ?? calculatedDailyCalories}{" "}
+                    kcal/dzień.
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Przyjęto: PAL {palDisplay} (
@@ -418,7 +620,7 @@ export default function UserProfilePage() {
                 BMR – Mifflin–St Jeor
               </Typography>
               <Typography variant="h4" fontWeight={900}>
-                {calculatedBMR} kcal
+                {previewBmr ?? calculatedBMR ?? "—"} kcal
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 10×W + 6.25×H − 5×A + {gender === "male" ? "+5" : "−161"}
@@ -436,7 +638,7 @@ export default function UserProfilePage() {
                 TDEE – całkowite zapotrzebowanie
               </Typography>
               <Typography variant="h4" fontWeight={900} color="secondary.main">
-                {calculatedDailyCalories} kcal
+                {previewTdee ?? calculatedDailyCalories ?? "—"} kcal
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 PAL {palDisplay} ({selectedActivityOption?.label})
@@ -463,7 +665,12 @@ export default function UserProfilePage() {
   return (
     <Box sx={{ p: 2, width: "100%" }}>
       <Stack spacing={3} sx={{ width: "100%" }}>
-        {(activeTab === "pomiary" || !activeTab) && renderMeasurements()}
+        {(activeTab === "pomiary" || !activeTab) && (
+          <>
+            {renderMeasurements()}
+            {renderMacroGoals()}
+          </>
+        )}
         {activeTab === "zapotrzebowanie" && renderDemandCard()}
         {activeTab === "alergeny" && renderAllergens()}
       </Stack>

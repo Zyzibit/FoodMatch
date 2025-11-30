@@ -6,4 +6,4 @@ export { ActivityLevelField, ACTIVITY_OPTIONS } from "./ActivityLevelField";
 export { GoalField, GOAL_OPTIONS } from "./GoalField";
 
 export type { ActivityLevel } from "./ActivityLevelField";
-export type { Goal } from "./GoalField";
+export type { FitnessGoal } from "./GoalField";

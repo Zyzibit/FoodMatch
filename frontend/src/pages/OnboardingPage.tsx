@@ -19,6 +19,7 @@ export default function OnboardingPage() {
     weight: "",
     height: "",
     activityLevel: "ModeratelyActive",
+    fitnessGoal: "Maintenance",
   });
 
   // Sprawdź czy użytkownik już ma zapisane pomiary
@@ -48,7 +49,7 @@ export default function OnboardingPage() {
     async (event: React.FormEvent) => {
       event.preventDefault();
 
-      const validationError = validateMeasurements(formData, false);
+      const validationError = validateMeasurements(formData, true);
       if (validationError) {
         setError(validationError);
         return;
@@ -64,7 +65,7 @@ export default function OnboardingPage() {
           weight: formData.weight as number,
           height: formData.height as number,
           activityLevel: formData.activityLevel,
-          // Note: "goal" nie jest wysyłane do backendu - może być użyte później do kalkulacji celów dziennych
+          fitnessGoal: formData.fitnessGoal,
         });
 
         // Po zapisaniu pomiarów przekieruj do dashboardu
@@ -111,7 +112,7 @@ export default function OnboardingPage() {
                 initialData={formData}
                 onChange={handleFormChange}
                 disabled={isLoading}
-                showGoal={false}
+                showGoal
                 error={error}
                 onErrorClose={() => setError(null)}
               />

@@ -867,26 +867,6 @@ namespace inzynierka.Migrations
                             b1.Property<string>("Allergies")
                                 .HasColumnType("text");
 
-                            b1.Property<int>("BreakfastCaloriePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(30);
-
-                            b1.Property<int>("BreakfastCarbohydratePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(30);
-
-                            b1.Property<int>("BreakfastFatPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(30);
-
-                            b1.Property<int>("BreakfastProteinPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(25);
-
                             b1.Property<int>("DailyCalorieGoal")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer")
@@ -907,25 +887,8 @@ namespace inzynierka.Migrations
                                 .HasColumnType("integer")
                                 .HasDefaultValue(0);
 
-                            b1.Property<int>("DinnerCaloriePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(25);
-
-                            b1.Property<int>("DinnerCarbohydratePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(25);
-
-                            b1.Property<int>("DinnerFatPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(25);
-
-                            b1.Property<int>("DinnerProteinPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(35);
+                            b1.Property<string>("FitnessGoal")
+                                .HasColumnType("text");
 
                             b1.Property<string>("Gender")
                                 .HasColumnType("text");
@@ -954,46 +917,6 @@ namespace inzynierka.Migrations
                                 .HasColumnType("boolean")
                                 .HasDefaultValue(false);
 
-                            b1.Property<int>("LunchCaloriePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(40);
-
-                            b1.Property<int>("LunchCarbohydratePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(40);
-
-                            b1.Property<int>("LunchFatPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(40);
-
-                            b1.Property<int>("LunchProteinPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(35);
-
-                            b1.Property<int>("SnackCaloriePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(5);
-
-                            b1.Property<int>("SnackCarbohydratePercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(5);
-
-                            b1.Property<int>("SnackFatPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(5);
-
-                            b1.Property<int>("SnackProteinPercentage")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer")
-                                .HasDefaultValue(5);
-
                             b1.Property<decimal?>("Weight")
                                 .HasPrecision(5, 2)
                                 .HasColumnType("numeric(5,2)");
@@ -1004,6 +927,150 @@ namespace inzynierka.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");
+
+                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Breakfast", b2 =>
+                                {
+                                    b2.Property<string>("FoodPreferencesUserId")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("CaloriePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(30);
+
+                                    b2.Property<int>("CarbohydratePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(30);
+
+                                    b2.Property<int>("FatPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(30);
+
+                                    b2.Property<int>("ProteinPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(25);
+
+                                    b2.HasKey("FoodPreferencesUserId");
+
+                                    b2.ToTable("AspNetUsers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FoodPreferencesUserId");
+                                });
+
+                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Dinner", b2 =>
+                                {
+                                    b2.Property<string>("FoodPreferencesUserId")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("CaloriePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(25);
+
+                                    b2.Property<int>("CarbohydratePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(25);
+
+                                    b2.Property<int>("FatPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(25);
+
+                                    b2.Property<int>("ProteinPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(35);
+
+                                    b2.HasKey("FoodPreferencesUserId");
+
+                                    b2.ToTable("AspNetUsers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FoodPreferencesUserId");
+                                });
+
+                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Lunch", b2 =>
+                                {
+                                    b2.Property<string>("FoodPreferencesUserId")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("CaloriePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("CarbohydratePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("FatPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("ProteinPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(35);
+
+                                    b2.HasKey("FoodPreferencesUserId");
+
+                                    b2.ToTable("AspNetUsers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FoodPreferencesUserId");
+                                });
+
+                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Snack", b2 =>
+                                {
+                                    b2.Property<string>("FoodPreferencesUserId")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("CaloriePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(5);
+
+                                    b2.Property<int>("CarbohydratePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(5);
+
+                                    b2.Property<int>("FatPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(5);
+
+                                    b2.Property<int>("ProteinPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(5);
+
+                                    b2.HasKey("FoodPreferencesUserId");
+
+                                    b2.ToTable("AspNetUsers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FoodPreferencesUserId");
+                                });
+
+                            b1.Navigation("Breakfast")
+                                .IsRequired();
+
+                            b1.Navigation("Dinner")
+                                .IsRequired();
+
+                            b1.Navigation("Lunch")
+                                .IsRequired();
+
+                            b1.Navigation("Snack")
+                                .IsRequired();
                         });
 
                     b.Navigation("FoodPreferences")

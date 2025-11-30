@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../config";
+import type { FitnessGoal } from "../constants/fitnessGoals";
 
 export interface UpdateFoodPreferencesRequest {
   age?: number;
@@ -11,6 +12,7 @@ export interface UpdateFoodPreferencesRequest {
     | "ModeratelyActive"
     | "VeryActive"
     | "ExtraActive";
+  fitnessGoal?: FitnessGoal;
 
   // Opcjonalne preferencje żywieniowe
   isVegan?: boolean;
@@ -32,6 +34,7 @@ export interface FoodPreferencesResponse {
   weight?: number;
   height?: number;
   activityLevel?: string;
+  fitnessGoal?: FitnessGoal;
 
   isVegan?: boolean;
   isVegetarian?: boolean;

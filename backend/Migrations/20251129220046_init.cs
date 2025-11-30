@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace inzynierka.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRecipesTable : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,26 +58,27 @@ namespace inzynierka.Migrations
                     FoodPreferences_Weight = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: true),
                     FoodPreferences_Height = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: true),
                     FoodPreferences_ActivityLevel = table.Column<string>(type: "text", nullable: true),
+                    FoodPreferences_FitnessGoal = table.Column<string>(type: "text", nullable: true),
                     FoodPreferences_DailyProteinGoal = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     FoodPreferences_DailyCarbohydrateGoal = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     FoodPreferences_DailyFatGoal = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     FoodPreferences_DailyCalorieGoal = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    FoodPreferences_BreakfastCaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
-                    FoodPreferences_LunchCaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
-                    FoodPreferences_DinnerCaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
-                    FoodPreferences_SnackCaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
-                    FoodPreferences_BreakfastProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
-                    FoodPreferences_LunchProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 35),
-                    FoodPreferences_DinnerProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 35),
-                    FoodPreferences_SnackProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
-                    FoodPreferences_BreakfastCarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
-                    FoodPreferences_LunchCarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
-                    FoodPreferences_DinnerCarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
-                    FoodPreferences_SnackCarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
-                    FoodPreferences_BreakfastFatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
-                    FoodPreferences_LunchFatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
-                    FoodPreferences_DinnerFatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
-                    FoodPreferences_SnackFatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
+                    FoodPreferences_Breakfast_CaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
+                    FoodPreferences_Breakfast_ProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
+                    FoodPreferences_Breakfast_CarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
+                    FoodPreferences_Breakfast_FatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 30),
+                    FoodPreferences_Lunch_CaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
+                    FoodPreferences_Lunch_ProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 35),
+                    FoodPreferences_Lunch_CarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
+                    FoodPreferences_Lunch_FatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 40),
+                    FoodPreferences_Dinner_CaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
+                    FoodPreferences_Dinner_ProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 35),
+                    FoodPreferences_Dinner_CarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
+                    FoodPreferences_Dinner_FatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 25),
+                    FoodPreferences_Snack_CaloriePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
+                    FoodPreferences_Snack_ProteinPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
+                    FoodPreferences_Snack_CarbohydratePercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
+                    FoodPreferences_Snack_FatPercentage = table.Column<int>(type: "integer", nullable: false, defaultValue: 5),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),

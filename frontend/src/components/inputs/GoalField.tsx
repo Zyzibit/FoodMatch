@@ -1,31 +1,18 @@
 import { Box, MenuItem, TextField, Typography } from "@mui/material";
-
-type Goal = "lose" | "maintain" | "gain";
+import {
+  FITNESS_GOAL_OPTIONS,
+  type FitnessGoal,
+  type FitnessGoalOption,
+} from "../../constants/fitnessGoals";
 
 interface GoalFieldProps {
-  value: Goal | "";
-  onChange: (value: Goal) => void;
+  value: FitnessGoal | "";
+  onChange: (value: FitnessGoal) => void;
   disabled?: boolean;
   showDetails?: boolean;
 }
 
-const GOAL_OPTIONS = [
-  {
-    value: "lose" as const,
-    label: "Zrzucić wagę",
-    description: "Redukcja masy ciała",
-  },
-  {
-    value: "maintain" as const,
-    label: "Utrzymać obecną wagę",
-    description: "Bez zmian wagi",
-  },
-  {
-    value: "gain" as const,
-    label: "Przybrać na wadze",
-    description: "Budowa masy / mięśni",
-  },
-];
+const GOAL_OPTIONS: FitnessGoalOption[] = FITNESS_GOAL_OPTIONS;
 
 export function GoalField({
   value,
@@ -34,7 +21,7 @@ export function GoalField({
   showDetails = false,
 }: GoalFieldProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value as Goal);
+    onChange(e.target.value as FitnessGoal);
   };
 
   return (
@@ -48,7 +35,7 @@ export function GoalField({
       disabled={disabled}
       helperText="Co chcesz osiągnąć?"
     >
-      {GOAL_OPTIONS.map(({ value, label, description }) => (
+      {GOAL_OPTIONS.map(({ value, label, description, adjustmentNote }) => (
         <MenuItem key={value} value={value}>
           {showDetails ? (
             <Box>
@@ -56,7 +43,7 @@ export function GoalField({
                 {label}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {description}
+                {description} · {adjustmentNote}
               </Typography>
             </Box>
           ) : (
@@ -69,4 +56,4 @@ export function GoalField({
 }
 
 export { GOAL_OPTIONS };
-export type { Goal };
+export type { FitnessGoal };
