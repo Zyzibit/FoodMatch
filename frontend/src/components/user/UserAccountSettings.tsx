@@ -1,325 +1,328 @@
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Avatar,
+  Alert,
   Box,
   Button,
-  Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-
-const LOCAL_STORAGE_KEY = "user_account_settings";
-
-type StoredSettings = {
-  username: string;
-  avatar?: string | null;
-};
-
-const defaultSettings: StoredSettings = {
-  username: "Jan Kowalski",
-  avatar: null,
-};
-
-const deviceSessions = [
-  {
-    id: "device-1",
-    name: "Chrome · Windows",
-    location: "Warszawa, PL",
-    lastActive: "dzisiaj, 10:24",
-  },
-  {
-    id: "device-2",
-    name: "Safari · iOS",
-    location: "Gdańsk, PL",
-    lastActive: "wczoraj, 21:17",
-  },
-];
-
-const buildPayload = (
-  state: { username: string; avatar: string | null },
-  override?: Partial<StoredSettings>
-): StoredSettings => ({
-  username: override?.username ?? state.username,
-  avatar: override?.avatar ?? state.avatar,
-});
+import authService from "../../services/authService";
+import userService from "../../services/userService";
+import type { UserSession } from "../../types/auth";
+import { useAuth } from "../../contexts/AuthContext";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 export default function UserAccountSettings() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [username, setUsername] = useState(defaultSettings.username);
-  const [avatar, setAvatar] = useState<string | null>(
-    defaultSettings.avatar ?? null
-  );
-  const [passwords, setPasswords] = useState({
-    current: "",
-    next: "",
-    confirm: "",
-  });
-  const avatarInitial = username.trim().slice(0, 1).toUpperCase() || "?";
+  const { user: authUser } = useAuth();
+  const [userName, setUserName] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (!raw) return;
-      const parsed: StoredSettings = JSON.parse(raw);
-      if (parsed.username) setUsername(parsed.username);
-      if (typeof parsed.avatar === "string" || parsed.avatar === null) {
-        setAvatar(parsed.avatar);
+    const loadUserProfile = async () => {
+      try {
+        if (authUser) {
+          setUserName(authUser.username);
+          setNewUserName(authUser.username);
+        }
+      } catch (error) {
+        console.error("Failed to load user profile:", error);
       }
-    } catch (error) {
-      console.warn("Nie udało się wczytać ustawień profilu", error);
-    }
-  }, []);
-
-  const persist = (override?: Partial<StoredSettings>) => {
-    const payload = buildPayload(
-      {
-        username,
-        avatar,
-      },
-      override
-    );
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
-  };
-
-  const handleUsernameSave = () => {
-    const trimmed = username.trim();
-    if (trimmed.length < 3) {
-      alert("Nazwa użytkownika musi mieć co najmniej 3 znaki.");
-      return;
-    }
-    setUsername(trimmed);
-    persist({ username: trimmed });
-    alert("Nazwa użytkownika została zaktualizowana.");
-  };
-
-  const handleAvatarButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("Wybierz plik graficzny (PNG, JPG, WEBP).");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Zdjęcie nie może być większe niż 2 MB.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      setAvatar(result);
-      persist({ avatar: result });
-      alert("Zdjęcie profilowe zostało zapisane lokalnie.");
     };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
 
-  const handleAvatarReset = () => {
-    setAvatar(null);
-    persist({ avatar: null });
-  };
+    const loadSessions = async () => {
+      try {
+        const sessionData = await authService.getSessions();
+        setSessions(sessionData);
+      } catch (error) {
+        console.error("Failed to load sessions:", error);
+        setSessions([]);
+      }
+    };
 
-  const handlePasswordField = (
-    field: keyof typeof passwords,
-    value: string
-  ) => {
-    setPasswords((prev) => ({ ...prev, [field]: value }));
-  };
+    void loadUserProfile();
+    void loadSessions();
+  }, [authUser]);
 
-  const handlePasswordChange = () => {
-    if (!passwords.current || !passwords.next || !passwords.confirm) {
-      alert("Uzupełnij wszystkie pola, aby zmienić hasło.");
+  const handleChangeUserName = async () => {
+    if (!newUserName || newUserName.trim() === "") {
+      alert("Nazwa użytkownika nie może być pusta");
       return;
     }
-    if (passwords.next.length < 8) {
-      alert("Nowe hasło powinno mieć co najmniej 8 znaków.");
-      return;
+
+    try {
+      await userService.updateCurrentUserProfile({ name: newUserName });
+      setUserName(newUserName);
+      alert("Nazwa użytkownika została zmieniona");
+    } catch (error) {
+      console.error("Failed to change username:", error);
+      alert("Błąd podczas zmiany nazwy użytkownika");
     }
-    if (passwords.next !== passwords.confirm) {
-      alert("Nowe hasło i potwierdzenie muszą być takie same.");
-      return;
-    }
-    if (passwords.current === passwords.next) {
-      alert("Nowe hasło musi różnić się od obecnego.");
-      return;
-    }
-    setPasswords({ current: "", next: "", confirm: "" });
-    alert("Hasło zostałoby zmienione po podpięciu backendu.");
   };
 
-  const handleEndSession = (sessionId: string) => {
-    alert(`Zakończono sesję: ${sessionId}. Funkcja zostanie podpięta do API.`);
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      alert("Wszystkie pola hasła muszą być wypełnione");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert("Nowe hasło i potwierdzenie hasła nie są takie same");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert("Nowe hasło musi mieć co najmniej 6 znaków");
+      return;
+    }
+
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      alert("Hasło zostało zmienione pomyślnie. Zostaniesz wylogowany.");
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Failed to change password:", error);
+      alert("Błąd podczas zmiany hasła. Sprawdź aktualne hasło.");
+    }
+  };
+
+  const handleLogoutAllSessions = async () => {
+    try {
+      await authService.revokeAllTokens();
+      alert("Wszystkie sesje zostały wylogowane");
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Failed to logout all sessions:", error);
+      alert("Błąd podczas wylogowywania wszystkich sesji");
+    }
   };
 
   return (
     <Stack spacing={4} sx={{ width: "100%" }}>
       <Box>
         <Typography variant="h5" fontWeight={800} gutterBottom>
-          Profil użytkownika
+          Zarządzanie kontem
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Zarządzaj danymi konta, wyglądem profilu oraz preferencjami
-          bezpieczeństwa. Wszystkie zmiany są zapisywane lokalnie do czasu
-          podpięcia backendu.
+          Zmień nazwę użytkownika, hasło oraz zarządzaj aktywnymi sesjami
         </Typography>
       </Box>
 
-      <Stack spacing={3}>
-        <Box>
-          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-            Zdjęcie i nazwa
-          </Typography>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={3}
-            alignItems={{ sm: "center" }}
-          >
-            <Avatar
-              src={avatar ?? undefined}
-              sx={{ width: 96, height: 96, fontSize: 32 }}
-            >
-              {avatarInitial}
-            </Avatar>
-            <Stack spacing={1} sx={{ flex: 1 }}>
-              <Stack direction="row" spacing={2}>
-                <Button variant="outlined" onClick={handleAvatarButtonClick}>
-                  Zmień zdjęcie
-                </Button>
-                {avatar && (
-                  <Button
-                    variant="text"
-                    color="error"
-                    onClick={handleAvatarReset}
-                  >
-                    Usuń zdjęcie
-                  </Button>
-                )}
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                Obsługujemy pliki PNG, JPG oraz WEBP do 2 MB. Zdjęcie zostanie
-                zapisane lokalnie.
-              </Typography>
-            </Stack>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleAvatarChange}
-            />
-          </Stack>
-        </Box>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          alignItems="flex-start"
-        >
+      {/* Change Username */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Zmiana nazwy użytkownika
+        </Typography>
+        <Stack spacing={2} sx={{ mt: 2 }}>
           <TextField
-            label="Nazwa użytkownika"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            label="Obecna nazwa użytkownika"
+            value={userName}
+            disabled
             fullWidth
           />
-          <Button
-            variant="contained"
-            onClick={handleUsernameSave}
-            sx={{ alignSelf: "stretch" }}
-          >
-            Zapisz nazwę
-          </Button>
+          <TextField
+            label="Nowa nazwa użytkownika"
+            value={newUserName}
+            onChange={(e) => setNewUserName(e.target.value)}
+            fullWidth
+          />
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="contained"
+              onClick={handleChangeUserName}
+              disabled={!newUserName || newUserName === userName}
+            >
+              Zmień nazwę
+            </Button>
+          </Box>
         </Stack>
-      </Stack>
+      </Paper>
 
-      <Divider />
-
-      <Box>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+      {/* Change Password */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
           Zmiana hasła
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Po podpięciu API zweryfikujemy bieżące hasło i ustawimy nowe na
-          serwerze. Na razie formularz demonstruje walidację i zachowany
-          przepływ.
+          Po zmianie hasła zostaniesz automatycznie wylogowany ze wszystkich
+          urządzeń.
         </Typography>
         <Stack spacing={2}>
           <TextField
             label="Aktualne hasło"
             type="password"
-            value={passwords.current}
-            onChange={(e) => handlePasswordField("current", e.target.value)}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
             fullWidth
           />
           <TextField
             label="Nowe hasło"
             type="password"
-            value={passwords.next}
-            onChange={(e) => handlePasswordField("next", e.target.value)}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             fullWidth
           />
           <TextField
-            label="Powtórz nowe hasło"
+            label="Potwierdź nowe hasło"
             type="password"
-            value={passwords.confirm}
-            onChange={(e) => handlePasswordField("confirm", e.target.value)}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
+            error={confirmPassword !== "" && newPassword !== confirmPassword}
+            helperText={
+              confirmPassword !== "" && newPassword !== confirmPassword
+                ? "Hasła nie są takie same"
+                : ""
+            }
           />
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" onClick={handlePasswordChange}>
-              Ustaw nowe hasło
+            <Button
+              variant="contained"
+              onClick={handleChangePassword}
+              disabled={
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                newPassword !== confirmPassword
+              }
+            >
+              Zmień hasło
             </Button>
           </Box>
         </Stack>
-      </Box>
+      </Paper>
 
-      <Divider />
-
-      <Box>
-        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+      {/* Active Sessions */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
           Aktywne sesje
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Monitoruj zalogowane urządzenia. Funkcja kończenia sesji zostanie
-          powiązana z backendem.
+          Lista wszystkich urządzeń, na których jesteś zalogowany.
         </Typography>
-        <Stack spacing={1.5}>
-          {deviceSessions.map((session) => (
-            <Box
-              key={session.id}
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                justifyContent: "space-between",
-                gap: 1,
-                p: 1.5,
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <Box>
-                <Typography fontWeight={600}>{session.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {session.location} · {session.lastActive}
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                color="error"
-                onClick={() => handleEndSession(session.id)}
-                sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
+        {sessions.length === 0 ? (
+          <Alert severity="info">Brak aktywnych sesji</Alert>
+        ) : (
+          <List>
+            {sessions.map((session, index) => (
+              <ListItem
+                key={index}
+                sx={{
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  mb: 1,
+                  bgcolor: session.isCurrent
+                    ? "action.selected"
+                    : "background.paper",
+                }}
               >
-                Wyloguj urządzenie
-              </Button>
-            </Box>
-          ))}
-        </Stack>
-      </Box>
+                <ListItemText
+                  primary={
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="body1">
+                        {session.userAgent || "Nieznane urządzenie"}
+                      </Typography>
+                      {session.isCurrent && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                          }}
+                        >
+                          Bieżąca sesja
+                        </Typography>
+                      )}
+                    </Stack>
+                  }
+                  secondary={
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        IP: {session.ipAddress}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Utworzono:{" "}
+                        {new Date(session.createdAt).toLocaleString("pl-PL")}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Wygasa:{" "}
+                        {new Date(session.expiresAt).toLocaleString("pl-PL")}
+                      </Typography>
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Paper>
+
+      {/* Logout All Sessions */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Zarządzanie sesjami
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Wyloguj się ze wszystkich urządzeń jednocześnie. Będziesz musiał się
+          zalogować ponownie.
+        </Typography>
+        <Button
+          variant="contained"
+          color="error"
+          startIcon={<ExitToAppIcon />}
+          onClick={() => setOpenLogoutDialog(true)}
+        >
+          Wyloguj wszystkie sesje
+        </Button>
+      </Paper>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openLogoutDialog}
+        onClose={() => setOpenLogoutDialog(false)}
+      >
+        <DialogTitle>Wyloguj wszystkie sesje?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Czy na pewno chcesz wylogować się ze wszystkich urządzeń? Ta akcja
+            zakończy wszystkie aktywne sesje i będziesz musiał się zalogować
+            ponownie.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenLogoutDialog(false)}>Anuluj</Button>
+          <Button
+            onClick={() => {
+              setOpenLogoutDialog(false);
+              handleLogoutAllSessions();
+            }}
+            color="error"
+            variant="contained"
+          >
+            Wyloguj wszystkie
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

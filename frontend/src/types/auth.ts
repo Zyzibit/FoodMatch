@@ -33,8 +33,10 @@ export interface UserSession {
   deviceId: string;
   userAgent: string;
   ipAddress: string;
-  lastUsed: string;
-  isCurrentDevice: boolean;
+  createdAt: string;
+  expiresAt: string;
+  isActive: boolean;
+  isCurrent: boolean;
 }
 
 export interface ApiError {

@@ -203,3 +203,43 @@ export const getRecipeById = async (
   const data = await response.json();
   return parseRecipeDetails(data);
 };
+
+export interface RecipeListResult {
+  recipes: RecipeDetails[];
+  totalCount: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
+export const getUserRecipes = async (
+  limit: number = 50,
+  offset: number = 0
+): Promise<RecipeListResult> => {
+  const response = await fetch(
+    `${API_BASE_URL}/recipes/my?limit=${limit}&offset=${offset}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się pobrać przepisów" }));
+    throw new Error(error.message || "Nie udało się pobrać przepisów");
+  }
+
+  const data = await response.json();
+  return {
+    recipes: Array.isArray(data.recipes)
+      ? data.recipes.map(parseRecipeDetails)
+      : [],
+    totalCount: data.totalCount || 0,
+    limit: data.limit || limit,
+    offset: data.offset || offset,
+    hasMore: data.hasMore || false,
+  };
+};

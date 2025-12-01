@@ -17,4 +17,7 @@ export const API_ENDPOINTS = {
   PRODUCTS: {
     SEARCH: "/products/search",
   },
+  USERS: {
+    ME: "/users/me",
+  },
 } as const;

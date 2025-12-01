@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Alert,
   Box,
@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useRef } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import userMeasurementsService, {
   type FoodPreferencesResponse,
@@ -100,7 +99,7 @@ const backendActivityToLocalMap: Record<string, ActivityLevel> = {
 const mapBackendActivityToLocal = (
   backendActivity?: string
 ): ActivityLevel | "" =>
-  backendActivity ? backendActivityToLocalMap[backendActivity] ?? "" : "";
+  backendActivity ? (backendActivityToLocalMap[backendActivity] ?? "") : "";
 
 const mapBackendGenderToLocal = (backendGender?: string): Gender | "" => {
   if (backendGender === "Male") return "male";
@@ -142,9 +141,7 @@ export default function UserProfilePage() {
   const [height, setHeight] = useState<number | "">("");
   const [activity, setActivity] = useState<ActivityLevel | "">("");
   const [gender, setGender] = useState<Gender | "">("");
-  const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal>(
-    "Maintenance"
-  );
+  const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal>("Maintenance");
   const [showCalculationDetails, setShowCalculationDetails] = useState(false);
   const [calculatedBMR, setCalculatedBMR] = useState<number | null>(null);
   const [calculatedDailyCalories, setCalculatedDailyCalories] = useState<
@@ -233,14 +230,10 @@ export default function UserProfilePage() {
   const persistedActivity = mapBackendActivityToLocal(
     persistedPreferences?.activityLevel
   );
-  const persistedActivityOption =
-    persistedActivity !== ""
-      ? ACTIVITY_OPTIONS.find((option) => option.value === persistedActivity)
-      : undefined;
-  const palValue =
-    persistedActivity && persistedActivity !== ""
-      ? PAL_VALUES[persistedActivity]
-      : null;
+  const persistedActivityOption = persistedActivity
+    ? ACTIVITY_OPTIONS.find((option) => option.value === persistedActivity)
+    : undefined;
+  const palValue = persistedActivity ? PAL_VALUES[persistedActivity] : null;
   const palDisplay = palValue !== null ? formatNumber(palValue) : null;
   const calorieTarget = macroGoals.calories ?? calculatedDailyCalories;
   const rawTdee =
@@ -248,9 +241,7 @@ export default function UserProfilePage() {
       ? Math.round(calculatedBMR * palValue)
       : null;
   const isCalorieTargetAdjusted =
-    rawTdee !== null &&
-    calorieTarget !== null &&
-    calorieTarget !== rawTdee;
+    rawTdee !== null && calorieTarget !== null && calorieTarget !== rawTdee;
   const isTargetBelowBmr =
     calorieTarget !== null &&
     calculatedBMR !== null &&
@@ -466,14 +457,18 @@ export default function UserProfilePage() {
           Dzienne makroskładniki
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Wartości pochodzą z Twojego celu fitness i posłużą do planowania posiłków.
+          Wartości pochodzą z Twojego celu fitness i posłużą do planowania
+          posiłków.
         </Typography>
         {hasMacroData ? (
           <Box
             sx={{
               display: "grid",
               gap: 2,
-              gridTemplateColumns: { sm: "repeat(2, minmax(0, 1fr))", xs: "1fr" },
+              gridTemplateColumns: {
+                sm: "repeat(2, minmax(0, 1fr))",
+                xs: "1fr",
+              },
             }}
           >
             {macroItems.map((item) => (
@@ -500,7 +495,8 @@ export default function UserProfilePage() {
           </Box>
         ) : (
           <Alert severity="info">
-            Zapisz pomiary i wybierz cel fitness, aby zobaczyć wyliczone wartości makro.
+            Zapisz pomiary i wybierz cel fitness, aby zobaczyć wyliczone
+            wartości makro.
           </Alert>
         )}
       </Paper>
@@ -559,12 +555,14 @@ export default function UserProfilePage() {
                   </Typography>
                   {rawTdee !== null && (
                     <Typography variant="body2" color="text.secondary">
-                      TDEE (BMR × PAL) przed uwzględnieniem celu: {rawTdee} kcal/dzień.
+                      TDEE (BMR × PAL) przed uwzględnieniem celu: {rawTdee}{" "}
+                      kcal/dzień.
                     </Typography>
                   )}
                   {calorieTarget !== null && (
                     <Typography variant="body2" color="text.secondary">
-                      Kalorie zapisane po uwzględnieniu celu: {calorieTarget} kcal/dzień.
+                      Kalorie zapisane po uwzględnieniu celu: {calorieTarget}{" "}
+                      kcal/dzień.
                     </Typography>
                   )}
                   {palDisplay && (
@@ -575,7 +573,8 @@ export default function UserProfilePage() {
                   )}
                   {isTargetBelowBmr && (
                     <Typography variant="body2" color="warning.main">
-                      Cel kaloryczny jest niższy niż BMR (deficyt z wybranego celu).
+                      Cel kaloryczny jest niższy niż BMR (deficyt z wybranego
+                      celu).
                     </Typography>
                   )}
                 </>
@@ -623,7 +622,11 @@ export default function UserProfilePage() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Kalorie po uwzględnieniu celu
                 </Typography>
-                <Typography variant="h4" fontWeight={900} color="secondary.main">
+                <Typography
+                  variant="h4"
+                  fontWeight={900}
+                  color="secondary.main"
+                >
                   {calorieTarget ?? "—"} kcal
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -633,7 +636,7 @@ export default function UserProfilePage() {
                       ? `PAL ${palDisplay}${
                           activityLabel ? ` (${activityLabel})` : ""
                         }`
-                      : activityLabel ?? "Poziom aktywności z profilu"}
+                      : (activityLabel ?? "Poziom aktywności z profilu")}
                 </Typography>
               </Box>
             </Stack>

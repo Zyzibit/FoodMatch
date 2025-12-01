@@ -31,8 +31,10 @@ import type { PlanMeal } from "../../types/plan";
 import {
   generateRecipePreview,
   saveGeneratedRecipe,
+  getUserRecipes,
   type GeneratedRecipe,
   type GenerateRecipeRequest,
+  type RecipeDetails,
 } from "../../services/recipeService";
 import { searchProducts, type ProductDto } from "../../services/productService";
 import { createMealPlan } from "../../services/mealPlanService";
@@ -53,15 +55,6 @@ type PlanAddRecipeModalProps = {
   meal?: PlanMeal | null;
   planDate: string;
   onRecipeAdded?: (payload: RecipeAddedPayload) => void;
-};
-
-type RecipeSuggestion = {
-  id: string;
-  title: string;
-  description: string;
-  calories: number;
-  macros: { protein: number; fat: number; carbs: number };
-  tags: string[];
 };
 
 type AiProduct = {
@@ -90,8 +83,6 @@ const cuisineOptions = [
   "Hiszpańska",
   "Amerykańska",
 ];
-
-const recipeSuggestions: RecipeSuggestion[] = [];
 
 const modeOptions: {
   key: AddMode;
@@ -134,7 +125,10 @@ export default function PlanAddRecipeModal({
   onRecipeAdded,
 }: PlanAddRecipeModalProps) {
   const [mode, setMode] = useState<AddMode>("recipes");
-  const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
+  const [userRecipes, setUserRecipes] = useState<RecipeDetails[]>([]);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
+  const [recipesError, setRecipesError] = useState<string | null>(null);
   const [productInputValue, setProductInputValue] = useState("");
   const [selectedProductOption, setSelectedProductOption] =
     useState<ProductDto | null>(null);
@@ -194,6 +188,9 @@ export default function PlanAddRecipeModal({
     if (!open) {
       setMode("recipes");
       setSelectedRecipe(null);
+      setUserRecipes([]);
+      setIsLoadingRecipes(false);
+      setRecipesError(null);
       setProductInputValue("");
       setSelectedProductOption(null);
       setProducts([]);
@@ -218,8 +215,8 @@ export default function PlanAddRecipeModal({
       });
       setProductSuggestions([]);
     } else {
-      // Przy otwieraniu modala ładujemy preferencje z API
-      const loadPreferences = async () => {
+      // Przy otwieraniu modala ładujemy preferencje i przepisy użytkownika
+      const loadData = async () => {
         try {
           const prefs = await userMeasurementsService.getPreferences();
           setPreferences({
@@ -232,8 +229,24 @@ export default function PlanAddRecipeModal({
         } catch (error) {
           console.error("Failed to load preferences:", error);
         }
+
+        setIsLoadingRecipes(true);
+        setRecipesError(null);
+        try {
+          const result = await getUserRecipes();
+          setUserRecipes(result.recipes);
+        } catch (error) {
+          console.error("Failed to load user recipes:", error);
+          setRecipesError(
+            error instanceof Error
+              ? error.message
+              : "Nie udało się pobrać przepisów"
+          );
+        } finally {
+          setIsLoadingRecipes(false);
+        }
       };
-      loadPreferences();
+      loadData();
     }
   }, [open]);
 
@@ -520,66 +533,147 @@ export default function PlanAddRecipeModal({
     }
   };
 
+  const handleAddSelectedRecipeToPlan = async () => {
+    if (!selectedRecipe || !meal || !normalizedMealPlanName) {
+      return;
+    }
+
+    setAddToPlanError(null);
+    setIsAddingToPlan(true);
+
+    try {
+      const { mealPlanId } = await createMealPlan({
+        mealName: normalizedMealPlanName,
+        date: planDateIso,
+        recipeId: selectedRecipe,
+      });
+
+      const recipe = userRecipes.find((r) => r.id === selectedRecipe);
+      if (recipe) {
+        onRecipeAdded?.({
+          meal,
+          recipe: {
+            title: recipe.title,
+            description: recipe.description,
+            instructions: recipe.instructions,
+            preparationTimeMinutes: recipe.preparationTimeMinutes || 0,
+            totalWeightGrams: recipe.totalWeightGrams || 0,
+            calories: recipe.calories,
+            proteins: recipe.proteins,
+            carbohydrates: recipe.carbohydrates,
+            fats: recipe.fats,
+            ingredients: recipe.ingredients.map((ing) => ({
+              productId: ing.productId,
+              productName: ing.productName,
+              unitId: ing.unitId || 0,
+              unitName: ing.unitName || "",
+              quantity: ing.quantity,
+              normalizedQuantityInGrams: ing.normalizedQuantityInGrams || 0,
+            })),
+            additionalProducts: recipe.additionalProducts || [],
+          },
+          recipeId: selectedRecipe,
+          mealPlanId,
+        });
+      }
+      onClose();
+    } catch (error) {
+      console.error("Error adding recipe to plan:", error);
+      setAddToPlanError(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się dodać przepisu do planu."
+      );
+    } finally {
+      setIsAddingToPlan(false);
+    }
+  };
+
   const renderRecipePicker = () => (
     <Stack spacing={1.5}>
-      {recipeSuggestions.length === 0 && (
+      {isLoadingRecipes && (
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Ładowanie przepisów...
+          </Typography>
+        </Stack>
+      )}
+
+      {recipesError && <Alert severity="error">{recipesError}</Alert>}
+
+      {!isLoadingRecipes && !recipesError && userRecipes.length === 0 && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Nie masz jeszcze zapisanych przepisów. Wkrótce dodamy ich listę.
+            Nie masz jeszcze zapisanych przepisów. Wygeneruj przepis z AI, a
+            zostanie automatycznie zapisany.
           </Typography>
         </Paper>
       )}
-      {recipeSuggestions.map((recipe) => {
-        const isActive = selectedRecipe === recipe.id;
-        return (
-          <Paper
-            key={recipe.id}
-            variant={isActive ? "outlined" : "elevation"}
-            onClick={() => setSelectedRecipe(recipe.id)}
-            sx={{
-              p: 2,
-              borderColor: (theme) =>
-                isActive ? theme.palette.secondary.main : undefined,
-              cursor: "pointer",
-              transition: "border-color 0.2s ease",
-            }}
-          >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              spacing={1.5}
+
+      {!isLoadingRecipes &&
+        !recipesError &&
+        userRecipes.length > 0 &&
+        userRecipes.map((recipe) => {
+          const isActive = selectedRecipe === recipe.id;
+          return (
+            <Paper
+              key={recipe.id}
+              variant={isActive ? "outlined" : "elevation"}
+              onClick={() => setSelectedRecipe(recipe.id)}
+              sx={{
+                p: 2,
+                borderColor: (theme) =>
+                  isActive ? theme.palette.secondary.main : undefined,
+                cursor: "pointer",
+                transition: "border-color 0.2s ease",
+              }}
             >
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  {recipe.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  {recipe.description}
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {recipe.tags.map((tag) => (
-                    <Chip key={tag} label={tag} size="small" />
-                  ))}
-                </Stack>
-              </Box>
-              <Box textAlign={{ xs: "left", sm: "right" }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {recipe.calories} kcal
-                </Typography>
-                <Typography variant="body2">
-                  B: {recipe.macros.protein} g
-                </Typography>
-                <Typography variant="body2">
-                  T: {recipe.macros.fat} g
-                </Typography>
-                <Typography variant="body2">
-                  W: {recipe.macros.carbs} g
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-        );
-      })}
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                spacing={1.5}
+              >
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    {recipe.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={1}>
+                    {recipe.description}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {recipe.preparationTimeMinutes && (
+                      <Chip
+                        label={`${recipe.preparationTimeMinutes} min`}
+                        size="small"
+                      />
+                    )}
+                    {recipe.totalWeightGrams && (
+                      <Chip
+                        label={`${recipe.totalWeightGrams} g`}
+                        size="small"
+                      />
+                    )}
+                  </Stack>
+                </Box>
+                <Box textAlign={{ xs: "left", sm: "right" }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {Math.round(recipe.calories)} kcal
+                  </Typography>
+                  <Typography variant="body2">
+                    B: {Math.round(recipe.proteins)} g
+                  </Typography>
+                  <Typography variant="body2">
+                    T: {Math.round(recipe.fats)} g
+                  </Typography>
+                  <Typography variant="body2">
+                    W: {Math.round(recipe.carbohydrates)} g
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          );
+        })}
     </Stack>
   );
 
@@ -973,7 +1067,8 @@ export default function PlanAddRecipeModal({
         )}
         {savedRecipeId && !isSavingRecipe && !saveRecipeError && (
           <Alert severity="success">
-            Przepis zapisany w bazie (ID: {savedRecipeId})
+            Przepis został automatycznie zapisany w społeczności i dodany do
+            Twoich przepisów (ID: {savedRecipeId})
           </Alert>
         )}
         {addToPlanError && <Alert severity="error">{addToPlanError}</Alert>}
@@ -1110,15 +1205,24 @@ export default function PlanAddRecipeModal({
   };
 
   const canAddToPlan =
-    mode === "ai" &&
-    Boolean(
-      generatedRecipe &&
-        savedRecipeId &&
-        !isGeneratingRecipe &&
-        !isSavingRecipe &&
-        meal &&
-        normalizedMealPlanName
-    );
+    mode === "ai"
+      ? Boolean(
+          generatedRecipe &&
+            savedRecipeId &&
+            !isGeneratingRecipe &&
+            !isSavingRecipe &&
+            meal &&
+            normalizedMealPlanName
+        )
+      : Boolean(selectedRecipe && meal && normalizedMealPlanName);
+
+  const handleAddClick = () => {
+    if (mode === "ai") {
+      handleAddToPlan();
+    } else {
+      handleAddSelectedRecipeToPlan();
+    }
+  };
 
   const content = mode === "ai" ? renderAiBuilder() : renderRecipePicker();
 
@@ -1246,7 +1350,7 @@ export default function PlanAddRecipeModal({
           variant="contained"
           sx={{ textTransform: "none" }}
           disabled={!canAddToPlan || isAddingToPlan}
-          onClick={handleAddToPlan}
+          onClick={handleAddClick}
           startIcon={
             isAddingToPlan ? (
               <CircularProgress size={16} color="inherit" />
