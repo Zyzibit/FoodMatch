@@ -1,3 +1,9 @@
+export type PlanMealProduct = {
+  id: string;
+  name: string;
+  quantityLabel?: string;
+};
+
 export type PlanMeal = {
   id: string;
   time: string;
@@ -5,9 +11,14 @@ export type PlanMeal = {
   title: string;
   calories: number;
   description?: string;
-  products?: string[];
+  products?: PlanMealProduct[];
+  instructions?: string;
+  isDetailsLoading?: boolean;
+  detailsError?: string | null;
   macros: { protein: number; fat: number; carbs: number };
   isPlaceholder?: boolean;
+  mealPlanId?: number;
+  recipeId?: number;
 };
 
 export type MacroEntry = {

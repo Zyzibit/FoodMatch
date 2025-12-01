@@ -24,6 +24,14 @@ export default function PlanMealCard({
   const metaLabel = isPlaceholder
     ? meal.time
     : `${meal.time} · ${meal.calories} kcal`;
+  const hasProducts = Boolean(meal.products?.length);
+  const hasInstructions = Boolean(meal.instructions);
+  const showFallback =
+    !meal.description &&
+    !hasProducts &&
+    !hasInstructions &&
+    !meal.isDetailsLoading &&
+    !meal.detailsError;
 
   const handlePrimaryAction = () => {
     if (isPlaceholder) {
@@ -107,27 +115,65 @@ export default function PlanMealCard({
               </Box>
             )}
 
-            {meal.products?.length ? (
+            {meal.isDetailsLoading && (
+              <Typography variant="body2" color="text.secondary" mt={meal.description ? 1.5 : 0}>
+                Ładowanie szczegółów przepisu...
+              </Typography>
+            )}
+
+            {meal.detailsError && !meal.isDetailsLoading && (
+              <Typography
+                variant="body2"
+                color="error"
+                mt={meal.description ? 1.5 : 0}
+              >
+                {meal.detailsError}
+              </Typography>
+            )}
+
+            {hasProducts && (
               <Box mt={meal.description ? 1.5 : 0}>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                   Produkty
                 </Typography>
-                <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
-                  {meal.products.map((product) => (
-                    <Typography
-                      key={product}
-                      component="li"
-                      variant="body2"
-                      color="text.secondary"
+                <Stack spacing={1}>
+                  {meal.products?.map((product) => (
+                    <Box
+                      key={product.id}
+                      sx={{
+                        borderBottom: (theme) =>
+                          `1px solid ${theme.palette.divider}`,
+                        pb: 1,
+                      }}
                     >
-                      {product}
-                    </Typography>
+                      <Typography fontWeight={700}>{product.name}</Typography>
+                      {product.quantityLabel && (
+                        <Typography variant="body2" color="text.secondary">
+                          {product.quantityLabel}
+                        </Typography>
+                      )}
+                    </Box>
                   ))}
                 </Stack>
               </Box>
-            ) : null}
+            )}
 
-            {!meal.description && !meal.products?.length && (
+            {hasInstructions && (
+              <Box mt={meal.description || hasProducts ? 1.5 : 0}>
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  Instrukcje
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  whiteSpace="pre-line"
+                >
+                  {meal.instructions}
+                </Typography>
+              </Box>
+            )}
+
+            {showFallback && (
               <Typography variant="body2" color="text.secondary">
                 Brak dodatkowych informacji dla tego posiłku.
               </Typography>

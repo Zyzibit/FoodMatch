@@ -152,8 +152,10 @@ var app = builder.Build();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
 
+//zmiana tutaj w corsie
 app.UseCors(policy =>
-    policy.AllowAnyOrigin()
+    policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        .AllowCredentials()
         .AllowAnyMethod()
         .AllowAnyHeader());
 

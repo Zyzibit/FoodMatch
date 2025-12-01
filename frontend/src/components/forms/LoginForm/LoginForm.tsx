@@ -3,7 +3,6 @@ import { alpha } from "@mui/material/styles";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { colors } from "../../../theme";
 
 import {
   InputLogin,

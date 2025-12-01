@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PlanPage from "./pages/PlanPage";
@@ -8,6 +9,7 @@ import ShoppingListPage from "./pages/ShoppingListPage";
 import RecipesPage from "./pages/RecipesPage";
 import SettingsPage from "./pages/SettingsPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -23,12 +25,20 @@ export const router = createBrowserRouter([
     element: <RegisterPage />,
   },
   {
+    path: "/onboarding",
+    element: <OnboardingPage />,
+  },
+  {
     path: "/forgot-password",
     element: <ForgotPasswordPage />,
   },
   {
     path: "/app",
-    element: <DashboardLayout />,
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="plan" replace /> },
       { path: "plan", element: <PlanPage /> },

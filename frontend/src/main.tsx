@@ -4,9 +4,8 @@ import App from "./App.tsx";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { themes, type ThemeName } from "./theme.ts";
 import AppThemeContext from "./contexts/AppThemeContext.tsx";
-import TextSizeContext, {
-  type TextSize,
-} from "./contexts/TextSizeContext.tsx";
+import TextSizeContext, { type TextSize } from "./contexts/TextSizeContext.tsx";
+import { AuthProvider } from "./contexts/AuthContext.tsx";
 
 type AppSettingsStorage = {
   theme?: ThemeName;
@@ -98,14 +97,16 @@ function Root() {
 
   return (
     <React.StrictMode>
-      <AppThemeContext.Provider value={contextValue}>
-        <TextSizeContext.Provider value={textSizeContextValue}>
-          <ThemeProvider theme={activeTheme}>
-            <CssBaseline />
-            <App />
-          </ThemeProvider>
-        </TextSizeContext.Provider>
-      </AppThemeContext.Provider>
+      <AuthProvider>
+        <AppThemeContext.Provider value={contextValue}>
+          <TextSizeContext.Provider value={textSizeContextValue}>
+            <ThemeProvider theme={activeTheme}>
+              <CssBaseline />
+              <App />
+            </ThemeProvider>
+          </TextSizeContext.Provider>
+        </AppThemeContext.Provider>
+      </AuthProvider>
     </React.StrictMode>
   );
 }

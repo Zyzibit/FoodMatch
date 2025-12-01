@@ -25,9 +25,7 @@ const topPanelConfigs: Record<string, PageConfig> = {
     defaultTab: "dzienny",
   },
   lista: {
-    tabs: [
-      { key: "do-kupienia", label: "Do kupienia" },
-    ],
+    tabs: [{ key: "do-kupienia", label: "Do kupienia" }],
     defaultTab: "do-kupienia",
   },
   przepisy: {
@@ -49,7 +47,7 @@ const topPanelConfigs: Record<string, PageConfig> = {
       { key: "profil", label: "Profil" },
       { key: "pomiary", label: "Pomiary" },
       { key: "zapotrzebowanie", label: "Zapotrzebowanie" },
-      { key: "alergeny", label: "Alergeny" },
+      { key: "preferencje", label: "Preferencje" },
     ],
     defaultTab: "pomiary",
   },
@@ -269,9 +267,7 @@ export default function TopPanel({
                   width: "100%",
                   height: "100%",
                   borderRight:
-                    i < count - 1
-                      ? `1px solid ${t.palette.divider}`
-                      : "none",
+                    i < count - 1 ? `1px solid ${t.palette.divider}` : "none",
                 })}
               >
                 <Tile

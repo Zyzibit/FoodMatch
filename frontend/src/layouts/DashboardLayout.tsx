@@ -10,6 +10,7 @@ import {
 import SidebarPanel from "../components/panels/SidebarPanel";
 import TopPanel from "../components/panels/TopPanel";
 import Footer from "../components/panels/Footer";
+import { useAuth } from "../contexts/AuthContext";
 
 const SUPPORTED_PAGES = new Set([
   "plan",
@@ -34,6 +35,7 @@ export type DashboardOutletContext = {
 export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const activePage = useMemo(
     () => resolveActivePage(location.pathname),
     [location.pathname]
@@ -50,9 +52,16 @@ export default function DashboardLayout() {
     [navigate]
   );
 
-  const handleLogout = useCallback(() => {
-    navigate("/login", { replace: true });
-  }, [navigate]);
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Even if logout fails, navigate to login
+      navigate("/login", { replace: true });
+    }
+  }, [logout, navigate]);
 
   const handleTopChange = useCallback(
     (key: string) => {
@@ -83,7 +92,7 @@ export default function DashboardLayout() {
           activeKey={activePage}
           onItemClick={handleSidebarClick}
           onLogoutClick={handleLogout}
-          userName="Jan Kowalski"
+          userName={user?.username || "User"}
         />
       </Box>
 

@@ -10,7 +10,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Add, Clear, Delete } from "@mui/icons-material";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { searchProducts, type ProductDto } from "../services/productService";
 
 type ShoppingItem = {
   id: string;
@@ -20,29 +21,43 @@ type ShoppingItem = {
   purchased: boolean;
 };
 
-const unitOptions = [
-  "sztuk",
-  "dg",
-  "gram",
-  "kilogram",
-  "litrów",
-  "kawałków",
-];
-
-const suggestedProducts = [
-  "Banany",
-  "Płatki owsiane",
-  "Jogurt naturalny",
-  "Pierś z kurczaka",
-  "Szpinak",
-  "Pomidor",
-];
+const unitOptions = ["sztuk", "dg", "gram", "kilogram", "litrów", "kawałków"];
 
 export default function ShoppingListPage() {
   const [search, setSearch] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<string | null>(null);
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [productSuggestions, setProductSuggestions] = useState<ProductDto[]>(
+    []
+  );
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const handleSearchProducts = useCallback(async (query: string) => {
+    if (!query || query.trim().length < 2) {
+      setProductSuggestions([]);
+      return;
+    }
+
+    setIsLoadingProducts(true);
+    try {
+      const results = await searchProducts(query, 10);
+      setProductSuggestions(results);
+    } catch (error) {
+      console.error("Error searching products:", error);
+      setProductSuggestions([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearchProducts(search);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [search, handleSearchProducts]);
 
   const canAddItem = search.trim().length > 0;
 
@@ -142,58 +157,76 @@ export default function ShoppingListPage() {
 
       <Paper sx={{ width: "100%", maxWidth: 900, p: 3 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={3}>
-        <Autocomplete
-          freeSolo
-          options={suggestedProducts}
-          value={search}
-          onInputChange={(_, value) => setSearch(value)}
-          renderInput={(params) => (
-            <TextField {...params} label="Produkt" placeholder="np. banany" />
-          )}
-          sx={{ flex: 2 }}
-        />
+          <Autocomplete
+            freeSolo
+            options={productSuggestions}
+            getOptionLabel={(option) =>
+              typeof option === "string" ? option : (option.name ?? "")
+            }
+            value={search}
+            onInputChange={(_, value) => setSearch(value)}
+            loading={isLoadingProducts}
+            renderInput={(params) => (
+              <TextField {...params} label="Produkt" placeholder="np. banany" />
+            )}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <Box>
+                  <Typography variant="body2">
+                    {typeof option === "string" ? option : option.name}
+                  </Typography>
+                  {typeof option !== "string" && option.brand && (
+                    <Typography variant="caption" color="text.secondary">
+                      {option.brand}
+                    </Typography>
+                  )}
+                </Box>
+              </li>
+            )}
+            sx={{ flex: 2 }}
+          />
 
-        <TextField
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          placeholder="500"
-          type="number"
-          inputProps={{ min: 0 }}
-          sx={{ width: 120 }}
-        />
+          <TextField
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="500"
+            type="number"
+            inputProps={{ min: 0 }}
+            sx={{ width: 120 }}
+          />
 
-        <Autocomplete
-          options={unitOptions}
-          value={unit}
-          onChange={(_, value) => setUnit(value)}
-          renderInput={(params) => (
-            <TextField {...params} placeholder="Jednostka" />
-          )}
-          sx={{ width: 160 }}
-        />
+          <Autocomplete
+            options={unitOptions}
+            value={unit}
+            onChange={(_, value) => setUnit(value)}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Jednostka" />
+            )}
+            sx={{ width: 160 }}
+          />
 
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          disabled={!canAddItem}
-          onClick={handleAddItem}
-          sx={{ whiteSpace: "nowrap", textTransform: "none" }}
-        >
-          Dodaj
-        </Button>
-      </Stack>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            disabled={!canAddItem}
+            onClick={handleAddItem}
+            sx={{ whiteSpace: "nowrap", textTransform: "none" }}
+          >
+            Dodaj
+          </Button>
+        </Stack>
 
         <Paper variant="outlined" sx={{ maxHeight: 420, overflowY: "auto" }}>
-        {items.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              Brak produktów na liście. Dodaj coś powyżej.
-            </Typography>
-          </Box>
-        ) : (
-          renderedItems
-        )}
-      </Paper>
+          {items.length === 0 ? (
+            <Box sx={{ p: 3, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                Brak produktów na liście. Dodaj coś powyżej.
+              </Typography>
+            </Box>
+          ) : (
+            renderedItems
+          )}
+        </Paper>
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -201,15 +234,15 @@ export default function ShoppingListPage() {
           justifyContent="flex-end"
           mt={3}
         >
-        <Button
-          variant="outlined"
-          startIcon={<Clear />}
-          color="error"
-          onClick={handleClear}
-          sx={{ textTransform: "none" }}
-        >
-          Wyczyść listę zakupów
-        </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Clear />}
+            color="error"
+            onClick={handleClear}
+            sx={{ textTransform: "none" }}
+          >
+            Wyczyść listę zakupów
+          </Button>
         </Stack>
       </Paper>
     </Box>
