@@ -80,9 +80,9 @@ public class UserService : IUserService
 
         var hasChanges = false;
 
-        if (!string.IsNullOrEmpty(request.Name) && user.Name != request.Name)
+        if (!string.IsNullOrEmpty(request.Name) && user.UserName != request.Name)
         {
-            user.Name = request.Name;
+            user.UserName = request.Name;
             hasChanges = true;
         }
 
