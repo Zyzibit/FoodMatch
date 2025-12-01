@@ -188,7 +188,8 @@ public class UserController : ControllerBase
                 return BadRequest(new { message = "Failed to update food preferences" });
             }
 
-            return Ok(new { message = "Food preferences updated successfully" });
+            var updatedPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            return Ok(updatedPreferences);
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Error updating user food preferences");
