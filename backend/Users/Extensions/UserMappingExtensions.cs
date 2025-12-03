@@ -156,9 +156,9 @@ internal static class NutritionalCalculations
     {
         return goal switch
         {
-            FitnessGoal.WeightLoss => (int)(tdee * 0.8), // -20% deficit
+            FitnessGoal.WeightLoss => (int)(tdee)-500, // -20% deficit
             FitnessGoal.Maintenance => tdee,
-            FitnessGoal.WeightGain => (int)(tdee * 1.15), // +15% surplus
+            FitnessGoal.WeightGain => (int)(tdee)+500, // +15% surplus
             _ => tdee
         };
     }
@@ -184,14 +184,12 @@ internal static class NutritionalCalculations
             _ => 0.0m
         };
         decimal proteinPerKg = baseProteinPerKg + activityProteinAdj;
-        // Bezpieczne widełki: min 1.2 g/kg, max 2.2 g/kg
         if (proteinPerKg < 1.2m) proteinPerKg = 1.2m;
         if (proteinPerKg > 2.2m) proteinPerKg = 2.2m;
 
         int proteinGrams = (int)Math.Round(weight * proteinPerKg);
         int proteinCalories = proteinGrams * 4;
 
-        // Tłuszcze: procent kalorii zależny od aktywności (więcej tłuszczu przy niskiej aktywności)
         decimal fatPercentage = activityLevel switch
         {
             PhysicalActivityLevel.Sedentary => 0.30m,
@@ -202,7 +200,6 @@ internal static class NutritionalCalculations
             _ => 0.28m
         };
 
-        // Dodatkowa delikatna korekta wg celu
         fatPercentage = goal switch
         {
             FitnessGoal.WeightLoss => Math.Max(0.22m, fatPercentage - 0.02m),
@@ -213,12 +210,10 @@ internal static class NutritionalCalculations
         int fatCalories = (int)Math.Round(calories * fatPercentage);
         int fatGrams = (int)Math.Round(fatCalories / 9.0);
 
-        // Węglowodany: pozostałe kalorie po białku i tłuszczu
         int carbCalories = calories - proteinCalories - fatCalories;
         if (carbCalories < 0) carbCalories = 0; // zabezpieczenie
         int carbGrams = (int)Math.Round(carbCalories / 4.0);
 
-        // Minimalne węglowodany wg aktywności
         int minCarbGrams = activityLevel switch
         {
             PhysicalActivityLevel.Sedentary => 100,
