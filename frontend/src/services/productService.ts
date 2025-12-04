@@ -1,11 +1,14 @@
 import { API_BASE_URL, API_ENDPOINTS } from "../config";
 
+export type ProductSource = "OpenFoodFacts" | "AI" | "User";
+
 export type ProductDto = {
   productId?: number;
   id?: number | string;
   name?: string;
   brand?: string;
   category?: string;
+  source?: ProductSource;
 };
 
 export type ProductSearchResponse = {

@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
     REVOKE_ALL_TOKENS: "/auth/revoke-all-tokens",
   },
   PRODUCTS: {
+    BASE: "/products",
     SEARCH: "/products/search",
   },
   USERS: {

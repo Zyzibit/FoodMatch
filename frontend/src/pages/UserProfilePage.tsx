@@ -661,13 +661,13 @@ export default function UserProfilePage() {
   return (
     <Box sx={{ p: 2, width: "100%" }}>
       <Stack spacing={3} sx={{ width: "100%" }}>
-        {(activeTab === "pomiary" || !activeTab) && (
+        {(activeTab === "pomiary" || !activeTab) && renderMeasurements()}
+        {activeTab === "zapotrzebowanie" && (
           <>
-            {renderMeasurements()}
+            {renderDemandCard()}
             {renderMacroGoals()}
           </>
         )}
-        {activeTab === "zapotrzebowanie" && renderDemandCard()}
         {activeTab === "alergeny" && renderAllergens()}
       </Stack>
     </Box>
