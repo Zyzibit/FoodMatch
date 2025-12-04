@@ -1,4 +1,8 @@
-import { createTheme, type ThemeOptions, type Theme } from "@mui/material/styles";
+import {
+  createTheme,
+  type ThemeOptions,
+  type Theme,
+} from "@mui/material/styles";
 import { plPL } from "@mui/material/locale";
 
 export const colors = {
@@ -36,6 +40,7 @@ export const colors = {
     logoutButtonHover: "#e8e8e8", // Hover dla przyciskow Wyloguj/Profil
     userAvatarBorder: "rgba(0,0,0,0.1)", // Obrys avatara w UserButton
     dividerOnAccent: "rgba(255,255,255,0.15)", // Dividery w formularzach na tle secondary
+    openFoodFactsBadge: "#718096", // Kolor znacznika "produkt z bazy openfoodfacts"
   },
   feedback: {
     error: "#d32f2f", // Kolor komunikatu FieldError przy walidacji formularzy

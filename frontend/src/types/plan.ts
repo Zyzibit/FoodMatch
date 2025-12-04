@@ -1,7 +1,11 @@
+export type ProductSource = "OpenFoodFacts" | "AI" | "User";
+
 export type PlanMealProduct = {
   id: string;
+  productId?: number;
   name: string;
   quantityLabel?: string;
+  source?: ProductSource;
 };
 
 export type PlanMeal = {

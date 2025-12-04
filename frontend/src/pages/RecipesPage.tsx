@@ -19,10 +19,10 @@ const mockRecipes: SavedRecipe[] = [
     macros: { protein: 36, fat: 18, carbs: 52 },
     tags: ["Obiad", "High-protein"],
     ingredients: [
-      "150 g mielonego indyka",
-      "120 g komosy ryżowej",
-      "Papryka, kukurydza, czerwona fasola",
-      "Salsa pomidorowa",
+      { name: "150 g mielonego indyka", productId: 5, source: "OpenFoodFacts" },
+      { name: "120 g komosy ryżowej", productId: 8, source: "OpenFoodFacts" },
+      { name: "Papryka, kukurydza, czerwona fasola" },
+      { name: "Salsa pomidorowa" },
     ],
     createdAt: "2024-03-04",
   },
@@ -35,10 +35,10 @@ const mockRecipes: SavedRecipe[] = [
     macros: { protein: 16, fat: 12, carbs: 50 },
     tags: ["Śniadanie", "Szybkie"],
     ingredients: [
-      "Płatki owsiane",
-      "Napój migdałowy",
-      "Nasiona chia",
-      "Maliny, miód",
+      { name: "Płatki owsiane", productId: 1, source: "OpenFoodFacts" },
+      { name: "Napój migdałowy" },
+      { name: "Nasiona chia" },
+      { name: "Maliny, miód" },
     ],
     createdAt: "2024-02-12",
   },
@@ -51,17 +51,19 @@ const mockRecipes: SavedRecipe[] = [
     macros: { protein: 21, fat: 22, carbs: 28 },
     tags: ["Kolacja", "Vege"],
     ingredients: [
-      "Ser halloumi",
-      "Roszponka, rukola",
-      "Pomarańcza, grejpfrut",
-      "Miód, oliwa, pistacje",
+      { name: "Ser halloumi", productId: 3, source: "OpenFoodFacts" },
+      { name: "Roszponka, rukola" },
+      { name: "Pomarańcza, grejpfrut" },
+      { name: "Miód, oliwa, pistacje" },
     ],
   },
 ];
 
 export default function RecipesPage() {
   const { activeTab } = useDashboardContext();
-  const label = activeTab ? tabLabels[activeTab] ?? activeTab : "Moje przepisy";
+  const label = activeTab
+    ? (tabLabels[activeTab] ?? activeTab)
+    : "Moje przepisy";
   const [recipes, setRecipes] = useState<SavedRecipe[]>(mockRecipes);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const isOwnTab = !activeTab || activeTab === "moje";
@@ -91,9 +93,7 @@ export default function RecipesPage() {
         <Typography variant="h5" fontWeight={800}>
           Przepisy
         </Typography>
-        <Typography variant="subtitle1">
-          Zakładka: {label}
-        </Typography>
+        <Typography variant="subtitle1">Zakładka: {label}</Typography>
         <Typography variant="body2" color="text.secondary">
           {notice}
         </Typography>

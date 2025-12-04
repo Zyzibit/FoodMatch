@@ -95,6 +95,8 @@ const macroLabels: Record<keyof MealPlanDay["summary"]["macros"], string> = {
 
 const DEFAULT_WEIGHT_UNIT = "g";
 
+type ProductSource = "OpenFoodFacts" | "AI" | "User";
+
 type IngredientForDisplay = {
   productId?: number | string;
   productName: string;
@@ -102,6 +104,7 @@ type IngredientForDisplay = {
   unitName?: string | null;
   unitId?: number;
   normalizedQuantityInGrams?: number;
+  source?: ProductSource;
 };
 
 const formatIngredientQuantityLabel = (
@@ -144,11 +147,14 @@ const mapIngredientToProduct = (
   unitNameOverride?: string
 ): PlanMealProduct => ({
   id: `${ingredient.productId ?? ingredient.productName}-${index}`,
+  productId:
+    typeof ingredient.productId === "number" ? ingredient.productId : undefined,
   name: ingredient.productName,
   quantityLabel: formatIngredientQuantityLabel({
     ...ingredient,
     unitName: unitNameOverride ?? ingredient.unitName,
   }),
+  source: ingredient.source,
 });
 
 const defaultSlotLookup = defaultMealSlots.reduce<
@@ -386,10 +392,13 @@ export default function PlanPage() {
           return;
         }
 
-        const normalizeGoal = (value?: number | null, fallback?: number): number =>
+        const normalizeGoal = (
+          value?: number | null,
+          fallback?: number
+        ): number =>
           typeof value === "number" && Number.isFinite(value)
             ? value
-            : fallback ?? 0;
+            : (fallback ?? 0);
 
         const nextTargets: MacroTargets = {
           calories: normalizeGoal(
@@ -400,10 +409,7 @@ export default function PlanPage() {
             prefs.dailyProteinGoal,
             DEFAULT_MACRO_TARGETS.protein
           ),
-          fat: normalizeGoal(
-            prefs.dailyFatGoal,
-            DEFAULT_MACRO_TARGETS.fat
-          ),
+          fat: normalizeGoal(prefs.dailyFatGoal, DEFAULT_MACRO_TARGETS.fat),
           carbs: normalizeGoal(
             prefs.dailyCarbohydrateGoal,
             DEFAULT_MACRO_TARGETS.carbs
@@ -485,6 +491,10 @@ export default function PlanPage() {
   );
 
   const handleAddRecipe = (meal: PlanMeal) => {
+    setMealForModal(meal);
+  };
+
+  const handleEditMeal = (meal: PlanMeal) => {
     setMealForModal(meal);
   };
 
@@ -602,6 +612,7 @@ export default function PlanPage() {
         <PlanMealList
           meals={plan.meals}
           onAddRecipe={handleAddRecipe}
+          onEditMeal={handleEditMeal}
           expandedMealId={expandedMealId}
           onExpandMeal={handleExpandMeal}
         />
@@ -610,6 +621,7 @@ export default function PlanPage() {
       <Paper elevation={1} sx={{ p: 3 }}>
         <PlanMacroSummary
           calorieTarget={plan.summary.calorieTarget}
+          consumedCalories={plan.consumedCalories}
           macroEntries={macroData}
         />
       </Paper>

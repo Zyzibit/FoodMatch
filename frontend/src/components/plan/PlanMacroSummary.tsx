@@ -4,59 +4,50 @@ import type { MacroEntry } from "../../types/plan";
 
 type PlanMacroSummaryProps = {
   calorieTarget: number;
+  consumedCalories: number;
   macroEntries: MacroEntry[];
 };
 
 export default function PlanMacroSummary({
   calorieTarget,
+  consumedCalories,
   macroEntries,
 }: PlanMacroSummaryProps) {
-  const totalConsumed = macroEntries.reduce(
-    (sum, entry) => sum + Math.max(0, entry.value),
-    0
-  );
+  // Oblicz procentowe wypełnienie celu kalorycznego na podstawie rzeczywistych kalorii
+  const caloriePercentage =
+    calorieTarget > 0
+      ? Math.min(100, Math.round((consumedCalories / calorieTarget) * 100))
+      : 0;
 
   const entriesWithShare = macroEntries.map((entry) => {
-    const percentOfTotal =
-      totalConsumed > 0
-        ? Math.round((Math.max(0, entry.value) / totalConsumed) * 100)
-        : 0;
     const percentOfTarget = entry.target
       ? Math.min(100, Math.round((entry.value / entry.target) * 100))
       : 0;
     return {
       ...entry,
-      percentOfTotal,
       percentOfTarget,
     };
   });
 
   const buildGradient = (theme: Theme) => {
-    if (!totalConsumed) {
+    // Jeśli brak spożytych kalorii - cały wykres szary (pusty)
+    if (!consumedCalories || caloriePercentage === 0) {
       return `conic-gradient(${theme.palette.grey[300]} 0deg 360deg)`;
     }
 
-    const colorMap: Record<string, string> = {
-      protein: theme.palette.primary.main,
-      carbs: theme.palette.warning?.main || theme.palette.info.light,
-      fat: theme.palette.success.main,
-    };
+    // Oblicz kąt końcowy na podstawie procentu celu kalorycznego
+    const totalAngle = (caloriePercentage / 100) * 360;
 
-    let currentAngle = 0;
-    const segments = entriesWithShare
-      .filter((entry) => entry.percentOfTotal > 0)
-      .map((entry) => {
-        const sweep = (entry.percentOfTotal / 100) * 360;
-        const start = currentAngle;
-        const end = start + sweep;
-        currentAngle = end;
-        const color = colorMap[entry.key] || theme.palette.grey[400];
-        return `${color} ${start}deg ${end}deg`;
-      });
+    // Wykres pokazuje tylko kalorie jednym kolorem (primary)
+    const calorieColor = theme.palette.primary.main;
 
-    return segments.length
-      ? `conic-gradient(${segments.join(", ")})`
-      : `conic-gradient(${theme.palette.grey[300]} 0deg 360deg)`;
+    // Dodaj szarą część reprezentującą nieosiągnięty cel
+    if (caloriePercentage < 100) {
+      return `conic-gradient(${calorieColor} 0deg ${totalAngle}deg, ${theme.palette.grey[300]} ${totalAngle}deg 360deg)`;
+    }
+
+    // Jeśli osiągnięto 100% - cały wykres w kolorze primary
+    return `conic-gradient(${calorieColor} 0deg 360deg)`;
   };
 
   return (
@@ -89,12 +80,14 @@ export default function PlanMacroSummary({
             justifyContent: "center",
             textAlign: "center",
             px: 2,
+            flexDirection: "column",
           }}
         >
-          <Typography variant="body2">
-            Cel energii:
-            <br />
-            <strong>{calorieTarget} kcal</strong>
+          <Typography variant="h5" fontWeight={700} color="primary">
+            {caloriePercentage}%
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {consumedCalories} / {calorieTarget} kcal
           </Typography>
         </Box>
       </Box>
@@ -107,8 +100,7 @@ export default function PlanMacroSummary({
                 {entry.label}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {entry.percentOfTarget}% celu · {entry.percentOfTotal}% dziennej
-                energii
+                {entry.percentOfTarget}% celu
               </Typography>
             </Stack>
             <Typography

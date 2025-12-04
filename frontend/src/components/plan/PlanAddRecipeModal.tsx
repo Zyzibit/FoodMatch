@@ -27,7 +27,7 @@ import {
   type ReactNode,
 } from "react";
 import { allergenOptions } from "../../constants/allergens";
-import type { PlanMeal } from "../../types/plan";
+import type { PlanMeal, ProductSource } from "../../types/plan";
 import {
   generateRecipePreview,
   saveGeneratedRecipe,
@@ -39,6 +39,8 @@ import {
 import { searchProducts, type ProductDto } from "../../services/productService";
 import { createMealPlan } from "../../services/mealPlanService";
 import userMeasurementsService from "../../services/userMeasurementsService";
+import ProductDetailsDialog from "../products/ProductDetailsDialog";
+import { colors } from "../../theme";
 
 type AddMode = "recipes" | "ai";
 
@@ -61,6 +63,7 @@ type AiProduct = {
   id: string;
   name: string;
   productId?: number;
+  source?: ProductSource;
 };
 
 interface FoodPreferences {
@@ -124,6 +127,7 @@ export default function PlanAddRecipeModal({
   planDate,
   onRecipeAdded,
 }: PlanAddRecipeModalProps) {
+  const isEditMode = Boolean(meal?.mealPlanId);
   const [mode, setMode] = useState<AddMode>("recipes");
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
   const [userRecipes, setUserRecipes] = useState<RecipeDetails[]>([]);
@@ -143,7 +147,6 @@ export default function PlanAddRecipeModal({
   const [customAllergen, setCustomAllergen] = useState("");
   const [cuisine, setCuisine] = useState<string>("");
   const [preparationTime, setPreparationTime] = useState<string>("");
-  const [servings, setServings] = useState<string>("");
   const [productSuggestions, setProductSuggestions] = useState<ProductDto[]>(
     []
   );
@@ -157,6 +160,9 @@ export default function PlanAddRecipeModal({
   const [saveRecipeError, setSaveRecipeError] = useState<string | null>(null);
   const [isAddingToPlan, setIsAddingToPlan] = useState(false);
   const [addToPlanError, setAddToPlanError] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<
+    number | string | null
+  >(null);
 
   const handleSearchProducts = useCallback(async (query: string) => {
     if (!query || query.trim().length < 2) {
@@ -197,7 +203,6 @@ export default function PlanAddRecipeModal({
       setCustomAllergen("");
       setCuisine("");
       setPreparationTime("");
-      setServings("");
       setGeneratedRecipe(null);
       setGenerationError(null);
       setIsGeneratingRecipe(false);
@@ -287,6 +292,7 @@ export default function PlanAddRecipeModal({
         id: crypto.randomUUID(),
         name: resolvedName,
         productId,
+        source: matchedOption?.source,
       },
     ]);
     setProductInputValue("");
@@ -295,6 +301,20 @@ export default function PlanAddRecipeModal({
 
   const handleRemoveProduct = (id: string) => {
     setProducts((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const getSourceLabel = (source?: ProductSource, hasProductId?: boolean) => {
+    if (!hasProductId && !source) return "Własny składnik";
+    if (source === "OpenFoodFacts") return "Produkt z bazy Open Food Facts";
+    if (source === "AI") return "Produkt wygenerowany przez sztuczną inteligencję";
+    if (source === "User") return "Własny składnik";
+    return "Produkt z bazy FoodMatch";
+  };
+
+  const handleProductClick = (product: AiProduct) => {
+    if (product.source === "OpenFoodFacts" && product.productId) {
+      setSelectedProductId(product.productId);
+    }
   };
 
   const toggleAllergen = (name: string) => {
@@ -349,60 +369,6 @@ export default function PlanAddRecipeModal({
     return trimmed;
   }, [meal?.type]);
 
-  const persistGeneratedRecipe = useCallback(
-    async (recipe: GeneratedRecipe) => {
-      setIsSavingRecipe(true);
-      setSaveRecipeError(null);
-      setSavedRecipeId(null);
-
-      try {
-        const payload = {
-          title: recipe.title,
-          description: recipe.description,
-          instructions: recipe.instructions,
-          preparationTimeMinutes: recipe.preparationTimeMinutes,
-          totalWeightGrams: recipe.totalWeightGrams,
-          calories: recipe.calories,
-          proteins: recipe.proteins,
-          carbohydrates: recipe.carbohydrates,
-          fats: recipe.fats,
-          ingredients: recipe.ingredients.map((ingredient) => ({
-            productId: ingredient.productId,
-            unitId: ingredient.unitId,
-            quantity: ingredient.quantity,
-            normalizedQuantityInGrams: ingredient.normalizedQuantityInGrams,
-          })),
-          additionalProducts: recipe.additionalProducts,
-        };
-
-        const { recipeId } = await saveGeneratedRecipe(payload);
-        const numericRecipeId = Number(recipeId);
-        if (Number.isNaN(numericRecipeId)) {
-          throw new Error("Nieprawidłowy identyfikator przepisu");
-        }
-        setSavedRecipeId(numericRecipeId);
-        return numericRecipeId;
-      } catch (error) {
-        setSavedRecipeId(null);
-        setSaveRecipeError(
-          error instanceof Error
-            ? error.message
-            : "Nie udało się zapisać przepisu."
-        );
-        return null;
-      } finally {
-        setIsSavingRecipe(false);
-      }
-    },
-    []
-  );
-
-  const handleRetrySaveRecipe = useCallback(() => {
-    if (generatedRecipe) {
-      void persistGeneratedRecipe(generatedRecipe);
-    }
-  }, [generatedRecipe, persistGeneratedRecipe]);
-
   const planDateIso = useMemo(() => {
     if (!planDate) {
       return new Date().toISOString();
@@ -423,8 +389,6 @@ export default function PlanAddRecipeModal({
     setGenerationError(null);
     setIsGeneratingRecipe(true);
     setGeneratedRecipe(null);
-    setSavedRecipeId(null);
-    setSaveRecipeError(null);
     setAddToPlanError(null);
 
     try {
@@ -443,23 +407,12 @@ export default function PlanAddRecipeModal({
         ? undefined
         : parsedPreparationTime;
 
-      const parsedServings = Number.parseInt(servings, 10);
-      const additionalInstructionsParts: string[] = [];
-      if (!Number.isNaN(parsedServings) && parsedServings > 0) {
-        additionalInstructionsParts.push(
-          `Przygotuj przepis dla ${parsedServings} porcji.`
-        );
-      }
-
       const requestPayload: GenerateRecipeRequest = {
         productIds,
         availableIngredients,
         cuisineType: normalizedCuisine,
         maxPreparationTimeMinutes: maxPreparationTime,
-        additionalInstructions:
-          additionalInstructionsParts.length > 0
-            ? additionalInstructionsParts.join(" ")
-            : undefined,
+        additionalInstructions: undefined,
         mealType: normalizedMealType,
         preferences: {
           isVegetarian: preferences.isVegetarian,
@@ -474,7 +427,6 @@ export default function PlanAddRecipeModal({
 
       const recipe = await generateRecipePreview(requestPayload);
       setGeneratedRecipe(recipe);
-      await persistGeneratedRecipe(recipe);
     } catch (error) {
       console.error("Error generating recipe preview:", error);
       setGenerationError(
@@ -494,12 +446,58 @@ export default function PlanAddRecipeModal({
     return Number.isInteger(value) ? value.toString() : value.toFixed(1);
   };
 
+  const handleSaveGeneratedRecipe = async () => {
+    if (!generatedRecipe) {
+      return;
+    }
+
+    setSaveRecipeError(null);
+    setIsSavingRecipe(true);
+
+    try {
+      const payload = {
+        title: generatedRecipe.title,
+        description: generatedRecipe.description,
+        instructions: generatedRecipe.instructions,
+        preparationTimeMinutes: generatedRecipe.preparationTimeMinutes,
+        totalWeightGrams: generatedRecipe.totalWeightGrams,
+        calories: generatedRecipe.calories,
+        proteins: generatedRecipe.proteins,
+        carbohydrates: generatedRecipe.carbohydrates,
+        fats: generatedRecipe.fats,
+        ingredients: generatedRecipe.ingredients.map((ingredient) => ({
+          productId: ingredient.productId,
+          unitId: ingredient.unitId,
+          quantity: ingredient.quantity,
+          normalizedQuantityInGrams: ingredient.normalizedQuantityInGrams,
+        })),
+        additionalProducts: generatedRecipe.additionalProducts,
+      };
+
+      const { recipeId } = await saveGeneratedRecipe(payload);
+      const numericRecipeId = Number(recipeId);
+      if (Number.isNaN(numericRecipeId)) {
+        throw new Error("Nieprawidłowy identyfikator przepisu");
+      }
+      setSavedRecipeId(numericRecipeId);
+    } catch (error) {
+      console.error("Error saving recipe:", error);
+      setSaveRecipeError(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się zapisać przepisu."
+      );
+    } finally {
+      setIsSavingRecipe(false);
+    }
+  };
+
   const handleAddToPlan = async () => {
     if (
-      !generatedRecipe ||
       !savedRecipeId ||
       !meal ||
-      !normalizedMealPlanName
+      !normalizedMealPlanName ||
+      !generatedRecipe
     ) {
       return;
     }
@@ -520,6 +518,7 @@ export default function PlanAddRecipeModal({
         recipeId: savedRecipeId,
         mealPlanId,
       });
+
       onClose();
     } catch (error) {
       console.error("Error adding recipe to plan:", error);
@@ -678,27 +677,6 @@ export default function PlanAddRecipeModal({
   );
 
   const renderAiBuilder = () => {
-    const macroItems = generatedRecipe
-      ? [
-          {
-            label: "Kalorie",
-            value: `${Math.round(generatedRecipe.calories)} kcal`,
-          },
-          {
-            label: "Białko",
-            value: `${Math.round(generatedRecipe.proteins)} g`,
-          },
-          {
-            label: "Węglowodany",
-            value: `${Math.round(generatedRecipe.carbohydrates)} g`,
-          },
-          {
-            label: "Tłuszcze",
-            value: `${Math.round(generatedRecipe.fats)} g`,
-          },
-        ]
-      : [];
-
     return (
       <Stack spacing={2}>
         {/* Parametry przepisu */}
@@ -720,26 +698,14 @@ export default function PlanAddRecipeModal({
               )}
               sx={{ flex: 1 }}
             />
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                label="Czas wykonania (minuty)"
-                type="number"
-                value={preparationTime}
-                onChange={(e) => setPreparationTime(e.target.value)}
-                placeholder="np. 30"
-                inputProps={{ min: 1 }}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Liczba porcji"
-                type="number"
-                value={servings}
-                onChange={(e) => setServings(e.target.value)}
-                placeholder="np. 4"
-                inputProps={{ min: 1 }}
-                sx={{ flex: 1 }}
-              />
-            </Stack>
+            <TextField
+              label="Czas wykonania (minuty)"
+              type="number"
+              value={preparationTime}
+              onChange={(e) => setPreparationTime(e.target.value)}
+              placeholder="np. 30"
+              inputProps={{ min: 1 }}
+            />
           </Stack>
         </Box>
 
@@ -748,7 +714,11 @@ export default function PlanAddRecipeModal({
         {/* Składniki */}
         <Box>
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Składniki
+            Składniki (opcjonalnie)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Możesz dodać składniki, które AI ma wykorzystać w przepisie, lub
+            pozostaw puste dla losowego przepisu
           </Typography>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -797,6 +767,8 @@ export default function PlanAddRecipeModal({
                     : (option.name ?? option.brand ?? "");
                 const optionBrand =
                   typeof option !== "string" ? option.brand : undefined;
+                const optionSource =
+                  typeof option !== "string" ? option.source : undefined;
                 return (
                   <li {...props}>
                     <Box>
@@ -804,6 +776,20 @@ export default function PlanAddRecipeModal({
                       {optionBrand && (
                         <Typography variant="caption" color="text.secondary">
                           {optionBrand}
+                        </Typography>
+                      )}
+                      {optionSource === "OpenFoodFacts" && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(255,255,255,0.5)"
+                                : colors.elements.openFoodFactsBadge,
+                            fontSize: "0.7rem",
+                          }}
+                        >
+                          produkt z bazy openfoodfacts
                         </Typography>
                       )}
                     </Box>
@@ -830,7 +816,8 @@ export default function PlanAddRecipeModal({
         >
           {products.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              Dodaj składniki, które AI ma wykorzystać w przepisie.
+              Brak dodanych składników. AI wygeneruje przepis na podstawie
+              Twoich preferencji żywieniowych.
             </Typography>
           ) : (
             products.map((product) => (
@@ -844,13 +831,54 @@ export default function PlanAddRecipeModal({
                   py: 1,
                 }}
               >
-                <Box>
-                  <Typography fontWeight={600}>{product.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {product.productId
-                      ? "Produkt z bazy FoodMatch"
-                      : "Własny składnik"}
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    fontWeight={600}
+                    onClick={() => handleProductClick(product)}
+                    sx={{
+                      cursor:
+                        product.source === "OpenFoodFacts" && product.productId
+                          ? "pointer"
+                          : "default",
+                      "&:hover":
+                        product.source === "OpenFoodFacts" && product.productId
+                          ? { textDecoration: "underline" }
+                          : {},
+                    }}
+                  >
+                    {product.name}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {getSourceLabel(product.source, !!product.productId)}
+                  </Typography>
+                  {product.source === "OpenFoodFacts" && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.5)"
+                            : colors.elements.openFoodFactsBadge,
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      produkt z bazy openfoodfacts
+                    </Typography>
+                  )}
+                  {product.source === "AI" && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.5)"
+                            : "rgba(0,0,0,0.5)",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      wygenerowany przez AI
+                    </Typography>
+                  )}
                 </Box>
                 <IconButton onClick={() => handleRemoveProduct(product.id)}>
                   <Delete />
@@ -1046,156 +1074,264 @@ export default function PlanAddRecipeModal({
         </Stack>
 
         {generationError && <Alert severity="error">{generationError}</Alert>}
-        {isSavingRecipe && (
-          <Alert severity="info">Zapisywanie przepisu w bazie...</Alert>
-        )}
-        {saveRecipeError && (
-          <Alert
-            severity="error"
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={handleRetrySaveRecipe}
-              >
-                Spróbuj ponownie
-              </Button>
-            }
-          >
-            {saveRecipeError}
-          </Alert>
-        )}
-        {savedRecipeId && !isSavingRecipe && !saveRecipeError && (
-          <Alert severity="success">
-            Przepis został automatycznie zapisany w społeczności i dodany do
-            Twoich przepisów (ID: {savedRecipeId})
-          </Alert>
-        )}
         {addToPlanError && <Alert severity="error">{addToPlanError}</Alert>}
 
+        {/* Wygenerowany przepis - podgląd */}
         {generatedRecipe && (
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="h6" fontWeight={700}>
-                  {generatedRecipe.title}
-                </Typography>
-                {generatedRecipe.description && (
-                  <Typography variant="body2" color="text.secondary">
-                    {generatedRecipe.description}
+          <>
+            <Divider />
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="h6" fontWeight={700}>
+                    {generatedRecipe.title}
                   </Typography>
-                )}
-              </Box>
-
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                {generatedRecipe.preparationTimeMinutes > 0 && (
-                  <Chip
-                    label={`${generatedRecipe.preparationTimeMinutes} min przygotowania`}
-                    size="small"
-                  />
-                )}
-                {generatedRecipe.totalWeightGrams > 0 && (
-                  <Chip
-                    label={`${generatedRecipe.totalWeightGrams} g`}
-                    size="small"
-                  />
-                )}
-              </Stack>
-
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                flexWrap="wrap"
-              >
-                {macroItems.map((item) => (
-                  <Box key={item.label} sx={{ minWidth: 120 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      {item.label}
+                  {generatedRecipe.description && (
+                    <Typography variant="body2" color="text.secondary">
+                      {generatedRecipe.description}
                     </Typography>
-                    <Typography variant="h6">{item.value}</Typography>
+                  )}
+                </Box>
+
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  {generatedRecipe.preparationTimeMinutes > 0 && (
+                    <Chip
+                      label={`${generatedRecipe.preparationTimeMinutes} min przygotowania`}
+                      size="small"
+                    />
+                  )}
+                  {generatedRecipe.totalWeightGrams > 0 && (
+                    <Chip
+                      label={`${generatedRecipe.totalWeightGrams} g`}
+                      size="small"
+                    />
+                  )}
+                </Stack>
+
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  flexWrap="wrap"
+                >
+                  <Box sx={{ minWidth: 120 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Kalorie
+                    </Typography>
+                    <Typography variant="h6">
+                      {Math.round(generatedRecipe.calories)} kcal
+                    </Typography>
                   </Box>
-                ))}
-              </Stack>
+                  <Box sx={{ minWidth: 120 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Białko
+                    </Typography>
+                    <Typography variant="h6">
+                      {Math.round(generatedRecipe.proteins)} g
+                    </Typography>
+                  </Box>
+                  <Box sx={{ minWidth: 120 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Węglowodany
+                    </Typography>
+                    <Typography variant="h6">
+                      {Math.round(generatedRecipe.carbohydrates)} g
+                    </Typography>
+                  </Box>
+                  <Box sx={{ minWidth: 120 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Tłuszcze
+                    </Typography>
+                    <Typography variant="h6">
+                      {Math.round(generatedRecipe.fats)} g
+                    </Typography>
+                  </Box>
+                </Stack>
 
-              <Divider />
+                <Divider />
 
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700}>
-                  Składniki
-                </Typography>
-                {generatedRecipe.ingredients.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    AI nie zwróciło szczegółowych składników.
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Składniki
                   </Typography>
-                ) : (
-                  <Stack spacing={1} sx={{ mt: 1 }}>
-                    {generatedRecipe.ingredients.map((ingredient) => (
-                      <Box
-                        key={`${ingredient.productId}-${ingredient.productName}-${ingredient.unitId}`}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 2,
-                          borderBottom: (theme) =>
-                            `1px solid ${theme.palette.divider}`,
-                          pb: 1,
-                        }}
-                      >
-                        <Box>
-                          <Typography fontWeight={600}>
-                            {ingredient.productName}
-                          </Typography>
+                  {generatedRecipe.ingredients.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      AI nie zwróciło szczegółowych składników.
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                      {generatedRecipe.ingredients.map((ingredient) => (
+                        <Box
+                          key={`${ingredient.productId}-${ingredient.productName}-${ingredient.unitId}`}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 2,
+                            borderBottom: (theme) =>
+                              `1px solid ${theme.palette.divider}`,
+                            pb: 1,
+                          }}
+                        >
+                          <Box sx={{ flex: 1 }}>
+                            <Box>
+                              <Typography
+                                fontWeight={600}
+                                onClick={() => {
+                                  if (ingredient.source === "OpenFoodFacts" || ingredient.source === "AI") {
+                                    setSelectedProductId(ingredient.productId);
+                                  }
+                                }}
+                                sx={{
+                                  cursor:
+                                    ingredient.source === "OpenFoodFacts" ||
+                                    ingredient.source === "AI"
+                                      ? "pointer"
+                                      : "default",
+                                  "&:hover":
+                                    ingredient.source === "OpenFoodFacts" ||
+                                    ingredient.source === "AI"
+                                      ? { textDecoration: "underline" }
+                                      : {},
+                                }}
+                              >
+                                {ingredient.productName}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {formatQuantity(ingredient.quantity)}{" "}
+                                {ingredient.unitName}
+                              </Typography>
+                              {ingredient.source === "OpenFoodFacts" && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: (theme) =>
+                                      theme.palette.mode === "dark"
+                                        ? "rgba(255,255,255,0.5)"
+                                        : colors.elements.openFoodFactsBadge,
+                                    fontSize: "0.7rem",
+                                  }}
+                                >
+                                  produkt z bazy openfoodfacts
+                                </Typography>
+                              )}
+                              {ingredient.source === "AI" && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: (theme) =>
+                                      theme.palette.mode === "dark"
+                                        ? "rgba(255,255,255,0.5)"
+                                        : "rgba(0,0,0,0.5)",
+                                    fontSize: "0.7rem",
+                                  }}
+                                >
+                                  wygenerowany przez AI
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
                           <Typography variant="body2" color="text.secondary">
-                            {formatQuantity(ingredient.quantity)}{" "}
-                            {ingredient.unitName}
+                            {Math.round(ingredient.normalizedQuantityInGrams)} g
                           </Typography>
                         </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {Math.round(ingredient.normalizedQuantityInGrams)} g
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                )}
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Typography variant="subtitle2" fontWeight={700}>
-                  Instrukcje
-                </Typography>
-                <Typography
-                  variant="body2"
-                  whiteSpace="pre-line"
-                  sx={{ mt: 1 }}
-                >
-                  {generatedRecipe.instructions}
-                </Typography>
-              </Box>
-
-              {generatedRecipe.additionalProducts?.length ? (
-                <>
-                  <Divider />
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={700}>
-                      Dodatkowe produkty
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      flexWrap="wrap"
-                      gap={1}
-                      sx={{ mt: 1 }}
-                    >
-                      {generatedRecipe.additionalProducts.map((item) => (
-                        <Chip key={item} label={item} size="small" />
                       ))}
                     </Stack>
-                  </Box>
-                </>
-              ) : null}
-            </Stack>
-          </Paper>
+                  )}
+                </Box>
+
+                <Divider />
+
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Instrukcje
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    whiteSpace="pre-line"
+                    sx={{ mt: 1 }}
+                  >
+                    {generatedRecipe.instructions}
+                  </Typography>
+                </Box>
+
+                {generatedRecipe.additionalProducts?.length ? (
+                  <>
+                    <Divider />
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={700}>
+                        Dodatkowe produkty
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        flexWrap="wrap"
+                        gap={1}
+                        sx={{ mt: 1 }}
+                      >
+                        {generatedRecipe.additionalProducts.map((item) => (
+                          <Chip key={item} label={item} size="small" />
+                        ))}
+                      </Stack>
+                    </Box>
+                  </>
+                ) : null}
+
+                <Divider />
+
+                {/* Przyciski akcji dla wygenerowanego przepisu */}
+                {!savedRecipeId ? (
+                  <>
+                    {saveRecipeError && (
+                      <Alert severity="error">{saveRecipeError}</Alert>
+                    )}
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      disabled={isSavingRecipe}
+                      onClick={handleSaveGeneratedRecipe}
+                      startIcon={
+                        isSavingRecipe ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : undefined
+                      }
+                      sx={{ textTransform: "none" }}
+                    >
+                      {isSavingRecipe
+                        ? "Zapisywanie..."
+                        : "Zatwierdź i zapisz przepis"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Alert severity="success">
+                      Przepis został zapisany! Możesz teraz{" "}
+                      {isEditMode ? "zaktualizować" : "dodać go do"} planu.
+                    </Alert>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      fullWidth
+                      disabled={isAddingToPlan}
+                      onClick={handleAddToPlan}
+                      startIcon={
+                        isAddingToPlan ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : undefined
+                      }
+                      sx={{ textTransform: "none" }}
+                    >
+                      {isAddingToPlan
+                        ? "Dodawanie..."
+                        : isEditMode
+                          ? "Zaktualizuj w planie"
+                          : "Dodaj do planu"}
+                    </Button>
+                  </>
+                )}
+              </Stack>
+            </Paper>
+          </>
         )}
 
         {/* Dodatkowe miejsce na dole */}
@@ -1204,162 +1340,162 @@ export default function PlanAddRecipeModal({
     );
   };
 
-  const canAddToPlan =
-    mode === "ai"
-      ? Boolean(
-          generatedRecipe &&
-            savedRecipeId &&
-            !isGeneratingRecipe &&
-            !isSavingRecipe &&
-            meal &&
-            normalizedMealPlanName
-        )
-      : Boolean(selectedRecipe && meal && normalizedMealPlanName);
+  const canAddToPlan = Boolean(
+    selectedRecipe && meal && normalizedMealPlanName
+  );
 
   const handleAddClick = () => {
-    if (mode === "ai") {
-      handleAddToPlan();
-    } else {
-      handleAddSelectedRecipeToPlan();
-    }
+    handleAddSelectedRecipeToPlan();
   };
 
   const content = mode === "ai" ? renderAiBuilder() : renderRecipePicker();
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-      <DialogTitle
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box>
-          <Typography variant="h6" fontWeight={800}>
-            Dodaj przepis
-          </Typography>
-          {meal?.type && (
-            <Typography variant="body2" color="text.secondary">
-              {meal.type}
-            </Typography>
-          )}
-        </Box>
-        <IconButton onClick={onClose}>
-          <Close />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent
-        dividers
-        sx={{
-          p: 0,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={3}
+    <>
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+        <DialogTitle
           sx={{
-            height: { xs: "auto", md: MODAL_BODY_HEIGHT },
-            minHeight: { xs: 400, md: MODAL_BODY_HEIGHT },
-            maxHeight: { xs: "70vh", md: MODAL_BODY_HEIGHT },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          {/* Sidebar z wyborem trybu - nie scrolluje się */}
+          <Box>
+            <Typography variant="h6" fontWeight={800}>
+              {isEditMode ? "Edytuj przepis" : "Dodaj przepis"}
+            </Typography>
+            {meal?.type && (
+              <Typography variant="body2" color="text.secondary">
+                {meal.type}
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            p: 0,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Stack
-            spacing={1.5}
+            direction={{ xs: "column", md: "row" }}
+            spacing={3}
             sx={{
-              width: { xs: "100%", md: 260 },
-              p: { xs: 2, md: 3 },
-              flexShrink: 0,
+              height: { xs: "auto", md: MODAL_BODY_HEIGHT },
+              minHeight: { xs: 400, md: MODAL_BODY_HEIGHT },
+              maxHeight: { xs: "70vh", md: MODAL_BODY_HEIGHT },
             }}
           >
-            {modeOptions.map((option) => {
-              const isActive = mode === option.key;
-              return (
-                <Paper
-                  key={option.key}
-                  variant={isActive ? "outlined" : "elevation"}
-                  onClick={() => setMode(option.key)}
-                  sx={(theme) => ({
-                    p: 1.5,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 0.5,
-                    cursor: "pointer",
-                    borderColor: isActive
-                      ? theme.palette.secondary.main
-                      : undefined,
-                  })}
-                >
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    {option.icon}
-                    <Typography fontWeight={700}>{option.label}</Typography>
-                  </Stack>
-                </Paper>
-              );
-            })}
-          </Stack>
+            {/* Sidebar z wyborem trybu - nie scrolluje się */}
+            <Stack
+              spacing={1.5}
+              sx={{
+                width: { xs: "100%", md: 260 },
+                p: { xs: 2, md: 3 },
+                flexShrink: 0,
+              }}
+            >
+              {modeOptions.map((option) => {
+                const isActive = mode === option.key;
+                return (
+                  <Paper
+                    key={option.key}
+                    variant={isActive ? "outlined" : "elevation"}
+                    onClick={() => setMode(option.key)}
+                    sx={(theme) => ({
+                      p: 1.5,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.5,
+                      cursor: "pointer",
+                      borderColor: isActive
+                        ? theme.palette.secondary.main
+                        : undefined,
+                    })}
+                  >
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {option.icon}
+                      <Typography fontWeight={700}>{option.label}</Typography>
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Stack>
 
-          {/* Główna zawartość - scrollowalna */}
-          <Box
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              pt: { xs: 0, md: 3 },
-              pr: { xs: 2, md: 3 },
-              pb: { xs: 2, md: 3 },
-            }}
-          >
+            {/* Główna zawartość - scrollowalna */}
             <Box
               sx={{
                 flex: 1,
-                overflowY: "auto",
-                overflowX: "hidden",
-                pr: 1,
-                "&::-webkit-scrollbar": {
-                  width: "8px",
-                },
-                "&::-webkit-scrollbar-track": {
-                  background: "transparent",
-                },
-                "&::-webkit-scrollbar-thumb": {
-                  background: "#888",
-                  borderRadius: "4px",
-                },
-                "&::-webkit-scrollbar-thumb:hover": {
-                  background: "#555",
-                },
+                minWidth: 0,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                pt: { xs: 0, md: 3 },
+                pr: { xs: 2, md: 3 },
+                pb: { xs: 2, md: 3 },
               }}
             >
-              {content}
+              <Box
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  pr: 1,
+                  "&::-webkit-scrollbar": {
+                    width: "8px",
+                  },
+                  "&::-webkit-scrollbar-track": {
+                    background: "transparent",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "#888",
+                    borderRadius: "4px",
+                  },
+                  "&::-webkit-scrollbar-thumb:hover": {
+                    background: "#555",
+                  },
+                }}
+              >
+                {content}
+              </Box>
             </Box>
-          </Box>
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} sx={{ textTransform: "none" }}>
-          Anuluj
-        </Button>
-        <Button
-          variant="contained"
-          sx={{ textTransform: "none" }}
-          disabled={!canAddToPlan || isAddingToPlan}
-          onClick={handleAddClick}
-          startIcon={
-            isAddingToPlan ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : undefined
-          }
-        >
-          {isAddingToPlan ? "Dodawanie..." : "Dodaj do planu"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={onClose} sx={{ textTransform: "none" }}>
+            Anuluj
+          </Button>
+          <Button
+            variant="contained"
+            sx={{ textTransform: "none" }}
+            disabled={!canAddToPlan || isAddingToPlan}
+            onClick={handleAddClick}
+            startIcon={
+              isAddingToPlan ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
+          >
+            {isAddingToPlan
+              ? "Dodawanie..."
+              : isEditMode
+                ? "Zaktualizuj przepis"
+                : "Dodaj do planu"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ProductDetailsDialog
+        open={selectedProductId !== null}
+        onClose={() => setSelectedProductId(null)}
+        productId={selectedProductId || ""}
+      />
+    </>
   );
 }

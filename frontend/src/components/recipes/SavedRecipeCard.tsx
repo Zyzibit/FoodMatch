@@ -1,14 +1,10 @@
-import {
-  Box,
-  Button,
-  Chip,
-  Collapse,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Chip, Collapse, Stack, Typography } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import type { SavedRecipe } from "../../types/recipes";
 import PlanMealMacroSummary from "../plan/PlanMealMacroSummary";
+import { useState } from "react";
+import ProductDetailsDialog from "../products/ProductDetailsDialog";
+import { colors } from "../../theme";
 
 type SavedRecipeCardProps = {
   recipe: SavedRecipe;
@@ -23,8 +19,25 @@ export default function SavedRecipeCard({
   onToggle,
   onRemove,
 }: SavedRecipeCardProps) {
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  );
   const handleToggle = () => onToggle?.(recipe);
   const handleRemove = () => onRemove?.(recipe);
+
+  const handleIngredientClick = (
+    ingredient:
+      | string
+      | { name: string; productId?: number | string; source?: string }
+  ) => {
+    if (
+      typeof ingredient !== "string" &&
+      ingredient.source === "OpenFoodFacts" &&
+      ingredient.productId
+    ) {
+      setSelectedProductId(String(ingredient.productId));
+    }
+  };
 
   return (
     <Box
@@ -96,19 +109,60 @@ export default function SavedRecipeCard({
             Składniki
           </Typography>
           <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
-            {recipe.ingredients.map((ingredient) => (
-              <Typography
-                key={ingredient}
+            {recipe.ingredients.map((ingredient, index) => (
+              <Box
+                key={index}
                 component="li"
-                variant="body2"
-                color="text.secondary"
+                onClick={() => handleIngredientClick(ingredient)}
+                sx={{
+                  cursor:
+                    typeof ingredient !== "string" &&
+                    ingredient.source === "OpenFoodFacts"
+                      ? "pointer"
+                      : "default",
+                }}
               >
-                {ingredient}
-              </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    "&:hover":
+                      typeof ingredient !== "string" &&
+                      ingredient.source === "OpenFoodFacts"
+                        ? { textDecoration: "underline" }
+                        : {},
+                  }}
+                >
+                  {typeof ingredient === "string"
+                    ? ingredient
+                    : ingredient.name}
+                </Typography>
+                {typeof ingredient !== "string" &&
+                  ingredient.source === "OpenFoodFacts" && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.5)"
+                            : colors.elements.openFoodFactsBadge,
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      produkt z bazy openfoodfacts
+                    </Typography>
+                  )}
+              </Box>
             ))}
           </Stack>
         </Box>
       </Collapse>
+
+      <ProductDetailsDialog
+        open={selectedProductId !== null}
+        onClose={() => setSelectedProductId(null)}
+        productId={selectedProductId || ""}
+      />
     </Box>
   );
 }

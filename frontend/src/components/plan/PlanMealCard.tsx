@@ -1,7 +1,10 @@
-import { Box, Button, Collapse, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Collapse, Stack, Typography } from "@mui/material";
 import { Add, Edit } from "@mui/icons-material";
 import type { PlanMeal } from "../../types/plan";
 import PlanMealMacroSummary from "./PlanMealMacroSummary";
+import { useState } from "react";
+import ProductDetailsDialog from "../products/ProductDetailsDialog";
+import { colors } from "../../theme";
 
 type PlanMealCardProps = {
   meal: PlanMeal;
@@ -18,6 +21,9 @@ export default function PlanMealCard({
   onExpand,
   isExpanded = false,
 }: PlanMealCardProps) {
+  const [selectedProductId, setSelectedProductId] = useState<
+    number | string | null
+  >(null);
   const isPlaceholder = Boolean(meal.isPlaceholder);
   const primaryLabel = isPlaceholder ? "Dodaj przepis" : "Edytuj";
   const primaryIcon = isPlaceholder ? <Add /> : <Edit />;
@@ -38,6 +44,16 @@ export default function PlanMealCard({
       onAddRecipe?.(meal);
     } else {
       onEdit?.(meal);
+    }
+  };
+
+  const handleProductClick = (product: {
+    productId?: number;
+    id: string;
+    source?: string;
+  }) => {
+    if ((product.source === "OpenFoodFacts" || product.source === "AI") && product.productId) {
+      setSelectedProductId(product.productId);
     }
   };
 
@@ -116,7 +132,11 @@ export default function PlanMealCard({
             )}
 
             {meal.isDetailsLoading && (
-              <Typography variant="body2" color="text.secondary" mt={meal.description ? 1.5 : 0}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                mt={meal.description ? 1.5 : 0}
+              >
                 Ładowanie szczegółów przepisu...
               </Typography>
             )}
@@ -146,12 +166,61 @@ export default function PlanMealCard({
                         pb: 1,
                       }}
                     >
-                      <Typography fontWeight={700}>{product.name}</Typography>
-                      {product.quantityLabel && (
-                        <Typography variant="body2" color="text.secondary">
-                          {product.quantityLabel}
+                      <Box>
+                        <Typography
+                          fontWeight={700}
+                          onClick={() => handleProductClick(product)}
+                          sx={{
+                            cursor:
+                              (product.source === "OpenFoodFacts" ||
+                                product.source === "AI") &&
+                              product.productId
+                                ? "pointer"
+                                : "default",
+                            "&:hover":
+                              (product.source === "OpenFoodFacts" ||
+                                product.source === "AI") &&
+                              product.productId
+                                ? { textDecoration: "underline" }
+                                : {},
+                          }}
+                        >
+                          {product.name}
                         </Typography>
-                      )}
+                        {product.quantityLabel && (
+                          <Typography variant="body2" color="text.secondary">
+                            {product.quantityLabel}
+                          </Typography>
+                        )}
+                        {product.source === "OpenFoodFacts" && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(255,255,255,0.5)"
+                                  : colors.elements.openFoodFactsBadge,
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            produkt z bazy openfoodfacts
+                          </Typography>
+                        )}
+                        {product.source === "AI" && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(255,255,255,0.5)"
+                                  : "rgba(0,0,0,0.5)",
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            wygenerowany przez AI
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   ))}
                 </Stack>
@@ -181,6 +250,12 @@ export default function PlanMealCard({
           </Box>
         </Collapse>
       )}
+
+      <ProductDetailsDialog
+        open={selectedProductId !== null}
+        onClose={() => setSelectedProductId(null)}
+        productId={selectedProductId || ""}
+      />
     </Box>
   );
 }
