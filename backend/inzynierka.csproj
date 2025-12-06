@@ -42,9 +42,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
-        <PackageReference Include="AutoMapper" Version="14.0.0" />
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+      <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.5.2" />
+      <PackageReference Include="Aspire.StackExchange.Redis" Version="9.5.2" />
+      <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
+      <PackageReference Include="AutoMapper" Version="14.0.0" />
+      <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
         <PackageReference Include="EFCore.BulkExtensions" Version="8.*" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.14" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
@@ -59,7 +61,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.20" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
@@ -78,6 +80,10 @@
     <ItemGroup>
       <Folder Include="UserPreferences\" />
       <Folder Include="UserPreferences\API\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\FoodMatch.ServiceDefaults\FoodMatch.ServiceDefaults.csproj" />
     </ItemGroup>
     
 </Project>

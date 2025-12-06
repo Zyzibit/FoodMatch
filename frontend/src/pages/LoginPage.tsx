@@ -12,7 +12,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login, error, clearError } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-
+  
   const handleLogin = useCallback<LoginFormSubmit>(
     async (data) => {
       setIsLoading(true);

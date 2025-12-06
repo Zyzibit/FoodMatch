@@ -6,9 +6,7 @@ using inzynierka.Data;
 using inzynierka.Products.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using StackExchange.Redis;
 using inzynierka.Auth.Services;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Services;
@@ -21,62 +19,24 @@ using inzynierka.ShoppingList.Services;
 using inzynierka.Units.Repositories;
 using inzynierka.Units.Services;
 using inzynierka.UserPreferences.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
+
+// Add Aspire service defaults (observability, health checks, etc.)
+builder.AddServiceDefaults();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
-{
-    var configuration = provider.GetService<IConfiguration>();
-    var logger = provider.GetService<ILogger<Program>>();
-    var connectionString = configuration!.GetConnectionString("Redis") ?? "127.0.0.1:6379";
-    
-    var options = ConfigurationOptions.Parse(connectionString);
-    
-    // Connection settings
-    options.AbortOnConnectFail = false;
-    options.ConnectTimeout = 30000; 
-    options.SyncTimeout = 30000; 
-    options.AsyncTimeout = 30000; 
-    options.ConnectRetry = 10; 
-    options.ReconnectRetryPolicy = new ExponentialRetry(1000, 30000); 
-    
-    options.KeepAlive = 180; 
-    options.DefaultDatabase = 0;
-    
-    try 
-    {
-        var multiplexer = ConnectionMultiplexer.Connect(options);
-        
-        // Log connection events
-        multiplexer.ConnectionFailed += (_, args) =>
-        {
-            logger?.LogError("Redis connection failed: {Exception}", args.Exception?.Message);
-        };
-        
-        multiplexer.ConnectionRestored += (_, _) =>
-        {
-            logger?.LogInformation("Redis connection restored");
-        };
-        
-        multiplexer.ErrorMessage += (_, args) =>
-        {
-            logger?.LogError("Redis error: {Message}", args.Message);
-        };
-        
-        logger?.LogInformation("Redis connection established successfully");
-        return multiplexer;
-    }
-    catch (Exception ex)
-    {
-        logger?.LogError(ex, "Failed to connect to Redis. Using fallback configuration.");
-        throw;
-    }
-});
+// Add Aspire PostgreSQL with EF Core
+builder.AddNpgsqlDbContext<AppDbContext>("foodmatch");
+
+// Add Aspire Redis
+builder.AddRedisClient("redis");
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -119,7 +79,14 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddHealthChecks()
-    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "127.0.0.1:6379");
+    .AddRedis(builder.Configuration.GetConnectionString("redis") 
+              ?? builder.Configuration.GetConnectionString("Redis") 
+              ?? "127.0.0.1:6379");
+
+// Get backend URL from Aspire or fallback to config
+var backendUrl = builder.Configuration["services:backend:http:0"] 
+                 ?? builder.Configuration["JWT:ValidAudience"] 
+                 ?? "http://localhost:5127";
 
 builder.Services.AddAuthentication(options =>
         {
@@ -136,8 +103,8 @@ builder.Services.AddAuthentication(options =>
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
-                ValidAudience = builder.Configuration["JWT:ValidAudience"],
-                ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
+                ValidAudience = backendUrl,
+                ValidIssuer = backendUrl,
                 ClockSkew = TimeSpan.Zero,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:secret"] ?? string.Empty))
             };
@@ -159,15 +126,40 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/alive");
+// Map Aspire default endpoints (health checks, metrics, etc.)
+app.MapDefaultEndpoints();
 
-//zmiana tutaj w corsie
+// Configure CORS for frontend
 app.UseCors(policy =>
-    policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
-        .AllowCredentials()
-        .AllowAnyMethod()
-        .AllowAnyHeader());
+{
+    policy.SetIsOriginAllowed(origin =>
+    {
+        // Allow any localhost origin
+        if (origin.StartsWith("http://localhost:") || origin.StartsWith("https://localhost:"))
+        {
+            return true;
+        }
+        
+        // Allow 127.0.0.1
+        if (origin.StartsWith("http://127.0.0.1:") || origin.StartsWith("https://127.0.0.1:"))
+        {
+            return true;
+        }
+        
+        // Allow Aspire frontend URLs
+        var frontendUrl = builder.Configuration["services:frontend:http:0"] 
+                          ?? builder.Configuration["services:frontend:https:0"];
+        if (!string.IsNullOrEmpty(frontendUrl) && origin.StartsWith(frontendUrl))
+        {
+            return true;
+        }
+        
+        return false;
+    })
+    .AllowCredentials()
+    .AllowAnyMethod()
+    .AllowAnyHeader();
+});
 
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))

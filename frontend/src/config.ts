@@ -1,5 +1,6 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5127/api/v1";
+// Aspire ustawia VITE_API_BASE_URL na pełny URL backendu (np. https://localhost:7257)
+const backendUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7257";
+export const API_BASE_URL = `${backendUrl}/api/v1`;
 
 export const API_ENDPOINTS = {
   AUTH: {
