@@ -1,4 +1,4 @@
-using inzynierka.Users.Responses;
+using inzynierka.UserPreferences.Responses;
 
 namespace inzynierka.Recipes.Model;
 

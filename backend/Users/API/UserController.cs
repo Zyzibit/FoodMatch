@@ -154,46 +154,4 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "User deleted successfully" });
     }
-    
-    [HttpGet("preferences")]
-    [Authorize]
-    public async Task<IActionResult> GetUserFoodPreferences()
-    {
-        try {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) {
-                return Unauthorized(new { message = "Invalid token" });
-            }
-            var preferences = await _userService.GetUserFoodPreferencesAsync(userId);
-            return Ok(preferences);
-        }
-        catch (Exception ex) {
-            _logger.LogError(ex, "Error getting user food preferences");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
-    }
-    
-    [HttpPut("preferences")]
-    [Authorize]
-    public async Task<IActionResult> UpdateUserFoodPreferences([FromBody] UpdateFoodPreferencesRequest request)
-    {
-        try {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) {
-                return Unauthorized(new { message = "Invalid token" });
-            }
-
-            var result = await _userService.UpdateUserFoodPreferencesAsync(userId, request);
-            if (!result) {
-                return BadRequest(new { message = "Failed to update food preferences" });
-            }
-
-            var updatedPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
-            return Ok(updatedPreferences);
-        }
-        catch (Exception ex) {
-            _logger.LogError(ex, "Error updating user food preferences");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
-    }
 }
