@@ -57,6 +57,20 @@ export default function SavedRecipeCard({
     }
   };
 
+  const handleIngredientClick = (
+    ingredient:
+      | string
+      | { name: string; productId?: number | string; source?: string }
+  ) => {
+    if (
+      typeof ingredient !== "string" &&
+      ingredient.source === "OpenFoodFacts" &&
+      ingredient.productId
+    ) {
+      setSelectedProductId(String(ingredient.productId));
+    }
+  };
+
   return (
     <Box
       sx={{

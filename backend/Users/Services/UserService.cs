@@ -12,15 +12,18 @@ public class UserService : IUserService
     private readonly ILogger<UserService> _logger;
     private readonly UserManager<User> _userManager;
     private readonly IRoleService _roleService;
+    private readonly IFileStorageService _fileStorageService;
 
     public UserService(
         ILogger<UserService> logger, 
         UserManager<User> userManager,
-        IRoleService roleService)
+        IRoleService roleService,
+        IFileStorageService fileStorageService)
     {
         _logger = logger;
         _userManager = userManager;
         _roleService = roleService;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<UserDto?> GetUserByIdAsync(string userId)
@@ -248,22 +251,59 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<FoodPreferencesDto?> GetUserFoodPreferencesAsync(string userId)
+    public async Task<(bool Success, string? ProfilePictureUrl, string? ErrorMessage)> UpdateProfilePictureAsync(
+        string userId, 
+        IFormFile file)
     {
-        var user = await _userManager.FindByIdAsync(userId);
-        return user?.FoodPreferences?.ToDto();
-    }
-    
-    public async Task<bool> UpdateUserFoodPreferencesAsync(
-        string userId,
-        UpdateFoodPreferencesRequest request)
-    {
-        if (string.IsNullOrEmpty(userId))
+        try
         {
-            _logger.LogWarning("Cannot update food preferences: userId is null or empty.");
-            return false;
-        }
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("User with ID {UserId} not found", userId);
+                return (false, null, "User not found");
+            }
 
+            if (!_fileStorageService.IsValidImageFile(file))
+            {
+                return (false, null, "Invalid image file. Allowed formats: JPG, PNG, GIF, WebP. Max size: 5MB");
+            }
+
+            // Delete old profile picture if exists
+            if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+            {
+                await _fileStorageService.DeleteProfilePictureAsync(user.ProfilePictureUrl);
+            }
+
+            // Save new profile picture
+            var profilePictureUrl = await _fileStorageService.SaveProfilePictureAsync(file, userId);
+            
+            user.ProfilePictureUrl = profilePictureUrl;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Failed to update user {UserId} with new profile picture. Errors: {Errors}",
+                    userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+                
+                // Cleanup uploaded file
+                await _fileStorageService.DeleteProfilePictureAsync(profilePictureUrl);
+                return (false, null, "Failed to update profile picture");
+            }
+
+            _logger.LogInformation("Profile picture updated successfully for user {UserId}", userId);
+            return (true, profilePictureUrl, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile picture for user {UserId}", userId);
+            return (false, null, "An error occurred while updating profile picture");
+        }
+    }
+
+    public async Task<bool> DeleteProfilePictureAsync(string userId)
+    {
         try
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -273,24 +313,32 @@ public class UserService : IUserService
                 return false;
             }
 
-            user.FoodPreferences.UpdateFrom(request, _logger);
+            if (string.IsNullOrEmpty(user.ProfilePictureUrl))
+            {
+                return true; // Nothing to delete
+            }
 
+            // Delete file
+            await _fileStorageService.DeleteProfilePictureAsync(user.ProfilePictureUrl);
+
+            // Update user
+            user.ProfilePictureUrl = null;
             user.UpdatedAt = DateTime.UtcNow;
-            var result = await _userManager.UpdateAsync(user);
 
+            var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogError("Failed to update food preferences for user {UserId}. Errors: {Errors}", userId, errors);
+                _logger.LogError("Failed to update user {UserId} after deleting profile picture. Errors: {Errors}",
+                    userId, string.Join(", ", result.Errors.Select(e => e.Description)));
                 return false;
             }
 
-            _logger.LogInformation("Food preferences updated for user {UserId}", userId);
+            _logger.LogInformation("Profile picture deleted successfully for user {UserId}", userId);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating food preferences for user {UserId}", userId);
+            _logger.LogError(ex, "Error deleting profile picture for user {UserId}", userId);
             return false;
         }
     }

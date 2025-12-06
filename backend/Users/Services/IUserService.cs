@@ -16,10 +16,9 @@ public interface IUserService
     Task<int> GetTotalUsersCountAsync();
     Task<(bool Success, User? User, string? ErrorMessage)> CreateUserAsync(string username, string email, string password, string role = "User");
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
-    Task<bool> UpdateUserFoodPreferencesAsync(string userId, UpdateFoodPreferencesRequest request);
-    Task<FoodPreferencesDto?> GetUserFoodPreferencesAsync(string userId);
+    Task<(bool Success, string? ProfilePictureUrl, string? ErrorMessage)> UpdateProfilePictureAsync(string userId, IFormFile file);
+    Task<bool> DeleteProfilePictureAsync(string userId);
     
-    // Internal methods - return entities (for use by other services like AuthService)
     Task<User?> GetUserEntityByIdAsync(string userId);
     Task<User?> GetUserEntityByUsernameAsync(string username);
     Task<User?> GetUserEntityByEmailAsync(string email);

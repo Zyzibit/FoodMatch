@@ -1,5 +1,5 @@
 using inzynierka.Recipes.Model.RecipeModel;
-using inzynierka.Users.Responses;
+using inzynierka.UserPreferences.Responses;
 
 namespace inzynierka.Users.Extensions;
 

@@ -3,22 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using inzynierka.Users.Services;
 using inzynierka.Users.Requests;
+using inzynierka.UserPreferences.Services;
+using UpdateFoodPreferencesRequest = inzynierka.UserPreferences.Requests.UpdateFoodPreferencesRequest;
 
 namespace inzynierka.Users.API;
 
 [ApiController]
 [Route("api/v1/users")]
-public class UserController : ControllerBase
+public class UserController(
+    IUserService userService,
+    IUserPreferencesService userPreferencesService,
+    ILogger<UserController> logger)
+    : ControllerBase
 {
-    private readonly IUserService _userService;
-    private readonly ILogger<UserController> _logger;
-
-    public UserController(IUserService userService, ILogger<UserController> logger)
-    {
-        _userService = userService;
-        _logger = logger;
-    }
-    
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUserProfile()
@@ -31,7 +28,7 @@ public class UserController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var user = await _userService.GetUserByIdAsync(userId);
+            var user = await userService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
@@ -41,7 +38,7 @@ public class UserController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting current user profile");
+            logger.LogError(ex, "Error getting current user profile");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -58,7 +55,7 @@ public class UserController : ControllerBase
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _userService.UpdateUserProfileAsync(userId, request);
+            var result = await userService.UpdateUserProfileAsync(userId, request);
             if (!result)
             {
                 return BadRequest(new { message = "Failed to update user profile" });
@@ -68,7 +65,7 @@ public class UserController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating current user profile");
+            logger.LogError(ex, "Error updating current user profile");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -77,7 +74,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUser(string userId)
     {
-        var user = await _userService.GetUserByIdAsync(userId);
+        var user = await userService.GetUserByIdAsync(userId);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -90,7 +87,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserByUsername(string username)
     {
-        var user = await _userService.GetUserByUsernameAsync(username);
+        var user = await userService.GetUserByUsernameAsync(username);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -103,7 +100,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUserByEmail(string email)
     {
-        var user = await _userService.GetUserByEmailAsync(email);
+        var user = await userService.GetUserByEmailAsync(email);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -116,8 +113,8 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var users = await _userService.GetUsersAsync(pageNumber, pageSize);
-        var totalCount = await _userService.GetTotalUsersCountAsync();
+        var users = await userService.GetUsersAsync(pageNumber, pageSize);
+        var totalCount = await userService.GetTotalUsersCountAsync();
 
         return Ok(new
         {
@@ -133,7 +130,7 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserProfileRequest request)
     {
-        var result = await _userService.UpdateUserProfileAsync(userId, request);
+        var result = await userService.UpdateUserProfileAsync(userId, request);
         if (!result)
         {
             return BadRequest(new { message = "Failed to update user profile" });
@@ -146,7 +143,7 @@ public class UserController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser(string userId)
     {
-        var result = await _userService.DeleteUserAsync(userId);
+        var result = await userService.DeleteUserAsync(userId);
         if (!result)
         {
             return BadRequest(new { message = "Failed to delete user" });
@@ -154,21 +151,87 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "User deleted successfully" });
     }
+
+    [HttpPost("/profile-picture")]
+    [Authorize]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile? file)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file provided" });
+            }
+
+            var result = await userService.UpdateProfilePictureAsync(userId, file);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { 
+                message = "Profile picture uploaded successfully", 
+                profilePictureUrl = result.ProfilePictureUrl 
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error uploading profile picture");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    [HttpDelete("/profile-picture")]
+    [Authorize]
+    public async Task<IActionResult> DeleteProfilePicture()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var result = await userService.DeleteProfilePictureAsync(userId);
+            if (!result)
+            {
+                return BadRequest(new { message = "Failed to delete profile picture" });
+            }
+
+            return Ok(new { message = "Profile picture deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting profile picture");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
     
     [HttpGet("preferences")]
     [Authorize]
     public async Task<IActionResult> GetUserFoodPreferences()
     {
-        try {
+        try 
+        {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) {
+            if (string.IsNullOrEmpty(userId)) 
+            {
                 return Unauthorized(new { message = "Invalid token" });
             }
-            var preferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            
+            var preferences = await userPreferencesService.GetUserFoodPreferencesAsync(userId);
             return Ok(preferences);
         }
-        catch (Exception ex) {
-            _logger.LogError(ex, "Error getting user food preferences");
+        catch (Exception ex) 
+        {
+            logger.LogError(ex, "Error getting user food preferences");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -177,22 +240,26 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateUserFoodPreferences([FromBody] UpdateFoodPreferencesRequest request)
     {
-        try {
+        try 
+        {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) {
+            if (string.IsNullOrEmpty(userId)) 
+            {
                 return Unauthorized(new { message = "Invalid token" });
             }
 
-            var result = await _userService.UpdateUserFoodPreferencesAsync(userId, request);
-            if (!result) {
+            var result = await userPreferencesService.UpdateUserFoodPreferencesAsync(userId, request);
+            if (!result) 
+            {
                 return BadRequest(new { message = "Failed to update food preferences" });
             }
 
-            var updatedPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            var updatedPreferences = await userPreferencesService.GetUserFoodPreferencesAsync(userId);
             return Ok(updatedPreferences);
         }
-        catch (Exception ex) {
-            _logger.LogError(ex, "Error updating user food preferences");
+        catch (Exception ex) 
+        {
+            logger.LogError(ex, "Error updating user food preferences");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }

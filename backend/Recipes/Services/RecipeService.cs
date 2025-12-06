@@ -8,6 +8,7 @@ using inzynierka.Recipes.Requests;
 using inzynierka.Recipes.Responses;
 using inzynierka.Units.Services;
 using inzynierka.Users.Services;
+using inzynierka.UserPreferences.Services;
 
 namespace inzynierka.Recipes.Services;
 
@@ -20,11 +21,13 @@ public class RecipeService : IRecipeService
     private readonly IProductService _productService;
     private readonly IUnitService _unitService;
     private readonly IUserService _userService;
+    private readonly IUserPreferencesService _userPreferencesService;
 
     public RecipeService(
         IRecipeRepository recipeRepository, 
         ILogger<RecipeService> logger,
         IUserService userService,
+        IUserPreferencesService userPreferencesService,
         IRecipeGeneratorService recipeGeneratorService,
         IProductService productService,
         IUnitService unitService
@@ -33,6 +36,7 @@ public class RecipeService : IRecipeService
         _recipeRepository = recipeRepository;
         _logger = logger;
         _userService = userService;
+        _userPreferencesService = userPreferencesService;
         _recipeGeneratorService = recipeGeneratorService;
         _productService = productService;
         _unitService = unitService;
@@ -244,7 +248,7 @@ public class RecipeService : IRecipeService
                 throw new InvalidOperationException($"User with ID {userId} does not exist in the database");
             }
             
-            var userPreferences = await _userService.GetUserFoodPreferencesAsync(userId);
+            var userPreferences = await _userPreferencesService.GetUserFoodPreferencesAsync(userId);
             
             var preferences = request.Preferences.MergeWithUserPreferences(userPreferences);
             
