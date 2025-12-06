@@ -16,6 +16,8 @@ public interface IUserService
     Task<int> GetTotalUsersCountAsync();
     Task<(bool Success, User? User, string? ErrorMessage)> CreateUserAsync(string username, string email, string password, string role = "User");
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
+    Task<(bool Success, string? ProfilePictureUrl, string? ErrorMessage)> UpdateProfilePictureAsync(string userId, IFormFile file);
+    Task<bool> DeleteProfilePictureAsync(string userId);
     
     Task<User?> GetUserEntityByIdAsync(string userId);
     Task<User?> GetUserEntityByUsernameAsync(string username);
