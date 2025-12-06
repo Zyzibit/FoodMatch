@@ -13,6 +13,7 @@ public static class UserMappingExtensions
             Name = user.Name,
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
+            ProfilePictureUrl = user.ProfilePictureUrl,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };

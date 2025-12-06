@@ -151,6 +151,68 @@ public class UserController(
 
         return Ok(new { message = "User deleted successfully" });
     }
+
+    [HttpPost("/profile-picture")]
+    [Authorize]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile? file)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file provided" });
+            }
+
+            var result = await userService.UpdateProfilePictureAsync(userId, file);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new { 
+                message = "Profile picture uploaded successfully", 
+                profilePictureUrl = result.ProfilePictureUrl 
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error uploading profile picture");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    [HttpDelete("/profile-picture")]
+    [Authorize]
+    public async Task<IActionResult> DeleteProfilePicture()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var result = await userService.DeleteProfilePictureAsync(userId);
+            if (!result)
+            {
+                return BadRequest(new { message = "Failed to delete profile picture" });
+            }
+
+            return Ok(new { message = "Profile picture deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error deleting profile picture");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
     
     [HttpGet("preferences")]
     [Authorize]
