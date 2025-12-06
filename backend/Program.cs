@@ -10,10 +10,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using inzynierka.Auth.Services;
+using inzynierka.MealPlans.Repositories;
+using inzynierka.MealPlans.Services;
 using inzynierka.Users.Model;
 using inzynierka.Users.Services;
 using inzynierka.Recipes.Repositories;
 using inzynierka.Recipes.Services;
+using inzynierka.ShoppingList.Repositories;
+using inzynierka.ShoppingList.Services;
 using inzynierka.Units.Repositories;
 using inzynierka.Units.Services;
 
@@ -91,11 +95,13 @@ builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IPromptConfigService, PromptConfigService>();
 builder.Services.AddScoped<IRecipeGeneratorService, RecipeGeneratorService>();
 
-builder.Services.AddScoped<inzynierka.MealPlans.Services.IMealPlanService, inzynierka.MealPlans.Services.MealPlanService>();
-builder.Services.AddScoped<inzynierka.MealPlans.Repositories.IMealPlanRepository, inzynierka.MealPlans.Repositories.MealPlanRepository>();
+builder.Services.AddScoped<IMealPlanService, MealPlanService>();
+builder.Services.AddScoped<IMealPlanRepository, MealPlanRepository>();
 
-// Rejestracja OpenAI Client używającego oficjalnej biblioteki
-builder.Services.AddScoped<IAiClient, inzynierka.AI.OpenAI.AiClient>();
+builder.Services.AddScoped<IShoppingListService, ShoppingListService>();
+builder.Services.AddScoped<IShoppingListRepository, ShoppingListRepository>();
+
+builder.Services.AddScoped<IAiClient, AiClient>();
 
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()

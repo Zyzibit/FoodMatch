@@ -8,6 +8,7 @@ using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Auth.Model;
 using inzynierka.MealPlans.Model;
 using inzynierka.Recipes.Model;
+using inzynierka.ShoppingList;
 using inzynierka.Units.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,9 @@ public class AppDbContext : IdentityDbContext<User> {
     public DbSet<Unit> Units { get; set; }
     
     public DbSet<MealPlan> MealPlans { get; set; }
+    
+    public DbSet<ShoppingList.Model.ShoppingList> ShoppingLists { get; set; }
+    public DbSet<ShoppingListItem> ShoppingListItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
@@ -86,5 +90,24 @@ public class AppDbContext : IdentityDbContext<User> {
             .WithMany()
             .HasForeignKey(mp => mp.RecipeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ShoppingList.Model.ShoppingList>()
+            .HasKey(sl => sl.Id);
+
+        modelBuilder.Entity<ShoppingList.Model.ShoppingList>()
+            .HasOne(sl => sl.User)
+            .WithMany()
+            .HasForeignKey(sl => sl.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ShoppingListItem>()
+            .HasKey(sli => sli.Id);
+
+        modelBuilder.Entity<ShoppingListItem>()
+            .HasOne(sli => sli.Product)
+            .WithMany()
+            .HasForeignKey(sli => sli.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
