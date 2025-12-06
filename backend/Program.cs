@@ -20,6 +20,7 @@ using inzynierka.ShoppingList.Repositories;
 using inzynierka.ShoppingList.Services;
 using inzynierka.Units.Repositories;
 using inzynierka.Units.Services;
+using inzynierka.UserPreferences.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,6 +101,8 @@ builder.Services.AddScoped<IMealPlanRepository, MealPlanRepository>();
 
 builder.Services.AddScoped<IShoppingListService, ShoppingListService>();
 builder.Services.AddScoped<IShoppingListRepository, ShoppingListRepository>();
+
+builder.Services.AddUserPreferencesServices();
 
 builder.Services.AddScoped<IAiClient, AiClient>();
 

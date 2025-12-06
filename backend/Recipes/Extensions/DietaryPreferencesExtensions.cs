@@ -1,7 +1,7 @@
 using inzynierka.Recipes.Model;
 using inzynierka.Recipes.Model.RecipeModel;
 using inzynierka.Users.Extensions;
-using inzynierka.Users.Responses;
+using inzynierka.UserPreferences.Responses;
 
 namespace inzynierka.Recipes.Extensions;
 
