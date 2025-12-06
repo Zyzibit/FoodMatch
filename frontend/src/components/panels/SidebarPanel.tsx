@@ -2,6 +2,8 @@ import { Box, Stack, Typography, Button } from "@mui/material";
 import Tile from "../buttons/Tile";
 import UserButton from "../buttons/UserButton";
 import dietLogo from "../../assets/diet-logo.png";
+import { useAuth } from "../../contexts/AuthContext";
+import { isAdmin } from "../../utils/roleUtils";
 
 export default function SidebarPanel({
   activeKey,
@@ -16,6 +18,9 @@ export default function SidebarPanel({
   userName?: string;
   userAvatar?: string;
 }) {
+  const { user } = useAuth();
+  const userIsAdmin = isAdmin(user);
+
   const sidebarItems = [
     { key: "plan", title: "Plan" },
     { key: "lista", title: "Lista" },
@@ -90,6 +95,14 @@ export default function SidebarPanel({
               onClick={() => onItemClick?.(key)}
             />
           ))}
+
+          {userIsAdmin && (
+            <Tile
+              title="Panel administratora"
+              active={activeKey === "admin"}
+              onClick={() => onItemClick?.("admin")}
+            />
+          )}
         </Stack>
       </Stack>
 

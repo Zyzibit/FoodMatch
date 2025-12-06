@@ -370,12 +370,12 @@ public class ProductRepository : IProductRepository
         }
     }
 
-    public async Task<Product> UpdateProductAsync(Product product)
+    public Task<Product> UpdateProductAsync(Product product)
     {
         try
         {
             var result = _context.Products.Update(product);
-            return result.Entity;
+            return Task.FromResult(result.Entity);
         }
         catch (Exception ex)
         {

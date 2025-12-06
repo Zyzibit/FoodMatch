@@ -30,6 +30,13 @@ public class RecipeRepository : IRecipeRepository
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 
+    public async Task<Recipe> UpdateRecipeAsync(Recipe recipe)
+    {
+        _db.Recipes.Update(recipe);
+        await _db.SaveChangesAsync();
+        return recipe;
+    }
+
     public async Task<(List<Recipe> Recipes, int TotalCount)> GetAllRecipesAsync(int limit = 50, int offset = 0)
     {
         var total = await _db.Recipes.CountAsync();
@@ -61,5 +68,32 @@ public class RecipeRepository : IRecipeRepository
             .ToListAsync();
 
         return (recipes, total);
+    }
+
+    public async Task<(List<Recipe> Recipes, int TotalCount)> GetPublicRecipesAsync(int limit = 50, int offset = 0)
+    {
+        var query = _db.Recipes.Where(r => r.IsPublic);
+        var total = await query.CountAsync();
+        var recipes = await query
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Unit)
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Product)
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync();
+
+        return (recipes, total);
+    }
+
+    public async Task<Recipe?> GetRecipeByIdForCopyAsync(int id)
+    {
+        return await _db.Recipes
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Unit)
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Product)
+            .FirstOrDefaultAsync(r => r.Id == id && r.IsPublic);
     }
 }

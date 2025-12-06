@@ -1,5 +1,13 @@
-import { Box, Button, Chip, Collapse, Stack, Typography } from "@mui/material";
-import { Delete } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Chip,
+  Collapse,
+  Stack,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
+import { Delete, Add, Share, Public } from "@mui/icons-material";
 import type { SavedRecipe } from "../../types/recipes";
 import PlanMealMacroSummary from "../plan/PlanMealMacroSummary";
 import { useState } from "react";
@@ -11,6 +19,10 @@ type SavedRecipeCardProps = {
   isExpanded?: boolean;
   onToggle?: (recipe: SavedRecipe) => void;
   onRemove?: (recipe: SavedRecipe) => void;
+  onCopy?: (recipe: SavedRecipe) => void;
+  onShare?: (recipe: SavedRecipe) => void;
+  isCopying?: boolean;
+  isSharing?: boolean;
 };
 
 export default function SavedRecipeCard({
@@ -18,12 +30,18 @@ export default function SavedRecipeCard({
   isExpanded = false,
   onToggle,
   onRemove,
+  onCopy,
+  onShare,
+  isCopying = false,
+  isSharing = false,
 }: SavedRecipeCardProps) {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   );
   const handleToggle = () => onToggle?.(recipe);
   const handleRemove = () => onRemove?.(recipe);
+  const handleCopy = () => onCopy?.(recipe);
+  const handleShare = () => onShare?.(recipe);
 
   const handleIngredientClick = (
     ingredient:
@@ -77,15 +95,52 @@ export default function SavedRecipeCard({
         </Box>
 
         <Stack spacing={1} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
-          <Button
-            startIcon={<Delete />}
-            color="error"
-            variant="text"
-            sx={{ textTransform: "none" }}
-            onClick={handleRemove}
-          >
-            Usuń
-          </Button>
+          {onShare && !recipe.isPublic && (
+            <Button
+              startIcon={isSharing ? <CircularProgress size={16} /> : <Share />}
+              color="success"
+              variant="outlined"
+              sx={{ textTransform: "none" }}
+              onClick={handleShare}
+              disabled={isSharing}
+            >
+              {isSharing ? "Udostępnianie..." : "Udostępnij"}
+            </Button>
+          )}
+          {onShare && recipe.isPublic && (
+            <Button
+              startIcon={<Public />}
+              color="success"
+              variant="contained"
+              sx={{ textTransform: "none" }}
+              disabled
+            >
+              Publiczny
+            </Button>
+          )}
+          {onCopy && (
+            <Button
+              startIcon={isCopying ? <CircularProgress size={16} /> : <Add />}
+              color="primary"
+              variant="outlined"
+              sx={{ textTransform: "none" }}
+              onClick={handleCopy}
+              disabled={isCopying}
+            >
+              {isCopying ? "Dodawanie..." : "Dodaj do moich"}
+            </Button>
+          )}
+          {onRemove && (
+            <Button
+              startIcon={<Delete />}
+              color="error"
+              variant="text"
+              sx={{ textTransform: "none" }}
+              onClick={handleRemove}
+            >
+              Usuń
+            </Button>
+          )}
           <Button
             size="small"
             variant="text"

@@ -52,7 +52,10 @@ export default function PlanMealCard({
     id: string;
     source?: string;
   }) => {
-    if ((product.source === "OpenFoodFacts" || product.source === "AI") && product.productId) {
+    if (
+      (product.source === "OpenFoodFacts" || product.source === "AI") &&
+      product.productId
+    ) {
       setSelectedProductId(product.productId);
     }
   };

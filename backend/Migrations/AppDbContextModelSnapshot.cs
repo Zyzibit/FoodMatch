@@ -495,7 +495,6 @@ namespace inzynierka.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("Fats")
@@ -504,6 +503,9 @@ namespace inzynierka.Migrations
                     b.Property<string>("Instructions")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("PreparationTimeMinutes")
                         .HasColumnType("integer");

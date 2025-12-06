@@ -12,8 +12,8 @@ public class RecipeIngredient {
     
     public decimal? NormalizedQuantityInGrams { get; set; }
     
-    public Unit Unit { get; set; }
-    public Recipe Recipe { get; set; }
-    public Product Product { get; set; }
+    public Unit? Unit { get; set; }
+    public Recipe? Recipe { get; set; }
+    public Product? Product { get; set; }
     
 }

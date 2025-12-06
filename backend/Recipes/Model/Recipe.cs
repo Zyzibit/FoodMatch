@@ -7,8 +7,8 @@ public class Recipe {
     public int Id { get; set; }
     
     [Required]
-    public string UserId { get; set; }
-    public User User { get; set; }
+    public required string UserId { get; set; }
+    public User? User { get; set; }
     
     [Required]
     public RecipeSource Source { get; set; } = RecipeSource.User;
@@ -21,7 +21,7 @@ public class Recipe {
     [MinLength(3)]
     public required string Title { get; set; }
     
-    public string Description { get; set; }
+    public string? Description { get; set; }
     [Required]
     public required string Instructions { get; set; }
     
@@ -38,6 +38,8 @@ public class Recipe {
     public decimal Carbohydrates { get; set; }
     [Required]
     public decimal Fats { get; set; }
+    
+    public bool IsPublic { get; set; } = false;
     
     public DateTime CreatedAt { get; set; }
 }

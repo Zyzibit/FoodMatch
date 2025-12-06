@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import {
   Navigate,
@@ -11,6 +11,7 @@ import SidebarPanel from "../components/panels/SidebarPanel";
 import TopPanel from "../components/panels/TopPanel";
 import Footer from "../components/panels/Footer";
 import { useAuth } from "../contexts/AuthContext";
+import userMeasurementsService from "../services/userMeasurementsService";
 
 const SUPPORTED_PAGES = new Set([
   "plan",
@@ -18,6 +19,7 @@ const SUPPORTED_PAGES = new Set([
   "przepisy",
   "ustawienia",
   "user",
+  "admin",
 ]);
 
 const resolveActivePage = (pathname: string) => {
@@ -43,6 +45,25 @@ export default function DashboardLayout() {
 
   const [pageTabs, setPageTabs] = useState<Record<string, string>>({});
   const activeTab = pageTabs[activePage];
+
+  // Sprawdź czy użytkownik ma wypełnione pomiary
+  useEffect(() => {
+    const checkMeasurements = async () => {
+      try {
+        const hasMeasurements = await userMeasurementsService.hasMeasurements();
+        if (!hasMeasurements) {
+          // Brak pomiarów - przekieruj do onboardingu
+          navigate("/onboarding", { replace: true });
+        }
+      } catch (err) {
+        console.error("Error checking measurements:", err);
+        // W przypadku błędu również przekieruj do onboardingu
+        navigate("/onboarding", { replace: true });
+      }
+    };
+
+    checkMeasurements();
+  }, [navigate]);
 
   const handleSidebarClick = useCallback(
     (key: string) => {

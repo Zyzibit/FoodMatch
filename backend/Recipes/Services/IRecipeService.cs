@@ -9,6 +9,9 @@ public interface IRecipeService
     Task<RecipeDto?> GetRecipeAsync(int id);
     Task<RecipeListResult> Recipes(int limit = 50, int offset = 0);
     Task<RecipeListResult> GetUserRecipesAsync(string userId, int limit = 50, int offset = 0);
+    Task<RecipeListResult> GetPublicRecipesAsync(int limit = 50, int offset = 0);
+    Task<CreateRecipeResult> CopyRecipeToUserAsync(string userId, int recipeId);
+    Task<CreateRecipeResult> ShareRecipeAsync(string userId, int recipeId);
     
     Task<GenerateRecipePreviewResult> GenerateRecipePreviewAsync(string userId, GenerateRecipeRequest request);
     Task<CreateRecipeResult> SaveGeneratedRecipeAsync(string userId, SaveGeneratedRecipeRequest request);

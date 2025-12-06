@@ -9,7 +9,9 @@ import ShoppingListPage from "./pages/ShoppingListPage";
 import RecipesPage from "./pages/RecipesPage";
 import SettingsPage from "./pages/SettingsPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +48,14 @@ export const router = createBrowserRouter([
       { path: "przepisy", element: <RecipesPage /> },
       { path: "ustawienia", element: <SettingsPage /> },
       { path: "user", element: <UserDashboardPage /> },
+      { 
+        path: "admin", 
+        element: (
+          <AdminRoute>
+            <AdminUsersPage />
+          </AdminRoute>
+        ) 
+      },
     ],
   },
   {

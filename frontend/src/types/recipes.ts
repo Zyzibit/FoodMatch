@@ -15,4 +15,5 @@ export type SavedRecipe = {
   tags?: string[];
   ingredients: SavedRecipeIngredient[];
   createdAt?: string;
+  isPublic?: boolean;
 };

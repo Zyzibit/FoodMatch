@@ -13,7 +13,7 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251202065923_InitialCreate")]
+    [Migration("20251204112338_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -498,7 +498,6 @@ namespace inzynierka.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("Fats")
@@ -507,6 +506,9 @@ namespace inzynierka.Migrations
                     b.Property<string>("Instructions")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("PreparationTimeMinutes")
                         .HasColumnType("integer");

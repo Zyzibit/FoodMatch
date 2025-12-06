@@ -306,7 +306,8 @@ export default function PlanAddRecipeModal({
   const getSourceLabel = (source?: ProductSource, hasProductId?: boolean) => {
     if (!hasProductId && !source) return "Własny składnik";
     if (source === "OpenFoodFacts") return "Produkt z bazy Open Food Facts";
-    if (source === "AI") return "Produkt wygenerowany przez sztuczną inteligencję";
+    if (source === "AI")
+      return "Produkt wygenerowany przez sztuczną inteligencję";
     if (source === "User") return "Własny składnik";
     return "Produkt z bazy FoodMatch";
   };
@@ -1176,7 +1177,10 @@ export default function PlanAddRecipeModal({
                               <Typography
                                 fontWeight={600}
                                 onClick={() => {
-                                  if (ingredient.source === "OpenFoodFacts" || ingredient.source === "AI") {
+                                  if (
+                                    ingredient.source === "OpenFoodFacts" ||
+                                    ingredient.source === "AI"
+                                  ) {
                                     setSelectedProductId(ingredient.productId);
                                   }
                                 }}

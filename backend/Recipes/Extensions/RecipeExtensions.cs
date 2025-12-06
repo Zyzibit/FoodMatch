@@ -45,6 +45,7 @@ public static class RecipeExtensions
             Proteins = recipe.Protein,
             Carbohydrates = recipe.Carbohydrates,
             Fats = recipe.Fats,
+            IsPublic = recipe.IsPublic,
             CreatedAt = recipe.CreatedAt
         };
     }

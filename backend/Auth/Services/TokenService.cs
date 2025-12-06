@@ -56,6 +56,11 @@ public class TokenService : ITokenService {
     }
     public void SetAccessTokenCookie(HttpResponse response, string? accessToken, int minutes)
     {
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return;
+        }
+        
         response.Cookies.Append("AccessToken", accessToken, new CookieOptions
         {
             HttpOnly = true,
@@ -83,7 +88,7 @@ public class TokenService : ITokenService {
             ValidateLifetime = false, 
             ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey
-                (Encoding.UTF8.GetBytes(_configuration["JWT:secret"]))
+                (Encoding.UTF8.GetBytes(_configuration["JWT:secret"] ?? throw new InvalidOperationException("JWT secret not configured")))
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();

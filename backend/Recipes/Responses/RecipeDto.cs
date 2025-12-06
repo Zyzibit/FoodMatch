@@ -19,6 +19,7 @@ public class RecipeDto
     public decimal Proteins { get; set; }
     public decimal Carbohydrates { get; set; }
     public decimal Fats { get; set; }
+    public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

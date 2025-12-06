@@ -312,7 +312,7 @@ namespace inzynierka.Migrations
                     Source = table.Column<int>(type: "integer", nullable: false),
                     AdditionalProducts = table.Column<List<string>>(type: "text[]", nullable: true),
                     Title = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     Instructions = table.Column<string>(type: "text", nullable: false),
                     PreparationTimeMinutes = table.Column<int>(type: "integer", nullable: false),
                     TotalWeightGrams = table.Column<int>(type: "integer", nullable: false),
@@ -320,6 +320,7 @@ namespace inzynierka.Migrations
                     Protein = table.Column<decimal>(type: "numeric", nullable: false),
                     Carbohydrates = table.Column<decimal>(type: "numeric", nullable: false),
                     Fats = table.Column<decimal>(type: "numeric", nullable: false),
+                    IsPublic = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>

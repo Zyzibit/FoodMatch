@@ -12,7 +12,7 @@ public class Product
     [Key]
     public int Id { get; set; }
     [Required]
-    public string Code { get; set; }
+    public required string Code { get; set; }
     public string? Language { get; set; }
     
     public string? BrandOwner { get; set; }
