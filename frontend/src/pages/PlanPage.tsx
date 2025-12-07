@@ -13,6 +13,7 @@ import PlanMacroSummary from "../components/plan/PlanMacroSummary";
 import PlanAddRecipeModal, {
   type RecipeAddedPayload,
 } from "../components/plan/PlanAddRecipeModal";
+import PlanPdfExportModal from "../components/plan/PlanPdfExportModal";
 import { getRecipeById } from "../services/recipeService";
 import {
   getMealPlansForDate,
@@ -308,6 +309,7 @@ export default function PlanPage() {
   );
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null);
   const [mealForModal, setMealForModal] = useState<PlanMeal | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isPlanLoading, setIsPlanLoading] = useState(false);
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
   const unitNameCacheRef = useRef<Record<number, string>>({});
@@ -546,6 +548,8 @@ export default function PlanPage() {
 
   const handleCloseModal = () => setMealForModal(null);
 
+  const handleOpenPdfModal = () => setIsPdfModalOpen(true);
+  const handleClosePdfModal = () => setIsPdfModalOpen(false);
   const handleRecipeAddedToPlan = (payload: RecipeAddedPayload) => {
     const products = convertIngredientsToProducts(payload.recipe.ingredients);
     setPlan((prev) => {
@@ -631,6 +635,7 @@ export default function PlanPage() {
         <PlanDayHeader
           consumedCalories={plan.consumedCalories}
           dateLabel={formatDate(plan.date)}
+          onExportPdf={handleOpenPdfModal}
         />
 
         <Typography
@@ -679,6 +684,13 @@ export default function PlanPage() {
         planDate={plan.date}
         onClose={handleCloseModal}
         onRecipeAdded={handleRecipeAddedToPlan}
+      />
+
+      <PlanPdfExportModal
+        open={isPdfModalOpen}
+        onClose={handleClosePdfModal}
+        planData={plan}
+        dateLabel={formatDate(plan.date)}
       />
     </Box>
   );

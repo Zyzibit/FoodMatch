@@ -98,8 +98,8 @@ export default function SavedRecipeCard({
           {onShare && !recipe.isPublic && (
             <Button
               startIcon={isSharing ? <CircularProgress size={16} /> : <Share />}
-              color="success"
-              variant="outlined"
+              color="primary"
+              variant="text"
               sx={{ textTransform: "none" }}
               onClick={handleShare}
               disabled={isSharing}
@@ -111,7 +111,7 @@ export default function SavedRecipeCard({
             <Button
               startIcon={<Public />}
               color="success"
-              variant="contained"
+              variant="text"
               sx={{ textTransform: "none" }}
               disabled
             >
@@ -122,7 +122,7 @@ export default function SavedRecipeCard({
             <Button
               startIcon={isCopying ? <CircularProgress size={16} /> : <Add />}
               color="primary"
-              variant="outlined"
+              variant="text"
               sx={{ textTransform: "none" }}
               onClick={handleCopy}
               disabled={isCopying}

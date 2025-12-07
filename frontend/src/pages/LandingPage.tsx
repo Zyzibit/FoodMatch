@@ -125,7 +125,7 @@ export default function LandingPage() {
               width: { xs: 200, md: 250 },
               height: "auto",
               mb: 3,
-              borderRadius: 2,
+              borderRadius: 3,
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
             }}
           />

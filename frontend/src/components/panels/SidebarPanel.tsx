@@ -52,7 +52,7 @@ export default function SidebarPanel({
           component="img"
           src={dietLogo}
           alt="Logo"
-          sx={{ width: 112, height: 112 }}
+          sx={{ width: 112, height: 112, borderRadius: 1.5 }}
         />
         <Typography
           variant="h4"

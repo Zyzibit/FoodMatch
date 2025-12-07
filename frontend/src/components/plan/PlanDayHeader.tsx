@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarMonth,
+  PictureAsPdf,
 } from "@mui/icons-material";
 
 type PlanDayHeaderProps = {
@@ -11,6 +12,7 @@ type PlanDayHeaderProps = {
   onPrev?: () => void;
   onNext?: () => void;
   onPickDate?: () => void;
+  onExportPdf?: () => void;
 };
 
 export default function PlanDayHeader({
@@ -19,6 +21,7 @@ export default function PlanDayHeader({
   onPrev,
   onNext,
   onPickDate,
+  onExportPdf,
 }: PlanDayHeaderProps) {
   return (
     <Stack
@@ -48,6 +51,14 @@ export default function PlanDayHeader({
         </IconButton>
         <IconButton size="small" aria-label="Następny dzień" onClick={onNext}>
           <ChevronRight />
+        </IconButton>
+        <IconButton
+          size="small"
+          aria-label="Eksportuj do PDF"
+          onClick={onExportPdf}
+          color="primary"
+        >
+          <PictureAsPdf />
         </IconButton>
       </Stack>
     </Stack>
