@@ -108,6 +108,18 @@ builder.Services.AddUserPreferencesServices();
 
 builder.Services.AddScoped<IAiClient, AiClient>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5127")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition");
+    });
+});
+
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -165,6 +177,8 @@ builder.Services.AddAuthentication(options =>
     ;
 
 var app = builder.Build();
+
+app.UseCors("AllowFrontend");
 
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
