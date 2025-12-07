@@ -1,3 +1,5 @@
+using inzynierka.ShoppingList.Model;
+
 namespace inzynierka.ShoppingList.Repositories;
 
 public interface IShoppingListRepository
@@ -8,7 +10,6 @@ public interface IShoppingListRepository
     Task<ShoppingListItem> AddItemAsync(ShoppingListItem item);
     Task<ShoppingListItem> UpdateItemAsync(ShoppingListItem item);
     Task DeleteItemAsync(int itemId);
-    Task<bool> ProductExistsAsync(int productId);
 }
 
 

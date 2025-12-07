@@ -1,3 +1,4 @@
+using inzynierka.ShoppingList.Model;
 using inzynierka.ShoppingList.Responses;
 
 namespace inzynierka.ShoppingList.Extensions;
@@ -21,11 +22,13 @@ public static class ShoppingListExtensions
             Id = item.Id,
             Quantity = item.Quantity,
             ProductId = item.ProductId,
-            ProductName = item.Product.ProductName,
-            ProductCode = item.Product.Code,
-            ImageUrl = item.Product.ImageUrl,
-            Brands = item.Product.Brands,
-            Source = item.Product.Source.ToString()
+            ProductName = item.Product?.ProductName ?? item.ProductName,
+            ProductCode = item.Product?.Code,
+            ImageUrl = item.Product?.ImageUrl,
+            Brands = item.Product?.Brands,
+            Source = item.Product?.Source.ToString(),
+            UnitId = item.UnitId,
+            UnitName = item.Unit.Name
         };
     }
 }
