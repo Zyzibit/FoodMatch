@@ -48,46 +48,41 @@ var body = $@"
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Resetowanie hasła DIET ZYNZI</title>
     <style>
-        /* Global Styles & Reset */
         body {{
             margin: 0;
             padding: 0;
             font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             line-height: 1.5;
             color: #1f2937; 
-            background-color: #f8f8f4; /* Bardziej beżowe, jasne tło pasujące do UI */
+            background-color: #f8f8f4;
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
         }}
-        /* Main Container */
         .container {{
             max-width: 550px; 
             margin: 30px auto;
             background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* Cień bliższy UI */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); 
             overflow: hidden;
         }}
-        /* Header/Hero Section - Zoptymalizowany pod logo */
         .header {{
-            background-color: #4F7972; /* Ciemna, stłumiona zieleń z UI */
+            background-color: #4F7972; 
             color: white;
-            padding: 20px 25px 30px; /* Zmniejszony górny padding */
+            padding: 20px 25px 30px; 
             text-align: center;
         }}
         .header h1 {{
-            margin: 10px 0 0 0; /* Dodatkowy margines między logo a tekstem */
-            font-size: 22px; /* Lekko mniejsza czcionka nagłówka pod logo */
+            margin: 10px 0 0 0; 
+            font-size: 22px; 
             font-weight: 700;
         }}
-        /* Logo Styles */
         .header .logo {{
-            max-width: 60px; /* Rozmiar loga */
+            max-width: 60px;
             height: auto;
             display: block;
             margin: 0 auto;
         }}
-        /* Content Section */
         .content {{
             padding: 30px 35px;
         }}
@@ -96,7 +91,6 @@ var body = $@"
             font-size: 16px;
             color: #374151;
         }}
-        /* Button Styling - Używamy jaśniejszej, akcentowej zieleni */
         .button-area {{
             text-align: center;
             margin: 30px 0;
@@ -104,17 +98,16 @@ var body = $@"
         .button {{
             display: inline-block;
             padding: 15px 40px;
-            background-color: #5cb85c; /* Jaśniejsza zieleń, akcent */
+            background-color: #5cb85c;
             color: #ffffff;
             text-decoration: none;
             border-radius: 8px; 
             font-weight: 600;
             font-size: 17px;
-            box-shadow: 0 4px 6px rgba(92, 184, 92, 0.4); /* Subtelny cień na przycisku */
+            box-shadow: 0 4px 6px rgba(92, 184, 92, 0.4);
         }}
-        /* Link/Token Box - Jasne tło, pasujące do UI */
         .token-box {{
-            background-color: #f3f5f6; /* Lekko szary/beżowy kolor tła elementów UI */
+            background-color: #f3f5f6;
             padding: 15px;
             margin: 20px 0;
             border-radius: 8px;
@@ -127,7 +120,6 @@ var body = $@"
             text-decoration: none;
             font-family: monospace;
         }}
-        /* Bullet Points/List */
         .info-list {{
             list-style-type: none;
             padding-left: 0;
@@ -142,19 +134,18 @@ var body = $@"
         }}
         .info-list li::before {{
             content: '•';
-            color: #5cb85c; /* Akcentowa zieleń */
+            color: #5cb85c;
             font-weight: bold;
             display: inline-block;
             width: 1em;
             margin-left: -1em;
         }}
-        /* Footer */
         .footer {{
             text-align: center;
             padding: 25px;
             color: #9ca3af;
             font-size: 12px;
-            background-color: #f7f9fb; /* Używamy jasnego tła */
+            background-color: #f7f9fb;
             border-top: 1px solid #f3f4f6;
         }}
     </style>
