@@ -1,4 +1,5 @@
 using inzynierka.Data;
+using inzynierka.ShoppingList.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace inzynierka.ShoppingList.Repositories;
@@ -17,6 +18,8 @@ public class ShoppingListRepository : IShoppingListRepository
         return await _context.ShoppingLists
             .Include(sl => sl.Items)
                 .ThenInclude(i => i.Product)
+            .Include(sl => sl.Items)
+                .ThenInclude(i => i.Unit)
             .FirstOrDefaultAsync(sl => sl.UserId == userId);
     }
 
@@ -31,6 +34,7 @@ public class ShoppingListRepository : IShoppingListRepository
     {
         return await _context.ShoppingListItems
             .Include(i => i.Product)
+            .Include(i => i.Unit)
             .FirstOrDefaultAsync(i => i.Id == itemId);
     }
 
@@ -39,9 +43,17 @@ public class ShoppingListRepository : IShoppingListRepository
         _context.ShoppingListItems.Add(item);
         await _context.SaveChangesAsync();
         
-        // Load the product details
+        // Load the product details (if exists)
+        if (item.ProductId.HasValue)
+        {
+            await _context.Entry(item)
+                .Reference(i => i.Product)
+                .LoadAsync();
+        }
+        
+        // Load the unit details
         await _context.Entry(item)
-            .Reference(i => i.Product)
+            .Reference(i => i.Unit)
             .LoadAsync();
             
         return item;
@@ -62,11 +74,6 @@ public class ShoppingListRepository : IShoppingListRepository
             _context.ShoppingListItems.Remove(item);
             await _context.SaveChangesAsync();
         }
-    }
-
-    public async Task<bool> ProductExistsAsync(int productId)
-    {
-        return await _context.Products.AnyAsync(p => p.Id == productId);
     }
 }
 

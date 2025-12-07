@@ -9,6 +9,7 @@ using inzynierka.Auth.Model;
 using inzynierka.MealPlans.Model;
 using inzynierka.Recipes.Model;
 using inzynierka.ShoppingList;
+using inzynierka.ShoppingList.Model;
 using inzynierka.Units.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -108,6 +109,19 @@ public class AppDbContext : IdentityDbContext<User> {
             .HasOne(sli => sli.Product)
             .WithMany()
             .HasForeignKey(sli => sli.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ShoppingListItem>()
+            .HasOne(sli => sli.Unit)
+            .WithMany()
+            .HasForeignKey(sli => sli.UnitId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ShoppingListItem>()
+            .Property(sli => sli.ProductName)
+            .IsRequired()
+            .HasMaxLength(255);
     }
 }
