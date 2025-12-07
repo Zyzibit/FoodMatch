@@ -185,40 +185,6 @@ const parseGeneratedRecipe = (data: any): GeneratedRecipe => ({
     : [],
 });
 
-const parseGeneratedRecipe = (data: any): GeneratedRecipe => ({
-  title: data?.title ?? data?.Title ?? "",
-  description: data?.description ?? data?.Description ?? "",
-  instructions: data?.instructions ?? data?.Instructions ?? "",
-  preparationTimeMinutes: parseNumber(
-    data?.preparationTimeMinutes ?? data?.PreparationTimeMinutes
-  ),
-  totalWeightGrams: parseNumber(
-    data?.totalWeightGrams ?? data?.TotalWeightGrams
-  ),
-  calories: parseNumber(data?.calories ?? data?.Calories),
-  proteins: parseNumber(data?.proteins ?? data?.Proteins),
-  carbohydrates: parseNumber(data?.carbohydrates ?? data?.Carbohydrates),
-  fats: parseNumber(data?.fats ?? data?.Fats),
-  ingredients: Array.isArray(data?.ingredients ?? data?.Ingredients)
-    ? (data?.ingredients ?? data?.Ingredients).map((ing: any) => ({
-        productId: parseNumber(ing?.productId ?? ing?.ProductId),
-        productName: ing?.productName ?? ing?.ProductName ?? "",
-        unitId: parseNumber(ing?.unitId ?? ing?.UnitId),
-        unitName: ing?.unitName ?? ing?.UnitName ?? "",
-        quantity: parseNumber(ing?.quantity ?? ing?.Quantity),
-        normalizedQuantityInGrams: parseNumber(
-          ing?.normalizedQuantityInGrams ?? ing?.NormalizedQuantityInGrams
-        ),
-        source: ing?.source ?? ing?.Source,
-      }))
-    : [],
-  additionalProducts: Array.isArray(
-    data?.additionalProducts ?? data?.AdditionalProducts
-  )
-    ? (data?.additionalProducts ?? data?.AdditionalProducts)
-    : [],
-});
-
 export const generateRecipePreview = async (
   request: GenerateRecipeRequest
 ): Promise<GeneratedRecipe> => {
@@ -336,11 +302,9 @@ export const getCommunityRecipes = async (
   );
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({
-        message: "Nie udało się pobrać przepisów społeczności",
-      }));
+    const error = await response.json().catch(() => ({
+      message: "Nie udało się pobrać przepisów społeczności",
+    }));
     throw new Error(
       error.message || "Nie udało się pobrać przepisów społeczności"
     );
@@ -390,5 +354,20 @@ export const shareRecipe = async (recipeId: number): Promise<void> => {
       .json()
       .catch(() => ({ message: "Nie udało się udostępnić przepisu" }));
     throw new Error(error.message || "Nie udało się udostępnić przepisu");
+  }
+};
+
+export const deleteRecipe = async (recipeId: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się usunąć przepisu" }));
+    throw new Error(error.message || "Nie udało się usunąć przepisu");
   }
 };

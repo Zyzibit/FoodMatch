@@ -274,5 +274,35 @@ public class RecipeController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+    
+    [HttpDelete("{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteRecipe(int id)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var result = await _recipeService.DeleteRecipeAsync(userId, id);
+            if (!result)
+            {
+                return NotFound(new { message = "Recipe not found or you don't have permission to delete it" });
+            }
+
+            return Ok(new { 
+                success = true, 
+                message = "Recipe deleted successfully" 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting recipe {Id}", id);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }
 

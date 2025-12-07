@@ -5,6 +5,7 @@ using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Requests;
 using inzynierka.MealPlans.Responses;
 using inzynierka.Recipes.Services;
+using Microsoft.Extensions.Logging;
 
 namespace inzynierka.MealPlans.Services;
 
@@ -12,11 +13,13 @@ public class MealPlanService: IMealPlanService
 {
     private readonly IMealPlanRepository _mealPlanRepository;
     private readonly IRecipeService _recipeService;
+    private readonly ILogger<MealPlanService> _logger;
         
-    public MealPlanService(IMealPlanRepository mealPlanRepository, IRecipeService recipeService)
+    public MealPlanService(IMealPlanRepository mealPlanRepository, IRecipeService recipeService, ILogger<MealPlanService> logger)
     {
         _mealPlanRepository = mealPlanRepository;
         _recipeService = recipeService;
+        _logger = logger;
     }
 
     public async Task<AddMealPlanResponse> AddMealPlanAsync(string userId, CreateMealPlanRequest request)
@@ -111,6 +114,40 @@ public class MealPlanService: IMealPlanService
                 MealPlans = new List<MealPlanDto>(),
                 Message = $"Error getting meal plans: {ex.Message}"
             };
+        }
+    }
+
+    public async Task<bool> DeleteMealPlanAsync(string userId, int mealPlanId)
+    {
+        try
+        {
+            _logger.LogInformation("Attempting to delete meal plan {MealPlanId} for user {UserId}", mealPlanId, userId);
+            
+            var mealPlan = await _mealPlanRepository.GetMealPlanAsync(mealPlanId);
+            
+            if (mealPlan == null)
+            {
+                _logger.LogWarning("Meal plan with ID {MealPlanId} not found", mealPlanId);
+                return false;
+            }
+
+            _logger.LogInformation("Found meal plan {MealPlanId} owned by user {OwnerId}", mealPlanId, mealPlan.UserId);
+
+            if (mealPlan.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} attempted to delete meal plan {MealPlanId} owned by {OwnerId}", 
+                    userId, mealPlanId, mealPlan.UserId);
+                return false;
+            }
+
+            await _mealPlanRepository.DeleteMealPlanAsync(mealPlanId);
+            _logger.LogInformation("Meal plan {MealPlanId} deleted successfully by user {UserId}", mealPlanId, userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting meal plan {MealPlanId}", mealPlanId);
+            return false;
         }
     }
 }

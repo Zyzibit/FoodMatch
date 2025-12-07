@@ -1,5 +1,5 @@
 import { Box, Button, Chip, Collapse, Stack, Typography } from "@mui/material";
-import { Add, Edit } from "@mui/icons-material";
+import { Add, Edit, Delete } from "@mui/icons-material";
 import type { PlanMeal } from "../../types/plan";
 import PlanMealMacroSummary from "./PlanMealMacroSummary";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { colors } from "../../theme";
 type PlanMealCardProps = {
   meal: PlanMeal;
   onEdit?: (meal: PlanMeal) => void;
+  onDelete?: (meal: PlanMeal) => void;
   onAddRecipe?: (meal: PlanMeal) => void;
   onExpand?: (meal: PlanMeal) => void;
   isExpanded?: boolean;
@@ -17,6 +18,7 @@ type PlanMealCardProps = {
 export default function PlanMealCard({
   meal,
   onEdit,
+  onDelete,
   onAddRecipe,
   onExpand,
   isExpanded = false,
@@ -103,14 +105,26 @@ export default function PlanMealCard({
             {primaryLabel}
           </Button>
           {!isPlaceholder && (
-            <Button
-              size="small"
-              variant="text"
-              sx={{ textTransform: "none" }}
-              onClick={() => onExpand?.(meal)}
-            >
-              {isExpanded ? "Zwiń" : "Rozwiń"}
-            </Button>
+            <>
+              <Button
+                startIcon={<Delete />}
+                size="small"
+                variant="text"
+                color="error"
+                sx={{ textTransform: "none" }}
+                onClick={() => onDelete?.(meal)}
+              >
+                Usuń
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                sx={{ textTransform: "none" }}
+                onClick={() => onExpand?.(meal)}
+              >
+                {isExpanded ? "Zwiń" : "Rozwiń"}
+              </Button>
+            </>
           )}
         </Stack>
       </Stack>

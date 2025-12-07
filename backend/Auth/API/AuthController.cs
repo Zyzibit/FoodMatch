@@ -259,6 +259,7 @@ public class AuthController : ControllerBase
                 Username = user.UserName ?? string.Empty,
                 Email = user.Email ?? string.Empty,
                 Roles = roles.ToList(),
+                ProfilePictureUrl = user.ProfilePictureUrl,
             };
 
             return Ok(userInfo);

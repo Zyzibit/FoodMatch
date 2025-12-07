@@ -29,6 +29,7 @@ public class MealPlanRepository : IMealPlanRepository
     public async Task<MealPlan?> GetMealPlanAsync(int mealPlanId)
     {
         return await _dbContext.MealPlans
+            .Include(mp => mp.Recipe)
             .FirstOrDefaultAsync(mp => mp.Id == mealPlanId);
     }
 

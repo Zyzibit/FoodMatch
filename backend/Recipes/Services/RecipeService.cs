@@ -182,6 +182,40 @@ public class RecipeService : IRecipeService
         }
     }
 
+    public async Task<bool> DeleteRecipeAsync(string userId, int recipeId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("User ID is required to delete a recipe", nameof(userId));
+            }
+
+            var recipe = await _recipeRepository.GetRecipeByIdAsync(recipeId);
+            if (recipe == null)
+            {
+                return false;
+            }
+
+            if (recipe.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} attempted to delete recipe {RecipeId} owned by {OwnerId}", 
+                    userId, recipeId, recipe.UserId);
+                return false;
+            }
+
+            await _recipeRepository.DeleteRecipeAsync(recipeId);
+            _logger.LogInformation("Recipe {RecipeId} deleted by user {UserId}", recipeId, userId);
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting recipe {RecipeId} by user {UserId}", recipeId, userId);
+            return false;
+        }
+    }
+
     public async Task<CreateRecipeResult> CreateRecipeAsync(string userId, CreateRecipeRequest request)
     {
         try

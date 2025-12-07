@@ -160,7 +160,11 @@ export default function AdminUsersPage() {
                       {new Date(user.createdAt).toLocaleDateString("pl-PL")}
                     </TableCell>
                     <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="flex-end"
+                      >
                         <IconButton
                           size="small"
                           color="primary"
@@ -188,7 +192,10 @@ export default function AdminUsersPage() {
       </Stack>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Potwierdź usunięcie</DialogTitle>
         <DialogContent>
           <Typography>
@@ -198,7 +205,11 @@ export default function AdminUsersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Anuluj</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Usuń
           </Button>
         </DialogActions>
@@ -235,7 +246,11 @@ export default function AdminUsersPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditDialogOpen(false)}>Anuluj</Button>
-          <Button onClick={handleEditConfirm} color="primary" variant="contained">
+          <Button
+            onClick={handleEditConfirm}
+            color="primary"
+            variant="contained"
+          >
             Zapisz
           </Button>
         </DialogActions>

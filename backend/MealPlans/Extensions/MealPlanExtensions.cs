@@ -32,10 +32,10 @@ public static class MealPlanExtensions
         {
             Success = true,
             MealPlans = mealPlanList,
-            TotalCalories = mealPlanList.Sum(mp => mp.Recipe.Calories),
-            TotalProteins = mealPlanList.Sum(mp => mp.Recipe.Proteins),
-            TotalCarbohydrates = mealPlanList.Sum(mp => mp.Recipe.Carbohydrates),
-            TotalFats = mealPlanList.Sum(mp => mp.Recipe.Fats),
+            TotalCalories = mealPlanList.Sum(mp => mp.Recipe?.Calories ?? 0),
+            TotalProteins = mealPlanList.Sum(mp => mp.Recipe?.Proteins ?? 0),
+            TotalCarbohydrates = mealPlanList.Sum(mp => mp.Recipe?.Carbohydrates ?? 0),
+            TotalFats = mealPlanList.Sum(mp => mp.Recipe?.Fats ?? 0),
             Message = $"Found {mealPlanList.Count} meal plan(s) for {date:yyyy-MM-dd}"
         };
     }

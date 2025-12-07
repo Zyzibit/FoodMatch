@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Collapse,
   FormControl,
   FormHelperText,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
@@ -14,6 +16,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { PhotoCamera, Delete as DeleteIcon } from "@mui/icons-material";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import userMeasurementsService, {
   type FoodPreferencesResponse,
@@ -22,6 +25,9 @@ import {
   FITNESS_GOAL_OPTIONS,
   type FitnessGoal,
 } from "../constants/fitnessGoals";
+import userService from "../services/userService";
+import { useAuth } from "../contexts/AuthContext";
+import { API_BASE_URL } from "../config";
 
 const ACTIVITY_LEVEL_VALUES = [
   "very_low",
@@ -135,7 +141,9 @@ const toNumberOrNull = (value?: number | null): number | null =>
 
 export default function UserProfilePage() {
   const { activeTab } = useDashboardContext();
+  const { user, refreshUser } = useAuth();
   const latestPreferencesRequest = useRef(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [age, setAge] = useState<number | "">("");
   const [weight, setWeight] = useState<number | "">("");
   const [height, setHeight] = useState<number | "">("");
@@ -143,6 +151,9 @@ export default function UserProfilePage() {
   const [gender, setGender] = useState<Gender | "">("");
   const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal>("Maintenance");
   const [showCalculationDetails, setShowCalculationDetails] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [calculatedBMR, setCalculatedBMR] = useState<number | null>(null);
   const [calculatedDailyCalories, setCalculatedDailyCalories] = useState<
     number | null
@@ -284,6 +295,152 @@ export default function UserProfilePage() {
       return;
     }
     persistProfile("Pomiary zapisane");
+  };
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      alert("Nieprawidłowy format pliku. Dozwolone: JPG, PNG, GIF, WebP");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Plik jest za duży. Maksymalny rozmiar to 5MB");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfilePicture = async () => {
+    if (!selectedFile) return;
+
+    setUploadingImage(true);
+    try {
+      await userService.uploadProfilePicture(selectedFile);
+      await refreshUser();
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      alert("Zdjęcie profilowe zostało zaktualizowane");
+    } catch (error) {
+      console.error("Failed to upload profile picture:", error);
+      alert("Nie udało się wgrać zdjęcia profilowego");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (!confirm("Czy na pewno chcesz usunąć zdjęcie profilowe?")) return;
+
+    setUploadingImage(true);
+    try {
+      await userService.deleteProfilePicture();
+      await refreshUser();
+      alert("Zdjęcie profilowe zostało usunięte");
+    } catch (error) {
+      console.error("Failed to delete profile picture:", error);
+      alert("Nie udało się usunąć zdjęcia profilowego");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const renderProfilePicture = () => {
+    const displayUrl =
+      previewUrl ||
+      (user?.profilePictureUrl
+        ? `${API_BASE_URL.replace("/api/v1", "")}${user.profilePictureUrl}`
+        : undefined);
+
+    return (
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Zdjęcie profilowe
+        </Typography>
+        <Stack direction="row" spacing={3} alignItems="center">
+          <Box sx={{ position: "relative" }}>
+            <Avatar src={displayUrl} sx={{ width: 120, height: 120 }}>
+              {user?.username?.charAt(0).toUpperCase()}
+            </Avatar>
+            <IconButton
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                bgcolor: "primary.main",
+                color: "white",
+                "&:hover": { bgcolor: "primary.dark" },
+              }}
+              size="small"
+              onClick={handleProfilePictureClick}
+              disabled={uploadingImage}
+            >
+              <PhotoCamera fontSize="small" />
+            </IconButton>
+          </Box>
+          <Stack spacing={1}>
+            <Typography variant="body2" color="text.secondary">
+              Dozwolone formaty: JPG, PNG, GIF, WebP
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Maksymalny rozmiar: 5MB
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              {selectedFile && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={handleSaveProfilePicture}
+                  disabled={uploadingImage}
+                >
+                  Zapisz zdjęcie
+                </Button>
+              )}
+              {user?.profilePictureUrl && !selectedFile && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteProfilePicture}
+                  disabled={uploadingImage}
+                >
+                  Usuń zdjęcie
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+        </Stack>
+      </Paper>
+    );
   };
 
   const renderMeasurements = () => (
@@ -661,6 +818,7 @@ export default function UserProfilePage() {
   return (
     <Box sx={{ p: 2, width: "100%" }}>
       <Stack spacing={3} sx={{ width: "100%" }}>
+        {activeTab === "profil" && renderProfilePicture()}
         {(activeTab === "pomiary" || !activeTab) && renderMeasurements()}
         {activeTab === "zapotrzebowanie" && (
           <>
@@ -668,7 +826,8 @@ export default function UserProfilePage() {
             {renderMacroGoals()}
           </>
         )}
-        {activeTab === "alergeny" && renderAllergens()}
+        {(activeTab === "alergeny" || activeTab === "preferencje") &&
+          renderAllergens()}
       </Stack>
     </Box>
   );

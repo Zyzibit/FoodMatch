@@ -13,7 +13,7 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251204112338_InitialCreate")]
+    [Migration("20251206225243_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -563,6 +563,51 @@ namespace inzynierka.Migrations
                     b.ToTable("RecipeIngredients");
                 });
 
+            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ShoppingLists");
+                });
+
+            modelBuilder.Entity("inzynierka.ShoppingList.ShoppingListItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("ShoppingListId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ShoppingListId");
+
+                    b.ToTable("ShoppingListItems");
+                });
+
             modelBuilder.Entity("inzynierka.Units.Models.Unit", b =>
                 {
                     b.Property<int>("UnitId")
@@ -636,6 +681,9 @@ namespace inzynierka.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -854,6 +902,32 @@ namespace inzynierka.Migrations
                     b.Navigation("Recipe");
 
                     b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+                {
+                    b.HasOne("inzynierka.Users.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("inzynierka.ShoppingList.ShoppingListItem", b =>
+                {
+                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("inzynierka.ShoppingList.Model.ShoppingList", null)
+                        .WithMany("Items")
+                        .HasForeignKey("ShoppingListId");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("inzynierka.Users.Model.User", b =>
@@ -1118,6 +1192,11 @@ namespace inzynierka.Migrations
             modelBuilder.Entity("inzynierka.Recipes.Model.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("inzynierka.Users.Model.User", b =>

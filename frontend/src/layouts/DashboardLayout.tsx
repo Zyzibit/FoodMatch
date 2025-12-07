@@ -12,6 +12,7 @@ import TopPanel from "../components/panels/TopPanel";
 import Footer from "../components/panels/Footer";
 import { useAuth } from "../contexts/AuthContext";
 import userMeasurementsService from "../services/userMeasurementsService";
+import { API_BASE_URL } from "../config";
 
 const SUPPORTED_PAGES = new Set([
   "plan",
@@ -114,6 +115,11 @@ export default function DashboardLayout() {
           onItemClick={handleSidebarClick}
           onLogoutClick={handleLogout}
           userName={user?.username || "User"}
+          userAvatar={
+            user?.profilePictureUrl
+              ? `${API_BASE_URL.replace("/api/v1", "")}${user.profilePictureUrl}`
+              : undefined
+          }
         />
       </Box>
 

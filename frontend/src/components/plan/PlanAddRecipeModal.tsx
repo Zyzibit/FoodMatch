@@ -631,10 +631,10 @@ export default function PlanAddRecipeModal({
             >
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
                 spacing={1.5}
+                alignItems="flex-start"
               >
-                <Box>
+                <Box flex={1}>
                   <Typography variant="subtitle1" fontWeight={700}>
                     {recipe.title}
                   </Typography>
@@ -656,7 +656,7 @@ export default function PlanAddRecipeModal({
                     )}
                   </Stack>
                 </Box>
-                <Box textAlign={{ xs: "left", sm: "right" }}>
+                <Box sx={{ minWidth: 120 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {Math.round(recipe.calories)} kcal
                   </Typography>

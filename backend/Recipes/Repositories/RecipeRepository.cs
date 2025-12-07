@@ -37,6 +37,16 @@ public class RecipeRepository : IRecipeRepository
         return recipe;
     }
 
+    public async Task DeleteRecipeAsync(int recipeId)
+    {
+        var recipe = await _db.Recipes.FindAsync(recipeId);
+        if (recipe != null)
+        {
+            _db.Recipes.Remove(recipe);
+            await _db.SaveChangesAsync();
+        }
+    }
+
     public async Task<(List<Recipe> Recipes, int TotalCount)> GetAllRecipesAsync(int limit = 50, int offset = 0)
     {
         var total = await _db.Recipes.CountAsync();

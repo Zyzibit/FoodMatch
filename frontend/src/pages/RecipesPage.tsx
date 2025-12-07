@@ -14,6 +14,7 @@ import {
   getCommunityRecipes,
   copyRecipeToAccount,
   shareRecipe,
+  deleteRecipe,
   type RecipeDetails,
 } from "../services/recipeService";
 
@@ -107,9 +108,20 @@ export default function RecipesPage() {
     setExpandedId((prev) => (prev === recipe.id ? null : recipe.id));
   };
 
-  const handleRemove = (recipe: SavedRecipe) => {
-    setRecipes((prev) => prev.filter((item) => item.id !== recipe.id));
-    setExpandedId((prev) => (prev === recipe.id ? null : prev));
+  const handleRemove = async (recipe: SavedRecipe) => {
+    const recipeId = parseInt(recipe.id, 10);
+    if (Number.isNaN(recipeId)) {
+      return;
+    }
+
+    try {
+      await deleteRecipe(recipeId);
+      setRecipes((prev) => prev.filter((item) => item.id !== recipe.id));
+      setExpandedId((prev) => (prev === recipe.id ? null : prev));
+    } catch (err) {
+      console.error("Błąd podczas usuwania przepisu:", err);
+      alert("Nie udało się usunąć przepisu");
+    }
   };
 
   const handleCopyRecipe = async (recipe: SavedRecipe) => {

@@ -16,6 +16,7 @@ import PlanAddRecipeModal, {
 import { getRecipeById } from "../services/recipeService";
 import {
   getMealPlansForDate,
+  deleteMealPlan,
   type MealPlanDto,
 } from "../services/mealPlanService";
 import { getAllUnits } from "../services/unitService";
@@ -498,6 +499,51 @@ export default function PlanPage() {
     setMealForModal(meal);
   };
 
+  const handleDeleteMeal = async (meal: PlanMeal) => {
+    if (!meal.mealPlanId) return;
+
+    if (!confirm(`Czy na pewno chcesz usunąć "${meal.title}" z planu?`)) return;
+
+    try {
+      await deleteMealPlan(meal.mealPlanId);
+
+      setPlan((prev) => {
+        const updatedMeals = prev.meals.map((planMeal) => {
+          if (planMeal.id !== meal.id) {
+            return planMeal;
+          }
+
+          const defaultSlot = defaultSlotLookup[planMeal.type];
+          return {
+            id: planMeal.id,
+            type: planMeal.type,
+            time: defaultSlot?.time ?? "",
+            isPlaceholder: true,
+            title: "",
+            description: "",
+            calories: 0,
+            macros: { protein: 0, fat: 0, carbs: 0 },
+            products: [],
+            instructions: "",
+            isDetailsLoading: false,
+            detailsError: null,
+          };
+        });
+
+        return withUpdatedSummary(
+          {
+            ...prev,
+            meals: updatedMeals,
+          },
+          macroTargetsRef.current
+        );
+      });
+    } catch (error) {
+      console.error("Failed to delete meal plan:", error);
+      alert("Nie udało się usunąć posiłku z planu");
+    }
+  };
+
   const handleCloseModal = () => setMealForModal(null);
 
   const handleRecipeAddedToPlan = (payload: RecipeAddedPayload) => {
@@ -613,6 +659,7 @@ export default function PlanPage() {
           meals={plan.meals}
           onAddRecipe={handleAddRecipe}
           onEditMeal={handleEditMeal}
+          onDeleteMeal={handleDeleteMeal}
           expandedMealId={expandedMealId}
           onExpandMeal={handleExpandMeal}
         />

@@ -152,7 +152,7 @@ public class UserController(
         return Ok(new { message = "User deleted successfully" });
     }
 
-    [HttpPost("/profile-picture")]
+    [HttpPost("profile-picture")]
     [Authorize]
     public async Task<IActionResult> UploadProfilePicture(IFormFile? file)
     {
@@ -187,7 +187,7 @@ public class UserController(
         }
     }
 
-    [HttpDelete("/profile-picture")]
+    [HttpDelete("profile-picture")]
     [Authorize]
     public async Task<IActionResult> DeleteProfilePicture()
     {
