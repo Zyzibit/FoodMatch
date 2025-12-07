@@ -180,14 +180,6 @@ var body = $@"
                 <li>Jeśli nie prosiłeś o reset hasła, <strong>natychmiast zignoruj</strong> tę wiadomość.</li>
                 <li>Po zmianie hasła, wszystkie aktywne sesje zostaną wylogowane.</li>
             </ul>
-            
-            <p style='font-size: 14px; color: #6b7280; margin-top: 25px;'>
-                *Opcjonalnie, w przypadku problemów, użyj poniższego kodu tokenu na stronie resetowania:
-            </p>
-            <div class='token-box'>
-                <code>{HttpUtility.HtmlEncode(resetToken)}</code>
-            </div>
-
         </div>
         <div class='footer'>
             <p>Jeśli masz jakiekolwiek pytania, skontaktuj się z naszym wsparciem.</p>
