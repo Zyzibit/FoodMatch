@@ -29,6 +29,7 @@ public class MealPlanRepository : IMealPlanRepository
     public async Task<MealPlan?> GetMealPlanAsync(int mealPlanId)
     {
         return await _dbContext.MealPlans
+            .Include(mp => mp.Recipe)
             .FirstOrDefaultAsync(mp => mp.Id == mealPlanId);
     }
 
@@ -45,10 +46,10 @@ public class MealPlanRepository : IMealPlanRepository
     {
         return await _dbContext.MealPlans
             .Include(mp => mp.Recipe)
-                .ThenInclude(r => r.Ingredients)
+                .ThenInclude(r => r!.Ingredients)
                     .ThenInclude(i => i.Product)
             .Include(mp => mp.Recipe)
-                .ThenInclude(r => r.Ingredients)
+                .ThenInclude(r => r!.Ingredients)
                     .ThenInclude(i => i.Unit)
             .Where(mp => mp.UserId == userId && mp.Date >= startDate && mp.Date <= endDate)
             .OrderBy(mp => mp.Date)

@@ -6,7 +6,7 @@ public class Unit
 {
     [Key] public int UnitId { get; set; }
 
-    [Required] [MinLength(1)] public string Name { get; set; }
+    [Required] [MinLength(1)] public required string Name { get; set; }
 
     [Required] public string Description { get; set; } = string.Empty;
 

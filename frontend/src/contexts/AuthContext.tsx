@@ -22,6 +22,7 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   clearError: () => void;
   getCurrentUser: () => Promise<UserInfo>;
   changePassword: (
@@ -185,6 +186,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  }, [getCurrentUser]);
+
   // Note: Token refresh is handled automatically by backend middleware (TokenRefreshMiddleware)
 
   const value: AuthContextType = {
@@ -196,6 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     refreshToken,
+    refreshUser,
     clearError,
     getCurrentUser,
     changePassword,

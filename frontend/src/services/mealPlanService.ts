@@ -119,3 +119,18 @@ export const getMealPlansForDate = async (
 
   return mealPlans.map(parseMealPlanDto);
 };
+
+export const deleteMealPlan = async (mealPlanId: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/mealplans/${mealPlanId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się usunąć posiłku z planu" }));
+    throw new Error(error.message || "Nie udało się usunąć posiłku z planu");
+  }
+};

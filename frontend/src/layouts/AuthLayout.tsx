@@ -1,12 +1,15 @@
 import { Box, Container, Typography } from "@mui/material";
 import type { ReactNode } from "react";
 import dietLogo from "../assets/diet-logo.png";
+import { useNavigate } from "react-router-dom";
 
 type AuthLayoutProps = {
   title?: string;
   children: ReactNode;
 };
 export default function AuthLayout({ children }: AuthLayoutProps) {
+  const navigate = useNavigate();
+
   return (
     <Box
       sx={{
@@ -35,6 +38,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             component="img"
             src={dietLogo}
             alt="Diet logo"
+            onClick={() => navigate("/")}
             sx={{
               width: { xs: 280, sm: 380, md: 520 },
               maxWidth: "95%",
@@ -42,6 +46,11 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
               borderRadius: 2,
               boxShadow: 2,
               objectFit: "contain",
+              cursor: "pointer",
+              transition: "transform 0.2s ease-in-out",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
             }}
           />
         </Box>

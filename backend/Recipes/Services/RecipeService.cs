@@ -63,6 +63,159 @@ public class RecipeService : IRecipeService
         return new RecipeListResult { Success = true, Recipes = dtoList, TotalCount = total };
     }
 
+    public async Task<RecipeListResult> GetPublicRecipesAsync(int limit = 50, int offset = 0)
+    {
+        var (recipes, total) = await _recipeRepository.GetPublicRecipesAsync(limit, offset);
+        var dtoList = recipes.ToDtoList().ToList();
+        return new RecipeListResult { Success = true, Recipes = dtoList, TotalCount = total };
+    }
+
+    public async Task<CreateRecipeResult> CopyRecipeToUserAsync(string userId, int recipeId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("User ID is required to copy a recipe", nameof(userId));
+            }
+
+            var userExists = await _userService.GetUserByIdAsync(userId);
+            if (userExists == null)
+            {
+                throw new InvalidOperationException($"User with ID {userId} does not exist in the database");
+            }
+
+            var originalRecipe = await _recipeRepository.GetRecipeByIdForCopyAsync(recipeId);
+            if (originalRecipe == null)
+            {
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Recipe not found or is not public" 
+                };
+            }
+
+            var ingredients = originalRecipe.Ingredients.Select(i => new RecipeIngredient
+            {
+                ProductId = i.ProductId,
+                UnitId = i.UnitId,
+                Quantity = i.Quantity,
+                NormalizedQuantityInGrams = i.NormalizedQuantityInGrams
+            }).ToList();
+
+            var builder = RecipeBuilder.Create()
+                .ForUser(userId)
+                .FromSource(originalRecipe.Source)
+                .WithIngredients(ingredients)
+                .WithAdditionalProducts(originalRecipe.AdditionalProducts)
+                .WithTitle(originalRecipe.Title)
+                .WithDescription(originalRecipe.Description)
+                .WithInstructions(originalRecipe.Instructions)
+                .WithPreparationTime(originalRecipe.PreparationTimeMinutes)
+                .WithTotalWeightGrams(originalRecipe.TotalWeightGrams)
+                .WithMacros(
+                    calories: originalRecipe.Calories,
+                    protein: originalRecipe.Protein,
+                    carbohydrates: originalRecipe.Carbohydrates,
+                    fats: originalRecipe.Fats)
+                .WithIsPublic(false)
+                .CreatedAt(DateTime.UtcNow);
+
+            var recipe = builder.Build();
+            var result = await _recipeRepository.AddRecipeAsync(recipe);
+            
+            return new CreateRecipeResult { Success = true, RecipeId = result.Id };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error copying recipe {RecipeId} to user {UserId}", recipeId, userId);
+            return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    public async Task<CreateRecipeResult> ShareRecipeAsync(string userId, int recipeId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("User ID is required to share a recipe", nameof(userId));
+            }
+
+            var recipe = await _recipeRepository.GetRecipeByIdAsync(recipeId);
+            if (recipe == null)
+            {
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Recipe not found" 
+                };
+            }
+
+            if (recipe.UserId != userId)
+            {
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "You can only share your own recipes" 
+                };
+            }
+
+            if (recipe.IsPublic)
+            {
+                return new CreateRecipeResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Recipe is already shared" 
+                };
+            }
+
+            recipe.IsPublic = true;
+            await _recipeRepository.UpdateRecipeAsync(recipe);
+            
+            return new CreateRecipeResult { Success = true, RecipeId = recipe.Id };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sharing recipe {RecipeId} by user {UserId}", recipeId, userId);
+            return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    public async Task<bool> DeleteRecipeAsync(string userId, int recipeId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new ArgumentException("User ID is required to delete a recipe", nameof(userId));
+            }
+
+            var recipe = await _recipeRepository.GetRecipeByIdAsync(recipeId);
+            if (recipe == null)
+            {
+                return false;
+            }
+
+            if (recipe.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} attempted to delete recipe {RecipeId} owned by {OwnerId}", 
+                    userId, recipeId, recipe.UserId);
+                return false;
+            }
+
+            await _recipeRepository.DeleteRecipeAsync(recipeId);
+            _logger.LogInformation("Recipe {RecipeId} deleted by user {UserId}", recipeId, userId);
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting recipe {RecipeId} by user {UserId}", recipeId, userId);
+            return false;
+        }
+    }
+
     public async Task<CreateRecipeResult> CreateRecipeAsync(string userId, CreateRecipeRequest request)
     {
         try
@@ -132,7 +285,12 @@ public class RecipeService : IRecipeService
             var userPreferences = await _userPreferencesService.GetUserFoodPreferencesAsync(userId);
             
             var preferences = request.Preferences.MergeWithUserPreferences(userPreferences);
-            preferences.ApplyMealTypeGoals(request.MealType, userPreferences);
+            
+            if (!string.IsNullOrEmpty(request.MealType) && userPreferences != null)
+            {
+                preferences.ApplyMealTypeGoals(request.MealType, userPreferences);
+            }
+            
             var productsInfo = await _productService.GetProductsByIdsAsync(request.ProductIds);
             var productsList = productsInfo.ToList();
             
@@ -280,6 +438,7 @@ public class RecipeService : IRecipeService
                     protein: request.Proteins,
                     carbohydrates: request.Carbohydrates,
                     fats: request.Fats)
+                .WithIsPublic(request.IsPublic)
                 .CreatedAt(DateTime.UtcNow);
 
             var recipe = builder.Build();

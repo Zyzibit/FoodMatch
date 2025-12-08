@@ -65,6 +65,7 @@ export interface SaveGeneratedRecipeRequest {
   proteins: number;
   carbohydrates: number;
   fats: number;
+  isPublic?: boolean;
   ingredients: {
     productId: number;
     unitId: number;
@@ -97,6 +98,8 @@ export interface RecipeDetails {
   fats: number;
   ingredients: RecipeDetailsIngredient[];
   additionalProducts?: string[];
+  isPublic?: boolean;
+  createdAt?: string;
 }
 
 const parseNumber = (value: any): number => {
@@ -144,6 +147,8 @@ const parseRecipeDetails = (data: any): RecipeDetails => ({
   )
     ? (data?.additionalProducts ?? data?.AdditionalProducts)
     : [],
+  isPublic: data?.isPublic ?? data?.IsPublic ?? false,
+  createdAt: data?.createdAt ?? data?.CreatedAt,
 });
 
 const parseGeneratedRecipe = (data: any): GeneratedRecipe => ({
@@ -256,7 +261,7 @@ export const getUserRecipes = async (
   offset: number = 0
 ): Promise<RecipeListResult> => {
   const response = await fetch(
-    `${API_BASE_URL}/recipes/my?limit=${limit}&offset=${offset}`,
+    `${API_BASE_URL}/recipes/me?limit=${limit}&offset=${offset}`,
     {
       method: "GET",
       headers: getAuthHeaders(),
@@ -281,4 +286,88 @@ export const getUserRecipes = async (
     offset: data.offset || offset,
     hasMore: data.hasMore || false,
   };
+};
+
+export const getCommunityRecipes = async (
+  limit: number = 50,
+  offset: number = 0
+): Promise<RecipeListResult> => {
+  const response = await fetch(
+    `${API_BASE_URL}/recipes/community?limit=${limit}&offset=${offset}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: "Nie udało się pobrać przepisów społeczności",
+    }));
+    throw new Error(
+      error.message || "Nie udało się pobrać przepisów społeczności"
+    );
+  }
+
+  const data = await response.json();
+  return {
+    recipes: Array.isArray(data.recipes)
+      ? data.recipes.map(parseRecipeDetails)
+      : [],
+    totalCount: data.totalCount || 0,
+    limit: data.limit || limit,
+    offset: data.offset || offset,
+    hasMore: data.hasMore || false,
+  };
+};
+
+export const copyRecipeToAccount = async (
+  recipeId: number
+): Promise<{ recipeId: string }> => {
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/copy`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się skopiować przepisu" }));
+    throw new Error(error.message || "Nie udało się skopiować przepisu");
+  }
+
+  const data = await response.json();
+  return { recipeId: data.recipeId };
+};
+
+export const shareRecipe = async (recipeId: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}/share`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się udostępnić przepisu" }));
+    throw new Error(error.message || "Nie udało się udostępnić przepisu");
+  }
+};
+
+export const deleteRecipe = async (recipeId: number): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/recipes/${recipeId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się usunąć przepisu" }));
+    throw new Error(error.message || "Nie udało się usunąć przepisu");
+  }
 };

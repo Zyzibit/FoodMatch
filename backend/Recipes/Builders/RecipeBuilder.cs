@@ -17,6 +17,7 @@ public class RecipeBuilder
     private decimal? _protein;
     private decimal? _carbohydrates;
     private decimal? _fats;
+    private bool _isPublic = false;
     private DateTime _createdAt = DateTime.UtcNow;
 
     public static RecipeBuilder Create() => new RecipeBuilder();
@@ -69,6 +70,12 @@ public class RecipeBuilder
         _protein = protein;
         _carbohydrates = carbohydrates;
         _fats = fats;
+        return this;
+    }
+
+    public RecipeBuilder WithIsPublic(bool isPublic)
+    {
+        _isPublic = isPublic;
         return this;
     }
 
@@ -152,6 +159,7 @@ public class RecipeBuilder
             Protein = _protein.Value,
             Carbohydrates = _carbohydrates.Value,
             Fats = _fats.Value,
+            IsPublic = _isPublic,
             CreatedAt = _createdAt
         };
     }

@@ -6,9 +6,9 @@ namespace inzynierka.MealPlans.Extensions;
 
 public static class MealPlanMappingExtensions
 {
-    public static MealPlanDto ToDto(this MealPlan model)
+    public static MealPlanDto? ToDto(this MealPlan? model)
     {
-        if (model == null) return null!; 
+        if (model == null) return null; 
 
         return new MealPlanDto
         {
@@ -29,9 +29,9 @@ public static class MealPlanMappingExtensions
         };
     }
 
-    public static MealPlan ToModel(this MealPlanDto dto)
+    public static MealPlan? ToModel(this MealPlanDto? dto)
     {
-        if (dto == null) return null!;
+        if (dto == null) return null;
 
         return new MealPlan
         {

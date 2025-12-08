@@ -7,6 +7,10 @@ type SavedRecipeListProps = {
   expandedId?: string | null;
   onToggle?: (recipe: SavedRecipe) => void;
   onRemove?: (recipe: SavedRecipe) => void;
+  onCopy?: (recipe: SavedRecipe) => void;
+  onShare?: (recipe: SavedRecipe) => void;
+  copyingRecipeId?: number | null;
+  sharingRecipeId?: number | null;
 };
 
 export default function SavedRecipeList({
@@ -14,6 +18,10 @@ export default function SavedRecipeList({
   expandedId,
   onToggle,
   onRemove,
+  onCopy,
+  onShare,
+  copyingRecipeId,
+  sharingRecipeId,
 }: SavedRecipeListProps) {
   if (!recipes.length) {
     return (
@@ -46,6 +54,10 @@ export default function SavedRecipeList({
           isExpanded={expandedId === recipe.id}
           onToggle={onToggle}
           onRemove={onRemove}
+          onCopy={onCopy}
+          onShare={onShare}
+          isCopying={copyingRecipeId === parseInt(recipe.id, 10)}
+          isSharing={sharingRecipeId === parseInt(recipe.id, 10)}
         />
       ))}
     </Stack>

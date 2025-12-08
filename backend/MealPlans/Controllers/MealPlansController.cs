@@ -74,4 +74,32 @@ public class MealPlansController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
+    [HttpDelete("{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteMealPlan(int id)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            var success = await _mealPlanService.DeleteMealPlanAsync(userId, id);
+            
+            if (!success)
+            {
+                return NotFound(new { message = "Meal plan not found or you don't have permission to delete it" });
+            }
+
+            return Ok(new { message = "Meal plan deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting meal plan");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }

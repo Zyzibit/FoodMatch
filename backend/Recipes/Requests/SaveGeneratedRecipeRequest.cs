@@ -11,6 +11,7 @@ public class SaveGeneratedRecipeRequest
     public decimal Proteins { get; set; }
     public decimal Carbohydrates { get; set; }
     public decimal Fats { get; set; }
+    public bool IsPublic { get; set; } = false;
     
     public List<SaveGeneratedRecipeIngredientDto> Ingredients { get; set; } = new();
     public List<string> AdditionalProducts { get; set; } = new();

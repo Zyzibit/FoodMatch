@@ -1,9 +1,5 @@
-import { Stack, Box, Typography, IconButton } from "@mui/material";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CalendarMonth,
-} from "@mui/icons-material";
+import { Stack, Box, Typography, Button } from "@mui/material";
+import { PictureAsPdf } from "@mui/icons-material";
 
 type PlanDayHeaderProps = {
   consumedCalories: number;
@@ -11,6 +7,7 @@ type PlanDayHeaderProps = {
   onPrev?: () => void;
   onNext?: () => void;
   onPickDate?: () => void;
+  onExportPdf?: () => void;
 };
 
 export default function PlanDayHeader({
@@ -19,6 +16,7 @@ export default function PlanDayHeader({
   onPrev,
   onNext,
   onPickDate,
+  onExportPdf,
 }: PlanDayHeaderProps) {
   return (
     <Stack
@@ -35,21 +33,13 @@ export default function PlanDayHeader({
           {dateLabel}
         </Typography>
       </Box>
-      <Stack direction="row" spacing={1}>
-        <IconButton size="small" aria-label="Poprzedni dzień" onClick={onPrev}>
-          <ChevronLeft />
-        </IconButton>
-        <IconButton
-          size="small"
-          aria-label="Wybierz dzień"
-          onClick={onPickDate}
-        >
-          <CalendarMonth />
-        </IconButton>
-        <IconButton size="small" aria-label="Następny dzień" onClick={onNext}>
-          <ChevronRight />
-        </IconButton>
-      </Stack>
+      <Button
+        variant="contained"
+        startIcon={<PictureAsPdf />}
+        onClick={onExportPdf}
+      >
+        Eksportuj do PDF
+      </Button>
     </Stack>
   );
 }

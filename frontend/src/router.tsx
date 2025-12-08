@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -9,12 +10,14 @@ import ShoppingListPage from "./pages/ShoppingListPage";
 import RecipesPage from "./pages/RecipesPage";
 import SettingsPage from "./pages/SettingsPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <LandingPage />,
   },
   {
     path: "/login",
@@ -46,6 +49,14 @@ export const router = createBrowserRouter([
       { path: "przepisy", element: <RecipesPage /> },
       { path: "ustawienia", element: <SettingsPage /> },
       { path: "user", element: <UserDashboardPage /> },
+      {
+        path: "admin",
+        element: (
+          <AdminRoute>
+            <AdminUsersPage />
+          </AdminRoute>
+        ),
+      },
     ],
   },
   {

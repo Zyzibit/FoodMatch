@@ -22,6 +22,7 @@ export interface UserInfo {
   email: string;
   roles?: string[];
   createdAt?: string;
+  profilePictureUrl?: string;
 }
 
 export interface AuthenticationResult {

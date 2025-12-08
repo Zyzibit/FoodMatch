@@ -15,7 +15,12 @@ export default function UserDashboardPage() {
       elevation={1}
       sx={{ p: 3, width: "100%", maxWidth: 1100, mx: "auto" }}
     >
-      {activeTab === "profil" && <UserAccountSettings />}
+      {activeTab === "profil" && (
+        <>
+          <UserProfilePage />
+          <UserAccountSettings />
+        </>
+      )}
 
       {showProfile && <UserProfilePage />}
 

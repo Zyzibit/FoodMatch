@@ -101,9 +101,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private static Product? MapToProduct(OpenFoodFactsProduct src)
         {
             var n = src.OpenFoodFactsNutriments;
-            if ((n.Carbohydrates100g!= null && n.Fat100g!= null && n.Proteins100g!= null && n.EnergyKcal100g!= null)) {
+            if ((n?.Carbohydrates100g != null && n?.Fat100g != null && n?.Proteins100g != null && n?.EnergyKcal100g != null)) {
                 var product = new Product {
-                    Code = Sanitizer(src.Code),
+                    Code = Sanitizer(src.Code) ?? string.Empty,
                     ProductName = Sanitizer(src.ProductName),
 
                     BrandOwner = Sanitizer(src.BrandOwner),

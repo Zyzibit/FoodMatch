@@ -63,6 +63,46 @@ class UserService {
       body: JSON.stringify(data),
     });
   }
+
+  async uploadProfilePicture(
+    file: File
+  ): Promise<{ message: string; profilePictureUrl: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const url = `${this.baseUrl}/users/profile-picture`;
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        message: "Failed to upload profile picture",
+      }));
+      throw new Error(errorData.message || "Failed to upload profile picture");
+    }
+
+    return await response.json();
+  }
+
+  async deleteProfilePicture(): Promise<{ message: string }> {
+    const url = `${this.baseUrl}/users/profile-picture`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        message: "Failed to delete profile picture",
+      }));
+      throw new Error(errorData.message || "Failed to delete profile picture");
+    }
+
+    return await response.json();
+  }
 }
 
 export const userService = new UserService();
