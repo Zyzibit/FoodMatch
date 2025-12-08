@@ -18,11 +18,17 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Download, Close } from "@mui/icons-material";
-import type { MealPlanDay } from "../../types/plan";
-import { useState } from "react";
+import type { MealPlanDay, PlanMeal } from "../../types/plan";
+import { useState, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import dietLogo from "../../assets/diet-logo.png";
+import { getRecipeById } from "../../services/recipeService";
+
+type EnrichedMeal = PlanMeal & {
+  fullIngredients?: Array<{ name: string; quantity?: string }>;
+  fullInstructions?: string;
+};
 
 type PlanPdfExportModalProps = {
   open: boolean;
@@ -38,6 +44,57 @@ export default function PlanPdfExportModal({
   dateLabel,
 }: PlanPdfExportModalProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [enrichedMeals, setEnrichedMeals] = useState<EnrichedMeal[]>([]);
+
+  // Load full recipe details when modal opens
+  useEffect(() => {
+    if (!open || !planData) {
+      setEnrichedMeals([]);
+      return;
+    }
+
+    const loadRecipeDetails = async () => {
+      setIsLoadingDetails(true);
+      try {
+        const mealsWithDetails = await Promise.all(
+          planData.meals.map(async (meal) => {
+            if (meal.isPlaceholder || !meal.recipeId) {
+              return meal as EnrichedMeal;
+            }
+
+            try {
+              const recipe = await getRecipeById(meal.recipeId);
+              return {
+                ...meal,
+                fullIngredients: recipe.ingredients.map((ing) => ({
+                  name: ing.productName,
+                  quantity:
+                    ing.quantity && ing.unitName
+                      ? `${ing.quantity} ${ing.unitName}`
+                      : ing.normalizedQuantityInGrams
+                        ? `${ing.normalizedQuantityInGrams}g`
+                        : undefined,
+                })),
+                fullInstructions: recipe.instructions,
+              } as EnrichedMeal;
+            } catch (error) {
+              console.error(`Failed to load recipe ${meal.recipeId}:`, error);
+              return meal as EnrichedMeal;
+            }
+          })
+        );
+        setEnrichedMeals(mealsWithDetails);
+      } catch (error) {
+        console.error("Error loading recipe details:", error);
+        setEnrichedMeals(planData.meals as EnrichedMeal[]);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    };
+
+    loadRecipeDetails();
+  }, [open, planData]);
 
   const handleDownload = async () => {
     if (!planData) return;
@@ -337,7 +394,17 @@ export default function PlanPdfExportModal({
             Zaplanowane Posiłki
           </Typography>
 
-          {planData.meals.filter((meal) => !meal.isPlaceholder).length === 0 ? (
+          {isLoadingDetails && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" sx={{ ml: 2, color: "#666" }}>
+                Ładowanie szczegółów przepisów...
+              </Typography>
+            </Box>
+          )}
+
+          {!isLoadingDetails &&
+          enrichedMeals.filter((meal) => !meal.isPlaceholder).length === 0 ? (
             <Typography
               variant="body2"
               align="center"
@@ -345,8 +412,8 @@ export default function PlanPdfExportModal({
             >
               Brak zaplanowanych posiłków na ten dzień
             </Typography>
-          ) : (
-            planData.meals
+          ) : !isLoadingDetails ? (
+            enrichedMeals
               .filter((meal) => !meal.isPlaceholder)
               .map((meal, index) => (
                 <Box
@@ -413,7 +480,7 @@ export default function PlanPdfExportModal({
                   >
                     Makroskładniki:
                   </Typography>
-                  <Stack direction="row" spacing={3}>
+                  <Stack direction="row" spacing={3} sx={{ mb: 2 }}>
                     <Box>
                       <Typography
                         variant="body2"
@@ -451,29 +518,81 @@ export default function PlanPdfExportModal({
                       </Typography>
                     </Box>
                   </Stack>
+
+                  {/* Składniki */}
+                  {meal.fullIngredients && meal.fullIngredients.length > 0 && (
+                    <>
+                      <Typography
+                        variant="caption"
+                        fontWeight="bold"
+                        sx={{ mb: 0.5, display: "block", color: "#666" }}
+                      >
+                        Składniki:
+                      </Typography>
+                      <Box sx={{ mb: 2, pl: 2 }}>
+                        {meal.fullIngredients.map((ingredient, idx) => (
+                          <Typography
+                            key={idx}
+                            variant="body2"
+                            sx={{ color: "#000", mb: 0.25 }}
+                          >
+                            • {ingredient.name}
+                            {ingredient.quantity && ` - ${ingredient.quantity}`}
+                          </Typography>
+                        ))}
+                      </Box>
+                    </>
+                  )}
+
+                  {/* Instrukcje */}
+                  {meal.fullInstructions && (
+                    <>
+                      <Typography
+                        variant="caption"
+                        fontWeight="bold"
+                        sx={{ mb: 0.5, display: "block", color: "#666" }}
+                      >
+                        Sposób przygotowania:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#000", whiteSpace: "pre-line" }}
+                      >
+                        {meal.fullInstructions}
+                      </Typography>
+                    </>
+                  )}
                 </Box>
               ))
-          )}
+          ) : null}
         </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit" disabled={isGenerating}>
+        <Button
+          onClick={onClose}
+          color="inherit"
+          disabled={isGenerating || isLoadingDetails}
+        >
           Anuluj
         </Button>
         <Button
           variant="contained"
           startIcon={
-            isGenerating ? (
+            isGenerating || isLoadingDetails ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
               <Download />
             )
           }
           onClick={handleDownload}
-          disabled={isGenerating}
+          disabled={isGenerating || isLoadingDetails}
         >
-          {isGenerating ? "Generowanie..." : "Pobierz PDF"}
+          {isLoadingDetails
+            ? "Ładowanie..."
+            : isGenerating
+              ? "Generowanie..."
+              : "Pobierz PDF"}
         </Button>
       </DialogActions>
     </Dialog>

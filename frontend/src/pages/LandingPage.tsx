@@ -16,38 +16,52 @@ export default function LandingPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Po zamontowaniu – ustawienie prędkości + nasłuch na zakończenie
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Ustaw prędkość odtwarzania na 0.6x
     video.playbackRate = 0.6;
 
     const handleVideoEnd = () => {
-      // Rozpocznij przyciemnienie
+      // Zaczynamy wygaszanie aktualnego nagrania
       setIsTransitioning(true);
 
-      // Po 200ms zmień wideo
+      // Po czasie równym długości przejścia zmieniamy źródło
       setTimeout(() => {
         setCurrentVideoIndex((prev) => (prev + 1) % videos.length);
-        // Po kolejnych 50ms rozpocznij rozjaśnianie
-        setTimeout(() => setIsTransitioning(false), 50);
-      }, 200);
+      }, 600); // 0.6s – tyle samo co w transition
     };
 
     video.addEventListener("ended", handleVideoEnd);
-    return () => video.removeEventListener("ended", handleVideoEnd);
+
+    // Spróbuj od razu odtworzyć pierwsze wideo
+    video.play().catch((error) => console.log("Autoplay prevented:", error));
+
+    return () => {
+      video.removeEventListener("ended", handleVideoEnd);
+    };
   }, []);
 
+  // Po zmianie wideo – ładujemy, odtwarzamy i robimy płynne rozjaśnianie
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.load();
+    if (!video) return;
+
+    const handleLoadedData = () => {
       video.playbackRate = 0.6;
-      video.play().catch((error) => {
-        console.log("Autoplay prevented:", error);
-      });
-    }
+      video.play().catch((error) => console.log("Autoplay prevented:", error));
+
+      // Dopiero gdy nowe wideo jest załadowane, zaczynamy fade-in
+      setIsTransitioning(false);
+    };
+
+    video.addEventListener("loadeddata", handleLoadedData);
+    video.load();
+
+    return () => {
+      video.removeEventListener("loadeddata", handleLoadedData);
+    };
   }, [currentVideoIndex]);
 
   return (
@@ -79,8 +93,8 @@ export default function LandingPage() {
           objectFit: "cover",
           filter: "blur(8px) brightness(0.7)",
           transform: "scale(1.1)",
-          opacity: isTransitioning ? 0.3 : 1,
-          transition: "opacity 0.25s ease-in-out",
+          opacity: isTransitioning ? 0 : 1,
+          transition: "opacity 0.6s ease-in-out",
         }}
       />
 
