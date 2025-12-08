@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IUserService _userService;
     private readonly IRoleService _roleService;
+    private readonly IEmailService _emailService;
 
     // Token configuration
     private int AccessTokenExpirationMinutes =>
@@ -33,7 +34,8 @@ public class AuthService : IAuthService
         IConfiguration configuration,
         ILogger<AuthService> logger,
         IUserService userService,
-        IRoleService roleService) {
+        IRoleService roleService,
+        IEmailService emailService) {
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
         _signInManager = signInManager;
@@ -41,6 +43,7 @@ public class AuthService : IAuthService
         _logger = logger;
         _userService = userService;
         _roleService = roleService;
+        _emailService = emailService;
     }
 
     public async Task<AuthenticationResult> AuthenticateAsync(
@@ -350,6 +353,60 @@ public class AuthService : IAuthService
             IsActive = token.RevokedAt == null && token.ExpiryDate > DateTime.UtcNow,
             IsCurrent = !string.IsNullOrEmpty(currentRefreshToken) && token.Token == currentRefreshToken
         };
+    }
+
+    public async Task<ForgotPasswordResult> ForgotPasswordAsync(string email) {
+        try {
+            var user = await _userService.GetUserEntityByEmailAsync(email);
+            if (user == null) {
+                _logger.LogWarning("Forgot password request for non-existent email: {Email}", email);
+                return ForgotPasswordResult.Succeeded("token_placeholder");
+            }
+
+            var token = await _signInManager.UserManager.GeneratePasswordResetTokenAsync(user);
+            _logger.LogInformation("Password reset token generated for user: {UserId}", user.Id);
+
+            var emailSent = await _emailService.SendPasswordResetEmailAsync(
+                email, 
+                token, 
+                user.UserName ?? email
+            );
+
+            if (!emailSent) {
+                _logger.LogWarning("Failed to send password reset email to {Email}, but token was generated", email);
+            }
+
+            return ForgotPasswordResult.Succeeded(token);
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Error generating password reset token for email: {Email}", email);
+            return ForgotPasswordResult.Failed("Failed to generate password reset token");
+        }
+    }
+
+    public async Task<ResetPasswordResult> ResetPasswordAsync(string email, string token, string newPassword) {
+        try {
+            var user = await _userService.GetUserEntityByEmailAsync(email);
+            if (user == null) {
+                _logger.LogWarning("Reset password attempt for non-existent email: {Email}", email);
+                return ResetPasswordResult.Failed("Invalid request");
+            }
+
+            var result = await _signInManager.UserManager.ResetPasswordAsync(user, token, newPassword);
+            if (!result.Succeeded) {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                _logger.LogWarning("Failed to reset password for user {UserId}: {Errors}", user.Id, errors);
+                return ResetPasswordResult.Failed(errors);
+            }
+            await RevokeAllTokensAsync(user.Id);
+            
+            _logger.LogInformation("Password reset successful for user: {UserId}", user.Id);
+            return ResetPasswordResult.Succeeded();
+        }
+        catch (Exception ex) {
+            _logger.LogError(ex, "Error resetting password for email: {Email}", email);
+            return ResetPasswordResult.Failed("Failed to reset password");
+        }
     }
 }
 

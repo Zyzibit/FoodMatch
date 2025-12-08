@@ -393,4 +393,64 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _authService.ForgotPasswordAsync(request.Email);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+            
+            return Ok(new 
+            { 
+                success = true, 
+                message = "If the email exists in our system, a password reset link has been sent to it."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing forgot password request");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _authService.ResetPasswordAsync(request.Email, request.Token, request.NewPassword);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { message = result.ErrorMessage });
+            }
+
+            return Ok(new 
+            { 
+                success = true, 
+                message = "Password has been reset successfully. Please login with your new password." 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting password for email: {Email}", request.Email);
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }

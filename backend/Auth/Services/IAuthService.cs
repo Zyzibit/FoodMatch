@@ -15,4 +15,6 @@ public interface IAuthService {
     Task<TokenValidationResult> ValidateTokenAsync(string accessToken);
     Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
     Task<List<UserSession>> GetUserSessionsAsync(string userId, string? currentRefreshToken = null);
+    Task<ForgotPasswordResult> ForgotPasswordAsync(string email);
+    Task<ResetPasswordResult> ResetPasswordAsync(string email, string token, string newPassword);
 }

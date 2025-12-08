@@ -81,6 +81,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRoleInitializationService, RoleInitializationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
@@ -107,10 +108,28 @@ builder.Services.AddUserPreferencesServices();
 
 builder.Services.AddScoped<IAiClient, AiClient>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5127")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition");
+    });
+});
+
 builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
-builder.Services.AddAuthorization();
+
+// Konfiguracja czasu ważności tokenów resetowania hasła
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(24); // Token ważny przez 24 godziny
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -159,15 +178,10 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
+app.UseCors("AllowFrontend");
+
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/alive");
-
-//zmiana tutaj w corsie
-app.UseCors(policy =>
-    policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
-        .AllowCredentials()
-        .AllowAnyMethod()
-        .AllowAnyHeader());
 
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))
