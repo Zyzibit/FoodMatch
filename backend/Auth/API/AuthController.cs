@@ -45,9 +45,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var (deviceId, userAgent, ipAddress) = DeviceInfoHelper.ExtractDeviceInfo(Request, _logger);
-            _logger.LogInformation("Login attempt for user {Username} from device {DeviceId} (IP: {IpAddress})",
-                request.Username, deviceId, ipAddress);
+            var (deviceId, userAgent, ipAddress) = DeviceInfoHelper.ExtractDeviceInfo(Request);
 
             var result = await _authService.AuthenticateAsync(request.Username, request.Password, deviceId, userAgent, ipAddress);
 
@@ -74,7 +72,6 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for user: {Username}", request.Username);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -89,7 +86,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var (deviceId, userAgent, ipAddress) = DeviceInfoHelper.ExtractDeviceInfo(Request, _logger);
+            var (deviceId, userAgent, ipAddress) = DeviceInfoHelper.ExtractDeviceInfo(Request);
             _logger.LogInformation("Registration attempt for user {Username} from device {DeviceId} (IP: {IpAddress})",
                 request.Username, deviceId, ipAddress);
 

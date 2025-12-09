@@ -51,102 +51,91 @@ public class PromptConfigService : IPromptConfigService
 
     private void RenderSection(StringBuilder builder, PromptSection section, Dictionary<string, object?> data, int indentLevel = 0)
     {
-        if (!string.IsNullOrEmpty(section.Title))
+        var renderers = new Action[]
         {
-            builder.AppendLine(section.Title);
-        }
+            () => AppendIfNotEmpty(builder, section.Title),
+            () => AppendIfNotEmpty(builder, ReplacePlaceholders(section.Content ?? "", data)),
+            () => AppendIfNotEmpty(builder, ResolvePlaceholder(section.Placeholder ?? "", data)),
+            () => RenderItems(builder, section.Items),
+            () => RenderDynamicFields(builder, section.DynamicFields, data),
+            () => RenderConditionalFields(builder, section.ConditionalFields, data),
+            () => RenderJsonSchema(builder, section.JsonSchema),
+            () => RenderSubsections(builder, section.Subsections, data, indentLevel),
+            () => AppendIfNotEmpty(builder, section.Footer)
+        };
 
-        if (!string.IsNullOrEmpty(section.Content))
+        foreach (var render in renderers)
         {
-            // Zastąp wszystkie placeholdery w contencie
-            var renderedContent = ReplacePlaceholders(section.Content, data);
-            builder.AppendLine(renderedContent);
-        }
-
-        if (!string.IsNullOrEmpty(section.Placeholder))
-        {
-            var placeholderValue = ResolvePlaceholder(section.Placeholder, data);
-            if (!string.IsNullOrEmpty(placeholderValue))
-            {
-                builder.AppendLine(placeholderValue);
-            }
-        }
-
-        if (section.Items != null && section.Items.Any())
-        {
-            foreach (var item in section.Items)
-            {
-                builder.AppendLine(item);
-            }
-        }
-
-        if (section.DynamicFields != null)
-        {
-            foreach (var field in section.DynamicFields)
-            {
-                var value = GetFieldValue(data, field.Field);
-                if (value != null)
-                {
-                    var rendered = field.Template.Replace("{value}", value.ToString());
-                    builder.AppendLine(rendered);
-                }
-            }
-        }
-
-        if (section.ConditionalFields != null)
-        {
-            foreach (var field in section.ConditionalFields)
-            {
-                var value = GetFieldValue(data, field.Field);
-                
-                if (value is bool boolValue)
-                {
-                    if (boolValue && !string.IsNullOrEmpty(field.Text))
-                    {
-                        builder.AppendLine(field.Text);
-                    }
-                }
-                else if (value != null && !string.IsNullOrEmpty(value.ToString()))
-                {
-                    if (!string.IsNullOrEmpty(field.Template))
-                    {
-                        var rendered = field.Template.Replace("{value}", value.ToString());
-                        builder.AppendLine(rendered);
-                    }
-                    else if (!string.IsNullOrEmpty(field.Text))
-                    {
-                        builder.AppendLine(field.Text);
-                    }
-                }
-            }
-        }
-
-        if (section.JsonSchema.HasValue)
-        {
-            var schemaJson = JsonSerializer.Serialize(section.JsonSchema.Value, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-            builder.AppendLine("```json");
-            builder.AppendLine(schemaJson);
-            builder.AppendLine("```");
-        }
-
-        if (section.Subsections != null)
-        {
-            foreach (var subsection in section.Subsections)
-            {
-                builder.AppendLine();
-                RenderSection(builder, subsection, data, indentLevel + 1);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(section.Footer))
-        {
-            builder.AppendLine(section.Footer);
+            render();
         }
 
         builder.AppendLine();
+    }
+
+    private void AppendIfNotEmpty(StringBuilder builder, string? text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            builder.AppendLine(text);
+        }
+    }
+
+    private void RenderItems(StringBuilder builder, List<string>? items)
+    {
+        items?.ForEach(item => builder.AppendLine(item));
+    }
+
+    private void RenderDynamicFields(StringBuilder builder, List<DynamicField>? fields, Dictionary<string, object?> data)
+    {
+        fields?.ForEach(field =>
+        {
+            var value = GetFieldValue(data, field.Field);
+            if (value != null)
+            {
+                builder.AppendLine(field.Template.Replace("{value}", value.ToString()));
+            }
+        });
+    }
+
+    private void RenderConditionalFields(StringBuilder builder, List<ConditionalField>? fields, Dictionary<string, object?> data)
+    {
+        fields?.ForEach(field => RenderConditionalField(builder, field, data));
+    }
+
+    private void RenderConditionalField(StringBuilder builder, ConditionalField field, Dictionary<string, object?> data)
+    {
+        var value = GetFieldValue(data, field.Field);
+
+        var text = value switch
+        {
+            bool boolValue when boolValue => field.Text,
+            not null when !string.IsNullOrEmpty(value.ToString()) => 
+                !string.IsNullOrEmpty(field.Template) 
+                    ? field.Template.Replace("{value}", value.ToString()) 
+                    : field.Text,
+            _ => null
+        };
+
+        AppendIfNotEmpty(builder, text);
+    }
+
+    private void RenderJsonSchema(StringBuilder builder, JsonElement? jsonSchema)
+    {
+        if (!jsonSchema.HasValue) return;
+
+        var schemaJson = JsonSerializer.Serialize(jsonSchema.Value, new JsonSerializerOptions { WriteIndented = true });
+        builder.AppendLine("```json");
+        builder.AppendLine(schemaJson);
+        builder.AppendLine("```");
+    }
+
+    private void RenderSubsections(StringBuilder builder, List<PromptSection>? subsections, Dictionary<string, object?> data, int indentLevel)
+    {
+        subsections?.ForEach(subsection =>
+        {
+            builder.AppendLine();
+            RenderSection(builder, subsection, data, indentLevel + 1);
+        });
     }
 
     private string ReplacePlaceholders(string text, Dictionary<string, object?> data)

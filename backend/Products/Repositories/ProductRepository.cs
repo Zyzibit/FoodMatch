@@ -73,8 +73,7 @@ public class ProductRepository : IProductRepository
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting product with details by ID: {ProductId}", productId);
-            throw;
+            throw new Exception($"Error getting product with details for ID: {productId}", ex);
         }
     }
 

@@ -43,34 +43,12 @@ public class AiClient : IAiClient
                 ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat()
             };
 
-            _logger.LogDebug("Sending request to OpenAI with model: {Model}", _model);
-            
             var response = await _chatClient.CompleteChatAsync(messages, chatOptions);
-            
-            if (response?.Value == null)
-            {
-                _logger.LogError("OpenAI returned null response");
-                return null;
-            }
-
+        
             var content = response.Value.Content;
-            
-            if (content == null || content.Count == 0)
-            {
-                _logger.LogError("OpenAI returned empty content in response");
-                return null;
-            }
-
+        
             var jsonText = content[0].Text;
             
-            if (string.IsNullOrWhiteSpace(jsonText))
-            {
-                _logger.LogError("OpenAI returned empty text content");
-                return null;
-            }
-
-            _logger.LogDebug("OpenAI response received, parsing JSON");
-
             try
             {
                 using var resultDoc = JsonDocument.Parse(jsonText);
@@ -78,14 +56,11 @@ public class AiClient : IAiClient
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Failed to parse OpenAI response as JSON. Content: {Content}", jsonText);
-                return null;
+                throw new FormatException("OpenAI response is not valid JSON.", ex);
             }
         }
         catch (ClientResultException ex) when (ex.Status == 429)
         {
-            _logger.LogError(ex, "OpenAI API Rate Limit exceeded (429)");
-            
             throw new HttpRequestException(
                 "OpenAI API rate limit exceeded. Please wait a moment and try again. " +
                 "Check your OpenAI account for quota limits: https://platform.openai.com/account/limits",
@@ -95,7 +70,6 @@ public class AiClient : IAiClient
         }
         catch (ClientResultException ex)
         {
-            _logger.LogError(ex, "OpenAI API request failed with status {StatusCode}", ex.Status);
             throw new HttpRequestException(
                 $"OpenAI API request failed: {ex.Message}",
                 ex
@@ -103,8 +77,7 @@ public class AiClient : IAiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during OpenAI API call");
-            throw;
+            throw new Exception("An unexpected error occurred while communicating with the OpenAI API.", ex);
         }
     }
 }

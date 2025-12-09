@@ -355,7 +355,6 @@ public class DbSeeder
                     SecurityStamp = Guid.NewGuid().ToString()
                 };
 
-                // Attempt to create admin user
                 var createUserResult = await userManager
                     .CreateAsync(user, "Admin@123");
 

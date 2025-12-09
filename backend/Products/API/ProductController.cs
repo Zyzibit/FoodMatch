@@ -149,7 +149,6 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting ingredients");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -171,7 +170,6 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting nutrition info for product: {ProductId}", productId);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -200,7 +198,6 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error importing products");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
