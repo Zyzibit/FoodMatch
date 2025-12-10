@@ -1,26 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+import { Paper } from "@mui/material";
 import AuthLayout from "../layouts/AuthLayout";
-import {
-  UserMeasurementsForm,
-  validateMeasurements,
-  type UserMeasurementsFormData,
-} from "../components/user/UserMeasurementsForm";
+import { type UserMeasurementsFormData } from "../components/user/UserMeasurementsForm";
+import { OnboardingForm } from "../components/forms/OnboardingForm/OnboardingForm";
 import userMeasurementsService from "../services/userMeasurementsService";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<UserMeasurementsFormData>({
-    age: "",
-    gender: "Male",
-    weight: "",
-    height: "",
-    activityLevel: "ModeratelyActive",
-    fitnessGoal: "Maintenance",
-  });
 
   // Sprawdź czy użytkownik już ma zapisane pomiary
   useEffect(() => {
@@ -40,23 +28,9 @@ export default function OnboardingPage() {
     checkExistingMeasurements();
   }, [navigate]);
 
-  const handleFormChange = (data: UserMeasurementsFormData) => {
-    setFormData(data);
-    setError(null);
-  };
-
   const handleSubmit = useCallback(
-    async (event: React.FormEvent) => {
-      event.preventDefault();
-
-      const validationError = validateMeasurements(formData, true);
-      if (validationError) {
-        setError(validationError);
-        return;
-      }
-
+    async (formData: UserMeasurementsFormData) => {
       setIsLoading(true);
-      setError(null);
 
       try {
         await userMeasurementsService.updatePreferences({
@@ -72,7 +46,7 @@ export default function OnboardingPage() {
         navigate("/app/plan", { replace: true });
       } catch (err) {
         console.error("Error saving measurements:", err);
-        setError(
+        alert(
           err instanceof Error
             ? err.message
             : "Nie udało się zapisać pomiarów. Spróbuj ponownie."
@@ -81,7 +55,7 @@ export default function OnboardingPage() {
         setIsLoading(false);
       }
     },
-    [formData, navigate]
+    [navigate]
   );
 
   return (
@@ -95,40 +69,7 @@ export default function OnboardingPage() {
           borderRadius: 2,
         }}
       >
-        <Stack spacing={3}>
-          <Box textAlign="center">
-            <Typography variant="h4" fontWeight={800} gutterBottom>
-              Witaj w DIET ZYNZI! 🎉
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Aby stworzyć spersonalizowany plan żywieniowy, potrzebujemy kilku
-              informacji o Tobie.
-            </Typography>
-          </Box>
-
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={3}>
-              <UserMeasurementsForm
-                initialData={formData}
-                onChange={handleFormChange}
-                disabled={isLoading}
-                showGoal
-                error={error}
-                onErrorClose={() => setError(null)}
-              />
-
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                disabled={isLoading}
-                fullWidth
-              >
-                {isLoading ? "Zapisywanie..." : "Zapisz i rozpocznij"}
-              </Button>
-            </Stack>
-          </form>
-        </Stack>
+        <OnboardingForm onSubmit={handleSubmit} isLoading={isLoading} />
       </Paper>
     </AuthLayout>
   );

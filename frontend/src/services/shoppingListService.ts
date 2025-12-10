@@ -3,12 +3,14 @@ import { API_BASE_URL } from "../config";
 export interface ShoppingListItem {
   id: number;
   quantity: number;
-  productId: number;
-  productName: string | null;
+  productId: number | null;
+  productName: string;
   productCode: string | null;
   imageUrl: string | null;
-  source: string;
+  source: string | null;
   brands: string | null;
+  unitId: number;
+  unitName: string;
 }
 
 export interface ShoppingList {
@@ -18,12 +20,15 @@ export interface ShoppingList {
 }
 
 export interface AddProductRequest {
-  productId: number;
+  productId?: number | null;
+  productName: string;
   quantity: number;
+  unitId: number;
 }
 
 export interface UpdateItemRequest {
   quantity: number;
+  unitId: number;
 }
 
 export interface AddProductResult {
@@ -46,8 +51,10 @@ export async function getShoppingList(): Promise<ShoppingList> {
 }
 
 export async function addItemToShoppingList(
-  productId: number,
-  quantity: number
+  productName: string,
+  quantity: number,
+  unitId: number,
+  productId?: number | null
 ): Promise<AddProductResult> {
   const response = await fetch(`${API_BASE_URL}/shopping-list/items`, {
     method: "POST",
@@ -55,7 +62,12 @@ export async function addItemToShoppingList(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ productId, quantity } as AddProductRequest),
+    body: JSON.stringify({ 
+      productId: productId || null, 
+      productName, 
+      quantity, 
+      unitId 
+    } as AddProductRequest),
   });
 
   if (!response.ok) {
@@ -67,7 +79,8 @@ export async function addItemToShoppingList(
 
 export async function updateShoppingListItem(
   itemId: number,
-  quantity: number
+  quantity: number,
+  unitId: number
 ): Promise<AddProductResult> {
   const response = await fetch(
     `${API_BASE_URL}/shopping-list/items/${itemId}`,
@@ -77,7 +90,7 @@ export async function updateShoppingListItem(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ quantity } as UpdateItemRequest),
+      body: JSON.stringify({ quantity, unitId } as UpdateItemRequest),
     }
   );
 

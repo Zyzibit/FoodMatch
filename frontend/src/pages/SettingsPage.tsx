@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Box,
   Paper,
@@ -17,7 +17,6 @@ import type { TextSize } from "../contexts/TextSizeContext";
 export default function SettingsPage() {
   const { themeName, setThemeName } = useAppTheme();
   const { textSize, setTextSize } = useTextSize();
-  const [language, setLanguage] = useState<string>("pl");
 
   useEffect(() => {
     try {
@@ -28,7 +27,6 @@ export default function SettingsPage() {
         setThemeName(parsed.theme as ThemeName);
       }
       if (parsed.textSize) setTextSize(parsed.textSize as TextSize);
-      if (parsed.language) setLanguage(parsed.language);
     } catch (e) {
       // ignore
     }
@@ -37,7 +35,7 @@ export default function SettingsPage() {
   const handleSave = () => {
     localStorage.setItem(
       "app_settings",
-      JSON.stringify({ theme: themeName, textSize, language })
+      JSON.stringify({ theme: themeName, textSize })
     );
     alert("Ustawienia aplikacji zapisane");
   };
@@ -98,19 +96,6 @@ export default function SettingsPage() {
               <MenuItem value="sm">Mały</MenuItem>
               <MenuItem value="md">Średni</MenuItem>
               <MenuItem value="lg">Duży</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl>
-            <InputLabel id="lang-label">Język</InputLabel>
-            <Select
-              labelId="lang-label"
-              label="Język"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as string)}
-            >
-              <MenuItem value="pl">Polski</MenuItem>
-              <MenuItem value="en">English</MenuItem>
             </Select>
           </FormControl>
 
