@@ -444,7 +444,7 @@ export default function UserProfilePage() {
   };
 
   const renderMeasurements = () => (
-    <Paper sx={{ p: 3 }}>
+    <Box>
       <Typography variant="h6" gutterBottom>
         Pomiary
       </Typography>
@@ -581,7 +581,7 @@ export default function UserProfilePage() {
           Zapisz pomiary
         </Button>
       </Box>
-    </Paper>
+    </Box>
   );
 
   const renderMacroGoals = () => {

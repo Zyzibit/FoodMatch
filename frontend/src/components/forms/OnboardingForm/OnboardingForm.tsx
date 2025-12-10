@@ -46,47 +46,54 @@ export function OnboardingForm({
   };
 
   return (
-    <Box
-      sx={{
-        p: 4,
-        maxWidth: 600,
-        width: "100%",
-        borderRadius: 2,
-      }}
-    >
-      <Stack spacing={3}>
-        <Box textAlign="center">
-          <Typography variant="h4" fontWeight={800} gutterBottom>
-            Witaj w DIET ZYNZI! 🎉
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Aby stworzyć spersonalizowany plan żywieniowy, potrzebujemy kilku
-            informacji o Tobie.
-          </Typography>
+    <Box component="form" onSubmit={handleSubmit} noValidate width="100%">
+      <Stack spacing={2.5}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            gap: 1,
+          }}
+        >
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              Kilka szybkich pytań
+            </Typography>
+            <Typography variant="h5" fontWeight={800} lineHeight={1.2}>
+              Dane potrzebne do startu
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Dzięki nim dopasujemy plan żywieniowy do Twoich celów.
+            </Typography>
+          </Box>
+
+         
         </Box>
 
-        <form onSubmit={handleSubmit}>
-          <Stack spacing={3}>
-            <UserMeasurementsForm
-              initialData={formData}
-              onChange={handleFormChange}
-              disabled={isLoading}
-              showGoal
-              error={error}
-              onErrorClose={() => setError(null)}
-            />
+        <UserMeasurementsForm
+          initialData={formData}
+          onChange={handleFormChange}
+          disabled={isLoading}
+          showGoal
+          error={error}
+          onErrorClose={() => setError(null)}
+        />
 
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={isLoading}
-              fullWidth
-            >
-              {isLoading ? "Zapisywanie..." : "Zapisz i rozpocznij"}
-            </Button>
-          </Stack>
-        </form>
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={isLoading}
+          fullWidth
+          sx={{
+            py: 1.25,
+            fontWeight: 700,
+            letterSpacing: 0.3,
+          }}
+        >
+          {isLoading ? "Zapisywanie..." : "Zapisz i rozpocznij"}
+        </Button>
       </Stack>
     </Box>
   );
