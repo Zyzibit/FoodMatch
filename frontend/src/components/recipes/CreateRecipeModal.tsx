@@ -54,6 +54,30 @@ export function CreateRecipeModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const resolveProductId = (product: ProductDto | null): number => {
+    if (!product) return 0;
+    const candidates = [
+      product.id,
+      (product as any)?.Id,
+      product.productId,
+      (product as any)?.ProductId,
+    ];
+
+    for (const candidate of candidates) {
+      const idValue =
+        typeof candidate === "number"
+          ? candidate
+          : typeof candidate === "string"
+            ? Number(candidate)
+            : undefined;
+      if (Number.isFinite(idValue) && idValue > 0) {
+        return idValue;
+      }
+    }
+
+    return 0;
+  };
+
   // Load units on mount
   useState(() => {
     const loadUnits = async () => {
@@ -177,14 +201,7 @@ export function CreateRecipeModal({
       const mappedIngredients = ingredients
         .filter((ing) => ing.product && ing.quantity)
         .map((ing) => {
-          let productId = 0;
-          if (typeof ing.product!.id === 'number') {
-            productId = ing.product!.id;
-          } else if (typeof ing.product!.id === 'string') {
-            productId = parseInt(ing.product!.id, 10) || 0;
-          } else if (typeof ing.product!.productId === 'number') {
-            productId = ing.product!.productId;
-          }
+          const productId = resolveProductId(ing.product);
           return {
             productId,
             unitId: ing.unitId,
@@ -195,7 +212,9 @@ export function CreateRecipeModal({
         .filter((ing) => ing.productId > 0);
 
       if (mappedIngredients.length === 0) {
-        setError("Nie udało się dodać składników. Upewnij się, że wybrane produkty są prawidłowe.");
+        setError(
+          "Nie udało się dodać składników. Wybierz produkt z listy wyszukiwania i podaj ilość."
+        );
         setSaving(false);
         return;
       }

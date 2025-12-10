@@ -35,6 +35,19 @@ const convertRecipeDetailsToSavedRecipe = (
   const totalCarbs = recipe.carbohydrates;
   const totalFat = recipe.fats;
 
+  const baseIngredients = recipe.ingredients.map((ing) => ({
+    name: ing.productName,
+    productId: ing.productId,
+    source: ing.source as any,
+  }));
+
+  const additionalIngredients =
+    recipe.additionalProducts?.map((name) => ({
+      name,
+      source: "User" as const,
+      isAdditional: true,
+    })) ?? [];
+
   return {
     id: recipe.id.toString(),
     title: recipe.title,
@@ -46,11 +59,8 @@ const convertRecipeDetailsToSavedRecipe = (
       carbs: Math.round(totalCarbs),
     },
     tags: [],
-    ingredients: recipe.ingredients.map((ing) => ({
-      name: ing.productName,
-      productId: ing.productId,
-      source: ing.source as any,
-    })),
+    ingredients: [...baseIngredients, ...additionalIngredients],
+    additionalProducts: recipe.additionalProducts ?? [],
     createdAt: recipe.createdAt
       ? new Date(recipe.createdAt).toISOString().split("T")[0]
       : undefined,

@@ -193,6 +193,12 @@ export default function SavedRecipeCard({
                     : ingredient.name}
                 </Typography>
                 {typeof ingredient !== "string" &&
+                  ingredient.isAdditional && (
+                    <Typography variant="caption" color="text.secondary">
+                      dodany ręcznie
+                    </Typography>
+                  )}
+                {typeof ingredient !== "string" &&
                   ingredient.source === "OpenFoodFacts" && (
                     <Typography
                       variant="caption"
