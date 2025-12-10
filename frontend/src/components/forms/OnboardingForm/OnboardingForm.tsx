@@ -67,8 +67,6 @@ export function OnboardingForm({
               Dzięki nim dopasujemy plan żywieniowy do Twoich celów.
             </Typography>
           </Box>
-
-         
         </Box>
 
         <UserMeasurementsForm

@@ -104,7 +104,7 @@ const modeOptions: {
   },
 ];
 
-const MODAL_BODY_HEIGHT = 600;
+const MODAL_BODY_HEIGHT = 720;
 
 const mealTypeMap: Record<string, string> = {
   Śniadanie: "breakfast",
@@ -1074,6 +1074,8 @@ export default function PlanAddRecipeModal({
           </Button>
         </Stack>
 
+        <Box sx={{ height: 8 }} />
+
         {generationError && <Alert severity="error">{generationError}</Alert>}
         {addToPlanError && <Alert severity="error">{addToPlanError}</Alert>}
 
@@ -1382,18 +1384,18 @@ export default function PlanAddRecipeModal({
           dividers
           sx={{
             p: 0,
-            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
+            overflow: "hidden",
           }}
         >
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={3}
             sx={{
-              height: { xs: "auto", md: MODAL_BODY_HEIGHT },
-              minHeight: { xs: 400, md: MODAL_BODY_HEIGHT },
-              maxHeight: { xs: "70vh", md: MODAL_BODY_HEIGHT },
+              height: "100%",
+              maxHeight: { xs: "calc(100vh - 180px)", md: "calc(100vh - 140px)" },
+              minHeight: { xs: 360, md: 0 },
             }}
           >
             {/* Sidebar z wyborem trybu - nie scrolluje się */}
@@ -1440,9 +1442,9 @@ export default function PlanAddRecipeModal({
                 overflow: "hidden",
                 display: "flex",
                 flexDirection: "column",
-                pt: { xs: 0, md: 3 },
-                pr: { xs: 2, md: 3 },
-                pb: { xs: 2, md: 3 },
+                pt: 0,
+                pr: 0,
+                pb: 0,
               }}
             >
               <Box

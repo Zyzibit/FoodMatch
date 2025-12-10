@@ -252,42 +252,32 @@ export function CreateRecipeModal({
               {error}
             </Typography>
           )}
-
-
           <TextField
             label="Tytuł przepisu"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
-            required
-          />
-
+            required         />
           <TextField
             label="Opis"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             multiline
             rows={2}
-            fullWidth
-          />
-
+            fullWidth     />
           <TextField
             label="Instrukcje przygotowania"
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             multiline
             rows={4}
-            fullWidth
-          />
-
+            fullWidth         />
           <TextField
             label="Czas przygotowania (minuty)"
             type="number"
             value={preparationTime}
             onChange={(e) => setPreparationTime(e.target.value)}
-            fullWidth
-          />
-
+            fullWidth         />
           <Box>
             <Typography variant="h6" gutterBottom>
               Makroskładniki (opcjonalnie)
@@ -298,22 +288,19 @@ export function CreateRecipeModal({
                 type="number"
                 value={calories}
                 onChange={(e) => setCalories(e.target.value)}
-                sx={{ width: 120 }}
-              />
+                sx={{ width: 120 }}       />
               <TextField
                 label="Białko (g)"
                 type="number"
                 value={proteins}
                 onChange={(e) => setProteins(e.target.value)}
-                sx={{ width: 120 }}
-              />
+                sx={{ width: 120 }} />
               <TextField
                 label="Węglowodany (g)"
                 type="number"
                 value={carbohydrates}
                 onChange={(e) => setCarbohydrates(e.target.value)}
-                sx={{ width: 120 }}
-              />
+                sx={{ width: 120 }} />
               <TextField
                 label="Tłuszcze (g)"
                 type="number"
@@ -323,7 +310,6 @@ export function CreateRecipeModal({
               />
             </Stack>
           </Box>
-
           <Box>
             <Typography variant="h6" gutterBottom>
               Składniki
