@@ -194,7 +194,11 @@ if (app.Environment.IsDevelopment()) {
 //     }
 // }
 
-app.UseHttpsRedirection();
+// Przekierowanie HTTPS tylko w środowisku produkcyjnym
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // await DbSeeder.SeedData(app);
 
