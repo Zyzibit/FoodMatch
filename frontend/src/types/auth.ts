@@ -15,6 +15,16 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
 // Response types
 export interface UserInfo {
   userId: string;
@@ -41,5 +51,10 @@ export interface UserSession {
 }
 
 export interface ApiError {
+  message: string;
+}
+
+export interface ApiMessageResponse {
+  success?: boolean;
   message: string;
 }
