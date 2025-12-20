@@ -360,6 +360,7 @@ public class ProductRepository : IProductRepository
         try
         {
             var result = await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
             return result.Entity;
         }
         catch (Exception ex)
@@ -391,6 +392,7 @@ public class ProductRepository : IProductRepository
             if (product != null)
             {
                 _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
             }
         }
         catch (Exception ex)
