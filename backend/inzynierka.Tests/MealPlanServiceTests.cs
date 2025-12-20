@@ -25,8 +25,7 @@ namespace inzynierka.Tests.MealPlanTests
             
             _service = new MealPlanService(
                 _mockRepository.Object,
-                _mockRecipeService.Object,
-                _mockLogger.Object);
+                _mockRecipeService.Object);
         }
 
         [Fact]
