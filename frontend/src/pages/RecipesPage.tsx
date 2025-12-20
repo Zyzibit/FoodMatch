@@ -52,6 +52,7 @@ const convertRecipeDetailsToSavedRecipe = (
     id: recipe.id.toString(),
     title: recipe.title,
     description: recipe.description || "",
+    instructions: recipe.instructions,
     calories: Math.round(totalCalories),
     macros: {
       protein: Math.round(totalProtein),

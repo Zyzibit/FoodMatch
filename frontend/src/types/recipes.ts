@@ -11,6 +11,7 @@ export type SavedRecipe = {
   id: string;
   title: string;
   description: string;
+  instructions?: string;
   calories: number;
   macros: { protein: number; fat: number; carbs: number };
   tags?: string[];

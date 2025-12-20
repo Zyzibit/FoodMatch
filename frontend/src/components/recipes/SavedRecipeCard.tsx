@@ -160,10 +160,21 @@ export default function SavedRecipeCard({
             borderTop: (theme) => `1px dashed ${theme.palette.grey[300]}`,
           }}
         >
+          {recipe.description && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Opis
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                {recipe.description}
+              </Typography>
+            </Box>
+          )}
+
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
             Składniki
           </Typography>
-          <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
+          <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0, mb: 2 }}>
             {recipe.ingredients.map((ingredient, index) => (
               <Box
                 key={index}
@@ -216,6 +227,17 @@ export default function SavedRecipeCard({
               </Box>
             ))}
           </Stack>
+
+          {recipe.instructions && (
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Instrukcje przygotowania
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                {recipe.instructions}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Collapse>
 
