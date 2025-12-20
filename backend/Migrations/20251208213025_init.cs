@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace inzynierka.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -544,7 +544,9 @@ namespace inzynierka.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Quantity = table.Column<decimal>(type: "numeric", nullable: false),
-                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: true),
+                    ProductName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    UnitId = table.Column<int>(type: "integer", nullable: false),
                     ShoppingListId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -555,12 +557,18 @@ namespace inzynierka.Migrations
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_ShoppingListItems_ShoppingLists_ShoppingListId",
                         column: x => x.ShoppingListId,
                         principalTable: "ShoppingLists",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ShoppingListItems_Units_UnitId",
+                        column: x => x.UnitId,
+                        principalTable: "Units",
+                        principalColumn: "UnitId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -678,6 +686,11 @@ namespace inzynierka.Migrations
                 column: "ShoppingListId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ShoppingListItems_UnitId",
+                table: "ShoppingListItems",
+                column: "UnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ShoppingLists_UserId",
                 table: "ShoppingLists",
                 column: "UserId");
@@ -744,13 +757,13 @@ namespace inzynierka.Migrations
                 name: "Recipes");
 
             migrationBuilder.DropTable(
-                name: "Units");
-
-            migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
                 name: "ShoppingLists");
+
+            migrationBuilder.DropTable(
+                name: "Units");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

@@ -209,7 +209,6 @@ public class RecipeController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting recipe {Id}", id);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }

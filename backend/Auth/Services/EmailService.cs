@@ -194,8 +194,7 @@ var body = $@"
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending password reset email to {Email}", email);
-            return false;
+            throw new Exception("Error sending password reset email", ex);
         }
     }
 
@@ -203,16 +202,10 @@ var body = $@"
     {
         try
         {
-            // Sprawdzenie, czy konfiguracja email jest ustawiona
             if (string.IsNullOrEmpty(_smtpUsername) || string.IsNullOrEmpty(_smtpPassword))
             {
-                _logger.LogWarning("Email configuration is not set. Email will not be sent to {To}", to);
-                _logger.LogInformation("Email content would be: Subject: {Subject}", subject);
-                return false;
+                throw new Exception("SMTP username or password is not configured.");
             }
-
-            _logger.LogInformation("Attempting to send email via SMTP: Host={Host}, Port={Port}, Username={Username}, SSL=true", 
-                _smtpHost, _smtpPort, _smtpUsername);
 
             using var message = new MailMessage();
             message.From = new MailAddress(_fromEmail, _fromName);
@@ -231,18 +224,15 @@ var body = $@"
 
             await smtpClient.SendMailAsync(message);
             
-            _logger.LogInformation("Email sent successfully to {To}", to);
             return true;
         }
         catch (SmtpException ex)
         {
-            _logger.LogError(ex, "SMTP error sending email to {To}: {Message}", to, ex.Message);
-            return false;
+            throw new Exception("SMTP error sending email", ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending email to {To}", to);
-            return false;
+            throw new Exception("Error sending email", ex);
         }
     }
 }

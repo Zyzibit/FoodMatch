@@ -13,8 +13,8 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251206225243_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251208213025_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -582,7 +582,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ShoppingLists");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.ShoppingListItem", b =>
+            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingListItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -590,8 +590,13 @@ namespace inzynierka.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ProductId")
+                    b.Property<int?>("ProductId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric");
@@ -599,11 +604,16 @@ namespace inzynierka.Migrations
                     b.Property<int?>("ShoppingListId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UnitId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
                     b.HasIndex("ShoppingListId");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("ShoppingListItems");
                 });
@@ -915,19 +925,26 @@ namespace inzynierka.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.ShoppingListItem", b =>
+            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingListItem", b =>
                 {
                     b.HasOne("inzynierka.Products.Model.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("inzynierka.ShoppingList.Model.ShoppingList", null)
                         .WithMany("Items")
                         .HasForeignKey("ShoppingListId");
 
+                    b.HasOne("inzynierka.Units.Models.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Product");
+
+                    b.Navigation("Unit");
                 });
 
             modelBuilder.Entity("inzynierka.Users.Model.User", b =>

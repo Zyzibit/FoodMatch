@@ -51,22 +51,26 @@ public class AuthService : IAuthService
         string password,
         string? deviceId = null,
         string? userAgent = null,
-        string? ipAddress = null) {
-        try {
+        string? ipAddress = null)
+    {
+        try
+        {
             var user = await _userService.GetUserEntityByUsernameAsync(username);
-            if (user == null) {
-                return AuthenticationResult.Failed("Invalid username or password");
-            }
-
             var result = await _signInManager.CheckPasswordSignInAsync(user, password, false);
-            if (!result.Succeeded) {
-                return AuthenticationResult.Failed("Invalid username or password");
+            
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException("Invalid username or password");
             }
 
             return await GenerateTokensAsync(user, deviceId, userAgent, ipAddress);
         }
-        catch (Exception ex) {
-            _logger.LogError(ex, "Error during authentication for user: {Username}", username);
+        catch (InvalidOperationException)
+        {
+            return AuthenticationResult.Failed("Invalid username or password");
+        }
+        catch (Exception ex)
+        {
             return AuthenticationResult.Failed("Authentication failed");
         }
     }
@@ -150,7 +154,6 @@ public class AuthService : IAuthService
     public async Task<bool> RevokeAllTokensAsync(string userId) {
         try {
             await _refreshTokenRepository.RevokeAllByUserIdAsync(userId);
-
             return true;
         }
         catch (Exception ex) {
@@ -358,28 +361,17 @@ public class AuthService : IAuthService
     public async Task<ForgotPasswordResult> ForgotPasswordAsync(string email) {
         try {
             var user = await _userService.GetUserEntityByEmailAsync(email);
-            if (user == null) {
-                _logger.LogWarning("Forgot password request for non-existent email: {Email}", email);
-                return ForgotPasswordResult.Succeeded("token_placeholder");
-            }
 
             var token = await _signInManager.UserManager.GeneratePasswordResetTokenAsync(user);
-            _logger.LogInformation("Password reset token generated for user: {UserId}", user.Id);
-
+            
             var emailSent = await _emailService.SendPasswordResetEmailAsync(
                 email, 
                 token, 
                 user.UserName ?? email
             );
-
-            if (!emailSent) {
-                _logger.LogWarning("Failed to send password reset email to {Email}, but token was generated", email);
-            }
-
             return ForgotPasswordResult.Succeeded(token);
         }
         catch (Exception ex) {
-            _logger.LogError(ex, "Error generating password reset token for email: {Email}", email);
             return ForgotPasswordResult.Failed("Failed to generate password reset token");
         }
     }
@@ -395,7 +387,6 @@ public class AuthService : IAuthService
             var result = await _signInManager.UserManager.ResetPasswordAsync(user, token, newPassword);
             if (!result.Succeeded) {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                _logger.LogWarning("Failed to reset password for user {UserId}: {Errors}", user.Id, errors);
                 return ResetPasswordResult.Failed(errors);
             }
             await RevokeAllTokensAsync(user.Id);

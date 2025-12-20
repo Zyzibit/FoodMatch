@@ -56,7 +56,6 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting product with ID: {ProductId}", productId);
             return new ProductResult
             {
                 Success = false,
@@ -175,7 +174,6 @@ public class ProductService : IProductService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error importing products from: {FilePath}", filePath);
             return new ProductImportResult
             {
                 Success = false,
@@ -343,16 +341,10 @@ public class ProductService : IProductService
             var createdProduct = await _productRepository.AddProductAsync(aiProduct);
             await _productRepository.SaveChangesAsync();
 
-            _logger.LogInformation(
-                "Created new AI-generated product: {ProductName} with ID: {ProductId}. " +
-                "Normalized from {OriginalGrams}g (CaloriesGoal: {OriginalCalories}) to 100g (CaloriesGoal: {NormalizedCalories})", 
-                ingredient.Name, createdProduct.Id, normalizedQuantity, ingredient.EstimatedCalories, aiProduct.estimatedCalories);
-
             return createdProduct;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating AI-generated product: {ProductName}", ingredient.Name);
             throw new InvalidOperationException($"Failed to create product for ingredient '{ingredient.Name}'", ex);
         }
     }

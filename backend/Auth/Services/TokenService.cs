@@ -34,6 +34,7 @@ public class TokenService : ITokenService {
 
         return tokenHandler.WriteToken(token);
     }
+
     public string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -44,6 +45,7 @@ public class TokenService : ITokenService {
         return Convert.ToBase64String(randomNumber);
         
     }
+
     public void SetRefreshTokenCookie(HttpResponse response, string refreshToken, int days)
     {
         response.Cookies.Append("RefreshToken", refreshToken, new CookieOptions
@@ -54,6 +56,7 @@ public class TokenService : ITokenService {
             Expires = DateTime.UtcNow.AddDays(days)
         });
     }
+
     public void SetAccessTokenCookie(HttpResponse response, string? accessToken, int minutes)
     {
         if (string.IsNullOrEmpty(accessToken))
@@ -69,14 +72,17 @@ public class TokenService : ITokenService {
             Expires = DateTime.UtcNow.AddMinutes(minutes)
         });
     }
+
     public void RemoveAccessTokenCookie(HttpResponse response)
     {
         response.Cookies.Delete("AccessToken");
     }
+
     public void RemoveRefreshTokenCookie(HttpResponse response)
     {
         response.Cookies.Delete("RefreshToken");
     }
+    
     public ClaimsPrincipal GetPrincipalFromExpiredToken(string accessToken)
     {
         var tokenValidationParameters = new TokenValidationParameters

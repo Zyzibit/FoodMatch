@@ -53,6 +53,6 @@ public class Product
     public decimal? estimatedProteins { get; set; }
     public decimal? estimatedCalories { get; set; }
     [Required]
-    public ProductSource Source { get; set; } = ProductSource.OpenFoodFacts;
+    public ProductSource Source { get; set; } = ProductSource.User;
     
 }

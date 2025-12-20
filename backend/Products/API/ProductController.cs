@@ -149,7 +149,6 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting ingredients");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
@@ -171,12 +170,10 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting nutrition info for product: {ProductId}", productId);
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-
+    
     [HttpPost("import")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ImportProducts([FromBody] ProductImportRequest request)
@@ -200,7 +197,6 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error importing products");
             return StatusCode(500, new { message = "Internal server error" });
         }
     }

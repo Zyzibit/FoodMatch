@@ -41,12 +41,18 @@ public class RecipeService : IRecipeService
         _productService = productService;
         _unitService = unitService;
     }
+
     public async Task<RecipeDto?> GetRecipeAsync(int id)
     {
-        var recipe = await _recipeRepository.GetRecipeByIdAsync(id);
-        if (recipe == null) return null;
-
-        return recipe.ToDto();
+        try 
+        {
+            var recipe = await _recipeRepository.GetRecipeByIdAsync(id);
+            return recipe.ToDto();
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error getting recipe with ID: {id}", ex);
+        }
     }
 
     public async Task<RecipeListResult> Recipes(int limit = 50, int offset = 0)
@@ -177,7 +183,6 @@ public class RecipeService : IRecipeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sharing recipe {RecipeId} by user {UserId}", recipeId, userId);
             return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
         }
     }
@@ -194,25 +199,21 @@ public class RecipeService : IRecipeService
             var recipe = await _recipeRepository.GetRecipeByIdAsync(recipeId);
             if (recipe == null)
             {
-                return false;
+                throw new Exception("Recipe not found");
             }
 
             if (recipe.UserId != userId)
             {
-                _logger.LogWarning("User {UserId} attempted to delete recipe {RecipeId} owned by {OwnerId}", 
-                    userId, recipeId, recipe.UserId);
-                return false;
+                throw new UnauthorizedAccessException("You can only delete your own recipes");
             }
 
             await _recipeRepository.DeleteRecipeAsync(recipeId);
-            _logger.LogInformation("Recipe {RecipeId} deleted by user {UserId}", recipeId, userId);
             
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting recipe {RecipeId} by user {UserId}", recipeId, userId);
-            return false;
+            throw new Exception($"Error deleting recipe with ID: {recipeId} by user {userId}", ex);
         }
     }
 
@@ -295,11 +296,6 @@ public class RecipeService : IRecipeService
             var productsList = productsInfo.ToList();
             
             var ingredientNames = new List<string>();
-
-            // if (productsList.Any())
-            // {
-            //     ingredientNames.AddRange(productsList.Select(p => _productService.GetProductDisplayName(p)));
-            // }
 
             if (request.AvailableIngredients.Any())
             {
@@ -449,7 +445,6 @@ public class RecipeService : IRecipeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error saving generated recipe");
             return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
         }
     }

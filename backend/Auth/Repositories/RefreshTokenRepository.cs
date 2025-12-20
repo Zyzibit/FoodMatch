@@ -78,6 +78,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         {
             token.RevokedAt = DateTime.UtcNow;
         }
+        
         await _context.SaveChangesAsync();
     }
 
