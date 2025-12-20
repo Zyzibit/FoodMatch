@@ -194,7 +194,10 @@ if (app.Environment.IsDevelopment()) {
 //     }
 // }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // await DbSeeder.SeedData(app);
 
