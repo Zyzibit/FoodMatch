@@ -44,7 +44,7 @@ public class UserPreferencesService : IUserPreferencesService
                 return false;
             }
 
-            user.FoodPreferences.UpdateFrom(request, _logger);
+            user.FoodPreferences.UpdateFrom(request);
 
             user.UpdatedAt = DateTime.UtcNow;
             var result = await _userManager.UpdateAsync(user);
