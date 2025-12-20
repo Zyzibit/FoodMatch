@@ -418,6 +418,7 @@ export default function PlanAddRecipeModal({
         .filter((id): id is number => typeof id === "number");
 
       const availableIngredients = products
+        .filter((product) => !product.productId)
         .map((product) => product.name.trim())
         .filter((name) => name.length > 0);
 
