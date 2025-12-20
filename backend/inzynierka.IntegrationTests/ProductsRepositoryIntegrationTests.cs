@@ -21,17 +21,21 @@ public class ProductsRepositoryIntegrationTests : DatabaseIntegrationTest
     public async Task AddProduct_ShouldAddProductToDatabase()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<ProductRepository>>();
-        var repository = new ProductRepository(DbContext, mockLogger.Object);
-        var product = new Product { Code = "123456789", ProductName = "Test Product" };
+        var product = new Product 
+        { 
+            Code = "123456789", 
+            ProductName = "Test Product",
+            Language = "pl"
+        };
 
         // Act
-        await repository.AddProductAsync(product);
-        var result = await repository.GetProductByCodeAsync("123456789");
+        await _repository.AddProductAsync(product);
+        var result = await _repository.GetProductByCodeAsync("123456789");
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Product", result.ProductName);
+        Assert.Equal("123456789", result.Code);
     }
 
     [Fact]

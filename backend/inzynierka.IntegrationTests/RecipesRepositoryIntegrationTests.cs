@@ -62,7 +62,6 @@ public class RecipesRepositoryIntegrationTests : DatabaseIntegrationTest
     public async Task AddRecipe_ShouldAddRecipeToDatabase()
     {
         // Arrange
-        var repository = new RecipeRepository(DbContext);
         var recipe = new Recipe
         {
             UserId = "test-user-123",
@@ -82,8 +81,8 @@ public class RecipesRepositoryIntegrationTests : DatabaseIntegrationTest
         };
 
         // Act
-        var addedRecipe = await repository.AddRecipeAsync(recipe);
-        var result = await repository.GetRecipeByIdAsync(addedRecipe.Id);
+        var addedRecipe = await _repository.AddRecipeAsync(recipe);
+        var result = await _repository.GetRecipeByIdAsync(addedRecipe.Id);
 
         // Assert
         Assert.NotNull(result);
