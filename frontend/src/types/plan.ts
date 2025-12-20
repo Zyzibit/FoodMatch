@@ -5,6 +5,7 @@ export type PlanMealProduct = {
   productId?: number;
   name: string;
   quantityLabel?: string;
+  code?: string;
   source?: ProductSource;
 };
 

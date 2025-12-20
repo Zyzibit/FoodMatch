@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Collapse, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Collapse, Stack, Typography, Link } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import type { PlanMeal } from "../../types/plan";
 import PlanMealMacroSummary from "./PlanMealMacroSummary";
@@ -220,7 +220,25 @@ export default function PlanMealCard({
                               fontSize: "0.7rem",
                             }}
                           >
-                            produkt z bazy openfoodfacts
+                            {product.code ? (
+                              <Link
+                                href={`https://world.openfoodfacts.org/product/${product.code}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                  color: "inherit",
+                                  textDecoration: "none",
+                                  cursor: "pointer",
+                                  "&:hover": {
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                Open Food Facts ({product.code})
+                              </Link>
+                            ) : (
+                              "produkt z bazy openfoodfacts"
+                            )}
                           </Typography>
                         )}
                         {product.source === "AI" && (

@@ -82,6 +82,7 @@ export interface RecipeDetailsIngredient {
   unitName?: string;
   quantity: number;
   normalizedQuantityInGrams?: number;
+  code?: string;
   source?: ProductSource;
 }
 
@@ -121,6 +122,7 @@ const parseRecipeDetailsIngredient = (data: any): RecipeDetailsIngredient => ({
   normalizedQuantityInGrams: parseOptionalNumber(
     data?.normalizedQuantityInGrams ?? data?.NormalizedQuantityInGrams
   ),
+  code: data?.code ?? data?.Code,
   source: data?.source ?? data?.Source,
 });
 

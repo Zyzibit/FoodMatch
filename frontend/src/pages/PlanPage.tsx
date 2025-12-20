@@ -106,6 +106,7 @@ type IngredientForDisplay = {
   unitName?: string | null;
   unitId?: number;
   normalizedQuantityInGrams?: number;
+  code?: string;
   source?: ProductSource;
 };
 
@@ -156,6 +157,7 @@ const mapIngredientToProduct = (
     ...ingredient,
     unitName: unitNameOverride ?? ingredient.unitName,
   }),
+  code: ingredient.code,
   source: ingredient.source,
 });
 

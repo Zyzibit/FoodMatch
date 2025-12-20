@@ -9,6 +9,7 @@ import {
   Chip,
   Divider,
   CircularProgress,
+  Link,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
@@ -94,8 +95,29 @@ export default function ProductDetailsDialog({
     return estimated ?? actual;
   };
 
-  const getSourceLabel = (source: string) => {
-    if (source === "OpenFoodFacts") return "produkt z bazy openfoodfacts";
+  const getSourceLabel = (source: string, barcode?: string) => {
+    if (source === "OpenFoodFacts") {
+      if (barcode) {
+        return (
+          <Link
+            href={`https://world.openfoodfacts.org/product/${barcode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              color: "inherit",
+              textDecoration: "none",
+              cursor: "pointer",
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            }}
+          >
+            Open Food Facts ({barcode})
+          </Link>
+        );
+      }
+      return "produkt z bazy openfoodfacts";
+    }
     if (source === "AI") return "wygenerowany przez AI";
     if (source === "User") return "własny produkt";
     return "produkt z bazy FoodMatch";
@@ -166,7 +188,7 @@ export default function ProductDetailsDialog({
                   fontSize: "0.7rem",
                 }}
               >
-                {getSourceLabel(product.source)}
+                {getSourceLabel(product.source, product.barcode)}
               </Typography>
             </Box>
 

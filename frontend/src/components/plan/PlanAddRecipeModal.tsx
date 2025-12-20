@@ -14,6 +14,7 @@ import {
   Divider,
   FormControlLabel,
   IconButton,
+  Link,
   Paper,
   Stack,
   TextField,
@@ -63,6 +64,7 @@ type AiProduct = {
   id: string;
   name: string;
   productId?: number;
+  code?: string;
   source?: ProductSource;
 };
 
@@ -292,6 +294,7 @@ export default function PlanAddRecipeModal({
         id: crypto.randomUUID(),
         name: resolvedName,
         productId,
+        code: matchedOption?.barcode,
         source: matchedOption?.source,
       },
     ]);
@@ -303,13 +306,30 @@ export default function PlanAddRecipeModal({
     setProducts((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const getSourceLabel = (source?: ProductSource, hasProductId?: boolean) => {
+  const getSourceLabel = (source?: ProductSource, hasProductId?: boolean, code?: string) => {
     if (!hasProductId && !source) return "Własny składnik";
-    if (source === "OpenFoodFacts") return "Produkt z bazy Open Food Facts";
+    if (source === "OpenFoodFacts") {
+      if (code) {
+        return (
+          <span>
+            Produkt z bazy{" "}
+            <Link
+              href={`https://world.openfoodfacts.org/product/${code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ cursor: "pointer" }}
+            >
+              Open Food Facts ({code})
+            </Link>
+          </span>
+        );
+      }
+      return `Produkt z bazy Open Food Facts`;
+    }
     if (source === "AI")
       return "Produkt wygenerowany przez sztuczną inteligencję";
     if (source === "User") return "Własny składnik";
-    return "Produkt z bazy FoodMatch";
+    return "Produkt użytkownika";
   };
 
   const handleProductClick = (product: AiProduct) => {
@@ -850,7 +870,26 @@ export default function PlanAddRecipeModal({
                     {product.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {getSourceLabel(product.source, !!product.productId)}
+                    {product.source === "OpenFoodFacts" && product.code ? (
+                      <Box
+                        component="a"
+                        href={`https://world.openfoodfacts.org/product/${product.code}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          textDecoration: "none",
+                          color: "inherit",
+                          cursor: "pointer",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        {getSourceLabel(product.source, !!product.productId, product.code)}
+                      </Box>
+                    ) : (
+                      getSourceLabel(product.source, !!product.productId, product.code)
+                    )}
                   </Typography>
                   {product.source === "OpenFoodFacts" && (
                     <Typography
@@ -1276,7 +1315,21 @@ export default function PlanAddRecipeModal({
                         sx={{ mt: 1 }}
                       >
                         {generatedRecipe.additionalProducts.map((item) => (
-                          <Chip key={item} label={item} size="small" />
+                          <Link
+                            key={item}
+                            href={`https://world.openfoodfacts.org/search?q=${encodeURIComponent(item)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              textDecoration: "none",
+                              cursor: "pointer",
+                              "&:hover": {
+                                textDecoration: "underline",
+                              },
+                            }}
+                          >
+                            <Chip label={item} size="small" />
+                          </Link>
                         ))}
                       </Stack>
                     </Box>

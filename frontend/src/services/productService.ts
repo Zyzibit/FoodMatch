@@ -8,6 +8,7 @@ export type ProductDto = {
   name?: string;
   brand?: string;
   category?: string;
+  barcode?: string;
   source?: ProductSource;
 };
 
