@@ -11,43 +11,46 @@ import { alpha } from "@mui/material/styles";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  InputEmail,
-  emailSchema as emailFieldSchema,
-} from "../../inputs/InputEmail";
+import { InputPassword, passwordSchema } from "../../inputs/InputPassword";
 
-const forgotPasswordSchema = z.object({
-  email: emailFieldSchema,
-});
+const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Hasła muszą być takie same",
+  });
 
-type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-interface ForgotPasswordFormProps {
-  onSubmit?: (data: ForgotPasswordData) => Promise<void> | void;
+interface ResetPasswordFormProps {
+  email: string;
+  onSubmit?: (newPassword: string) => Promise<void> | void;
   onLoginRedirect?: () => void;
-  onRegisterRedirect?: () => void;
   loading?: boolean;
-  statusMessage?: string | null;
+  successMessage?: string | null;
   errorMessage?: string | null;
 }
 
-export function ForgotPasswordForm({
+export function ResetPasswordForm({
+  email,
   onSubmit,
   onLoginRedirect,
-  onRegisterRedirect,
   loading = false,
-  statusMessage,
+  successMessage,
   errorMessage,
-}: ForgotPasswordFormProps) {
-  const { handleSubmit, control, reset } = useForm<ForgotPasswordData>({
-    resolver: zodResolver(forgotPasswordSchema),
+}: ResetPasswordFormProps) {
+  const { handleSubmit, control, reset } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
     mode: "onSubmit",
   });
 
-  const handleFormSubmit = async (data: ForgotPasswordData) => {
+  const handleFormSubmit = async (data: ResetPasswordFormData) => {
     try {
-      await onSubmit?.(data);
-      reset({ email: data.email });
+      await onSubmit?.(data.password);
+      reset({ password: "", confirmPassword: "" });
     } catch (error) {
       // Error handling is delegated to the parent
     }
@@ -66,18 +69,27 @@ export function ForgotPasswordForm({
           align="center"
           sx={{ color: (theme) => alpha(theme.palette.common.white, 0.95) }}
         >
-          Przypomnienie hasła
+          Ustaw nowe hasło
         </Typography>
         <Typography
           variant="body2"
           align="center"
           sx={{ color: (theme) => alpha(theme.palette.common.white, 0.8) }}
         >
-          Podaj adres e-mail powiązany z kontem. Jeśli istnieje w naszej bazie,
-          wyślemy instrukcje ustawienia nowego hasła.
+          Resetujesz hasło dla konta <strong>{email}</strong>. Ustal nowe hasło,
+          aby odzyskać dostęp.
         </Typography>
 
-        <InputEmail control={control} placeholder="Adres e-mail" />
+        <InputPassword
+          name="password"
+          control={control}
+          placeholder="Nowe hasło"
+        />
+        <InputPassword
+          name="confirmPassword"
+          control={control}
+          placeholder="Powtórz nowe hasło"
+        />
 
         <Button
           type="submit"
@@ -94,12 +106,12 @@ export function ForgotPasswordForm({
             fontWeight: 700,
           }}
         >
-          {loading ? "Wysyłanie..." : "Wyślij link resetujący"}
+          {loading ? "Zapisywanie..." : "Zresetuj hasło"}
         </Button>
 
-        {statusMessage && (
+        {successMessage && (
           <Alert severity="success" sx={{ mt: 1 }}>
-            {statusMessage}
+            {successMessage}
           </Alert>
         )}
 
@@ -132,27 +144,7 @@ export function ForgotPasswordForm({
               fontWeight: 600,
             }}
           >
-            Zaloguj się
-          </Link>
-        </Typography>
-
-        <Typography
-          variant="body2"
-          align="center"
-          sx={{ color: (theme) => alpha(theme.palette.common.white, 0.85) }}
-        >
-          Nie masz jeszcze konta?{" "}
-          <Link
-            component="button"
-            type="button"
-            underline="hover"
-            onClick={onRegisterRedirect}
-            sx={{
-              color: (theme) => alpha(theme.palette.common.white, 0.95),
-              fontWeight: 600,
-            }}
-          >
-            Zarejestruj się
+            Wróć do logowania
           </Link>
         </Typography>
       </Stack>

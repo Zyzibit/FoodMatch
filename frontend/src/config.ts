@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: "/auth/change-password",
     SESSIONS: "/auth/sessions",
     REVOKE_ALL_TOKENS: "/auth/revoke-all-tokens",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
   },
   PRODUCTS: {
     BASE: "/products",

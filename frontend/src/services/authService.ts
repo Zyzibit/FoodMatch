@@ -7,6 +7,9 @@ import type {
   UserInfo,
   UserSession,
   ApiError,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  ApiMessageResponse,
 } from "../types/auth";
 
 class AuthService {
@@ -127,6 +130,28 @@ class AuthService {
         body: JSON.stringify(payload),
       }
     );
+  }
+
+  async forgotPassword(email: string): Promise<ApiMessageResponse> {
+    const payload: ForgotPasswordRequest = { email };
+
+    return this.request<ApiMessageResponse>(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async resetPassword(
+    email: string,
+    token: string,
+    newPassword: string
+  ): Promise<ApiMessageResponse> {
+    const payload: ResetPasswordRequest = { email, token, newPassword };
+
+    return this.request<ApiMessageResponse>(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
   async getSessions(): Promise<UserSession[]> {
