@@ -380,7 +380,6 @@ public class AuthService : IAuthService
         try {
             var user = await _userService.GetUserEntityByEmailAsync(email);
             if (user == null) {
-                _logger.LogWarning("Reset password attempt for non-existent email: {Email}", email);
                 return ResetPasswordResult.Failed("Invalid request");
             }
 
@@ -391,11 +390,9 @@ public class AuthService : IAuthService
             }
             await RevokeAllTokensAsync(user.Id);
             
-            _logger.LogInformation("Password reset successful for user: {UserId}", user.Id);
             return ResetPasswordResult.Succeeded();
         }
         catch (Exception ex) {
-            _logger.LogError(ex, "Error resetting password for email: {Email}", email);
             return ResetPasswordResult.Failed("Failed to reset password");
         }
     }
