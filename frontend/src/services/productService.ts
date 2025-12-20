@@ -3,7 +3,7 @@ import { API_BASE_URL, API_ENDPOINTS } from "../config";
 export type ProductSource = "OpenFoodFacts" | "AI" | "User";
 
 export type ProductDto = {
-  productId?: number;
+  productId?: number | string;
   id?: number | string;
   name?: string;
   brand?: string;

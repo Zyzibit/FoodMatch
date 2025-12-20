@@ -13,7 +13,6 @@ import {
   ListItemText,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import authService from "../../services/authService";
@@ -21,14 +20,12 @@ import userService from "../../services/userService";
 import type { UserSession } from "../../types/auth";
 import { useAuth } from "../../contexts/AuthContext";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import { ChangeUsernameForm } from "../forms/ChangeUsernameForm/ChangeUsernameForm";
+import { ChangePasswordForm } from "../forms/ChangePasswordForm/ChangePasswordForm";
 
 export default function UserAccountSettings() {
   const { user: authUser } = useAuth();
   const [userName, setUserName] = useState("");
-  const [newUserName, setNewUserName] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
@@ -37,7 +34,6 @@ export default function UserAccountSettings() {
       try {
         if (authUser) {
           setUserName(authUser.username);
-          setNewUserName(authUser.username);
         }
       } catch (error) {
         console.error("Failed to load user profile:", error);
@@ -58,49 +54,16 @@ export default function UserAccountSettings() {
     void loadSessions();
   }, [authUser]);
 
-  const handleChangeUserName = async () => {
-    if (!newUserName || newUserName.trim() === "") {
-      alert("Nazwa użytkownika nie może być pusta");
-      return;
-    }
-
-    try {
-      await userService.updateCurrentUserProfile({ name: newUserName });
-      setUserName(newUserName);
-      alert("Nazwa użytkownika została zmieniona");
-    } catch (error) {
-      console.error("Failed to change username:", error);
-      alert("Błąd podczas zmiany nazwy użytkownika");
-    }
+  const handleChangeUserName = async (newUserName: string) => {
+    await userService.updateCurrentUserProfile({ name: newUserName });
+    setUserName(newUserName);
   };
 
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      alert("Wszystkie pola hasła muszą być wypełnione");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      alert("Nowe hasło i potwierdzenie hasła nie są takie same");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      alert("Nowe hasło musi mieć co najmniej 6 znaków");
-      return;
-    }
-
-    try {
-      await authService.changePassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      alert("Hasło zostało zmienione pomyślnie. Zostaniesz wylogowany.");
-      window.location.href = "/login";
-    } catch (error) {
-      console.error("Failed to change password:", error);
-      alert("Błąd podczas zmiany hasła. Sprawdź aktualne hasło.");
-    }
+  const handleChangePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ) => {
+    await authService.changePassword(currentPassword, newPassword);
   };
 
   const handleLogoutAllSessions = async () => {
@@ -126,88 +89,13 @@ export default function UserAccountSettings() {
       </Box>
 
       {/* Change Username */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Zmiana nazwy użytkownika
-        </Typography>
-        <Stack spacing={2} sx={{ mt: 2 }}>
-          <TextField
-            label="Obecna nazwa użytkownika"
-            value={userName}
-            disabled
-            fullWidth
-          />
-          <TextField
-            label="Nowa nazwa użytkownika"
-            value={newUserName}
-            onChange={(e) => setNewUserName(e.target.value)}
-            fullWidth
-          />
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              onClick={handleChangeUserName}
-              disabled={!newUserName || newUserName === userName}
-            >
-              Zmień nazwę
-            </Button>
-          </Box>
-        </Stack>
-      </Paper>
+      <ChangeUsernameForm
+        currentUsername={userName}
+        onSubmit={handleChangeUserName}
+      />
 
       {/* Change Password */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Zmiana hasła
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Po zmianie hasła zostaniesz automatycznie wylogowany ze wszystkich
-          urządzeń.
-        </Typography>
-        <Stack spacing={2}>
-          <TextField
-            label="Aktualne hasło"
-            type="password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Nowe hasło"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Potwierdź nowe hasło"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            fullWidth
-            error={confirmPassword !== "" && newPassword !== confirmPassword}
-            helperText={
-              confirmPassword !== "" && newPassword !== confirmPassword
-                ? "Hasła nie są takie same"
-                : ""
-            }
-          />
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              onClick={handleChangePassword}
-              disabled={
-                !currentPassword ||
-                !newPassword ||
-                !confirmPassword ||
-                newPassword !== confirmPassword
-              }
-            >
-              Zmień hasło
-            </Button>
-          </Box>
-        </Stack>
-      </Paper>
+      <ChangePasswordForm onSubmit={handleChangePassword} />
 
       {/* Active Sessions */}
       <Paper sx={{ p: 3 }}>

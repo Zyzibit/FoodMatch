@@ -4,6 +4,7 @@ export type SavedRecipeIngredient = {
   name: string;
   productId?: number | string;
   source?: ProductSource;
+  isAdditional?: boolean;
 };
 
 export type SavedRecipe = {
@@ -14,6 +15,7 @@ export type SavedRecipe = {
   macros: { protein: number; fat: number; carbs: number };
   tags?: string[];
   ingredients: SavedRecipeIngredient[];
+  additionalProducts?: string[];
   createdAt?: string;
   isPublic?: boolean;
 };

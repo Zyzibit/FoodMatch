@@ -1,5 +1,16 @@
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import { Box } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  useMediaQuery,
+  type SelectChangeEvent,
+  useTheme,
+} from "@mui/material";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Tile from "../buttons/Tile";
@@ -132,6 +143,8 @@ export default function TopPanel({
 }) {
   const TOP_PANEL_HEIGHT = 56; // px - fixed height for the strip so tiles always same height
   const isPlanPage = activePage === "plan";
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [dateWindowStart, setDateWindowStart] = useState<Date>(() =>
     addDays(getToday(), -DATE_WINDOW_PADDING)
   );
@@ -144,10 +157,10 @@ export default function TopPanel({
   }, [todayTime]);
   const todayKey = formatDateKey(todayDate);
 
-  const dateTiles = useMemo(() => {
+  const dateTiles = useMemo<TopPanelItem[]>(() => {
     if (!isPlanPage) return [];
 
-    const tiles = Array.from({ length: DATE_WINDOW_LENGTH }, (_, index) => {
+    const tiles: TopPanelItem[] = Array.from({ length: DATE_WINDOW_LENGTH }, (_, index) => {
       const d = addDays(dateWindowStart, index);
       return {
         key: formatDateKey(d),
@@ -218,8 +231,72 @@ export default function TopPanel({
     onChange?.(key);
   };
 
-  const renderArray = isPlanPage ? dateTiles : items;
+  const renderArray: TopPanelItem[] = isPlanPage ? dateTiles : items;
   const count = renderArray.length;
+
+  if (isMobile) {
+    const selectLabel = isPlanPage ? "Dzień" : "Zakładka";
+    const activeValue = activeKey ?? renderArray[0]?.key ?? "";
+
+    const handleSelectChange = (event: SelectChangeEvent<string>) => {
+      handleTileClick(event.target.value as string);
+    };
+
+    return (
+      <Box
+        sx={(t) => ({
+          width: "100%",
+          bgcolor: t.palette.background.paper,
+          borderBottom: `1px solid ${t.palette.divider}`,
+          position: sticky ? "sticky" : "static",
+          top: sticky ? 0 : "auto",
+          zIndex: sticky ? 10 : "auto",
+        })}
+      >
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ px: 2, py: 1.5 }}
+        >
+          {isPlanPage && (
+            <IconButton
+              size="small"
+              onClick={() => handleDateWindowShift(-1)}
+              aria-label="Poprzednie dni"
+            >
+              <ChevronLeft fontSize="small" />
+            </IconButton>
+          )}
+
+          <FormControl fullWidth size="small">
+            <InputLabel>{selectLabel}</InputLabel>
+            <Select
+              label={selectLabel}
+              value={activeValue}
+              onChange={handleSelectChange}
+            >
+              {renderArray.map((it) => (
+                <MenuItem key={it.key} value={it.key}>
+                  {it.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {isPlanPage && (
+            <IconButton
+              size="small"
+              onClick={() => handleDateWindowShift(1)}
+              aria-label="Kolejne dni"
+            >
+              <ChevronRight fontSize="small" />
+            </IconButton>
+          )}
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -254,10 +331,10 @@ export default function TopPanel({
           }}
         >
           {renderArray.map((it, i) => {
-            const key = (it as any).key as string;
-            const label = (it as any).label as string;
-            const icon = (it as any).icon as ReactNode | undefined;
-            const disabled = (it as any).disabled as boolean | undefined;
+            const key = it.key;
+            const label = it.label;
+            const icon = it.icon;
+            const disabled = it.disabled;
             const active = key === activeKey;
 
             return (

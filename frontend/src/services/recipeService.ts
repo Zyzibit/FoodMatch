@@ -371,3 +371,46 @@ export const deleteRecipe = async (recipeId: number): Promise<void> => {
     throw new Error(error.message || "Nie udało się usunąć przepisu");
   }
 };
+
+export interface CreateRecipeRequest {
+  title: string;
+  description: string;
+  instructions: string;
+  preparationTimeMinutes: number;
+  totalWeightGrams: number;
+  calories: number;
+  proteins: number;
+  carbohydrates: number;
+  fats: number;
+  ingredients: {
+    productId: number;
+    unitId: number;
+    quantity: number;
+    normalizedQuantityInGrams: number;
+  }[];
+  additionalProducts?: string[];
+}
+
+export const createRecipe = async (
+  request: CreateRecipeRequest
+): Promise<{ success: boolean; recipeId: number }> => {
+  const response = await fetch(`${API_BASE_URL}/recipes`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się utworzyć przepisu" }));
+    throw new Error(error.message || "Nie udało się utworzyć przepisu");
+  }
+
+  return response.json();
+};
+

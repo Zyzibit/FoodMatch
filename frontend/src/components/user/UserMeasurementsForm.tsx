@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Stack } from "@mui/material";
+import { Alert, Box, Stack } from "@mui/material";
 import {
   AgeField,
   WeightField,
@@ -77,75 +77,96 @@ export function UserMeasurementsForm({
     (numericHeight < HEIGHT_RANGE.min || numericHeight > HEIGHT_RANGE.max);
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2.5}>
       {error && (
         <Alert severity="error" onClose={onErrorClose}>
           {error}
         </Alert>
       )}
 
-      <AgeField
-        value={formData.age}
-        onChange={(value) => updateField("age", value)}
-        disabled={disabled}
-        minAge={AGE_RANGE.min}
-        maxAge={AGE_RANGE.max}
-        error={showAgeError}
-        helperText={
-          showAgeError
-            ? `Wiek musi mieścić się w zakresie ${AGE_RANGE.min}-${AGE_RANGE.max} lat.`
-            : undefined
-        }
-      />
-
-      <GenderField
-        value={formData.gender}
-        onChange={(value) => updateField("gender", value)}
-        disabled={disabled}
-      />
-
-      <WeightField
-        value={formData.weight}
-        onChange={(value) => updateField("weight", value)}
-        disabled={disabled}
-        minWeight={WEIGHT_RANGE.min}
-        maxWeight={WEIGHT_RANGE.max}
-        error={showWeightError}
-        helperText={
-          showWeightError
-            ? `Waga musi mieścić się w zakresie ${WEIGHT_RANGE.min}-${WEIGHT_RANGE.max} kg.`
-            : undefined
-        }
-      />
-
-      <HeightField
-        value={formData.height}
-        onChange={(value) => updateField("height", value)}
-        disabled={disabled}
-        minHeight={HEIGHT_RANGE.min}
-        maxHeight={HEIGHT_RANGE.max}
-        error={showHeightError}
-        helperText={
-          showHeightError
-            ? `Wzrost musi mieścić się w zakresie ${HEIGHT_RANGE.min}-${HEIGHT_RANGE.max} cm.`
-            : undefined
-        }
-      />
-
-      <ActivityLevelField
-        value={formData.activityLevel}
-        onChange={(value) => updateField("activityLevel", value)}
-        disabled={disabled}
-      />
-
-      {showGoal && (
-        <GoalField
-          value={formData.fitnessGoal ?? "Maintenance"}
-          onChange={(value) => updateField("fitnessGoal", value)}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+          gap: { xs: 2, sm: 2.5 },
+        }}
+      >
+        <AgeField
+          value={formData.age}
+          onChange={(value) => updateField("age", value)}
           disabled={disabled}
-          showDetails
+          minAge={AGE_RANGE.min}
+          maxAge={AGE_RANGE.max}
+          error={showAgeError}
+          helperText={
+            showAgeError
+              ? `Wiek musi mieścić się w zakresie ${AGE_RANGE.min}-${AGE_RANGE.max} lat.`
+              : undefined
+          }
         />
-      )}
+
+        <GenderField
+          value={formData.gender}
+          onChange={(value) => updateField("gender", value)}
+          disabled={disabled}
+        />
+
+        <WeightField
+          value={formData.weight}
+          onChange={(value) => updateField("weight", value)}
+          disabled={disabled}
+          minWeight={WEIGHT_RANGE.min}
+          maxWeight={WEIGHT_RANGE.max}
+          error={showWeightError}
+          helperText={
+            showWeightError
+              ? `Waga musi mieścić się w zakresie ${WEIGHT_RANGE.min}-${WEIGHT_RANGE.max} kg.`
+              : undefined
+          }
+        />
+
+        <HeightField
+          value={formData.height}
+          onChange={(value) => updateField("height", value)}
+          disabled={disabled}
+          minHeight={HEIGHT_RANGE.min}
+          maxHeight={HEIGHT_RANGE.max}
+          error={showHeightError}
+          helperText={
+            showHeightError
+              ? `Wzrost musi mieścić się w zakresie ${HEIGHT_RANGE.min}-${HEIGHT_RANGE.max} cm.`
+              : undefined
+          }
+        />
+      </Box>
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: showGoal ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          },
+          gap: { xs: 2, sm: 2.5 },
+        }}
+      >
+        <Box sx={{ gridColumn: showGoal ? "auto" : { sm: "1 / -1" } }}>
+          <ActivityLevelField
+            value={formData.activityLevel}
+            onChange={(value) => updateField("activityLevel", value)}
+            disabled={disabled}
+          />
+        </Box>
+
+        {showGoal && (
+          <GoalField
+            value={formData.fitnessGoal ?? "Maintenance"}
+            onChange={(value) => updateField("fitnessGoal", value)}
+            disabled={disabled}
+            showDetails
+          />
+        )}
+      </Box>
     </Stack>
   );
 }

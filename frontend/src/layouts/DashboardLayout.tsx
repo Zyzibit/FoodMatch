@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  Drawer,
+  IconButton,
+  Toolbar,
+  Typography,
+} from "@mui/material";
+import { Menu as MenuIcon, Close as CloseIcon } from "@mui/icons-material";
 import {
   Navigate,
   Outlet,
@@ -46,6 +54,7 @@ export default function DashboardLayout() {
 
   const [pageTabs, setPageTabs] = useState<Record<string, string>>({});
   const activeTab = pageTabs[activePage];
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Sprawdź czy użytkownik ma wypełnione pomiary
   useEffect(() => {
@@ -70,6 +79,7 @@ export default function DashboardLayout() {
     (key: string) => {
       if (!SUPPORTED_PAGES.has(key)) return;
       navigate(`/app/${key}`);
+      setMobileNavOpen(false);
     },
     [navigate]
   );
@@ -93,6 +103,14 @@ export default function DashboardLayout() {
   );
 
   const showTopPanel = !["ustawienia", "lista"].includes(activePage);
+  const pageTitleMap: Record<string, string> = {
+    plan: "Plan",
+    lista: "Lista",
+    przepisy: "Przepisy",
+    ustawienia: "Ustawienia",
+    user: "Profil",
+    admin: "Panel administratora",
+  };
 
   // Guard against unsupported direct navigation
   if (!SUPPORTED_PAGES.has(activePage)) {
@@ -109,7 +127,7 @@ export default function DashboardLayout() {
         color: (t) => t.palette.text.primary,
       }}
     >
-      <Box sx={{ flexShrink: 0, height: "100%" }}>
+      <Box sx={{ flexShrink: 0, height: "100%", display: { xs: "none", md: "block" } }}>
         <SidebarPanel
           activeKey={activePage}
           onItemClick={handleSidebarClick}
@@ -123,6 +141,37 @@ export default function DashboardLayout() {
         />
       </Box>
 
+      <Drawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            width: "100%",
+            maxWidth: 360,
+            bgcolor: (t) => t.palette.background.paper,
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}>
+          <IconButton onClick={() => setMobileNavOpen(false)} aria-label="Zamknij menu">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <SidebarPanel
+          activeKey={activePage}
+          onItemClick={handleSidebarClick}
+          onLogoutClick={handleLogout}
+          userName={user?.username || "User"}
+          userAvatar={
+            user?.profilePictureUrl
+              ? `${API_BASE_URL.replace("/api/v1", "")}${user.profilePictureUrl}`
+              : undefined
+          }
+        />
+      </Drawer>
+
       <Box
         sx={{
           flexGrow: 1,
@@ -131,6 +180,32 @@ export default function DashboardLayout() {
           height: "100%",
         }}
       >
+        <AppBar
+          position="sticky"
+          color="default"
+          elevation={0}
+          sx={{
+            display: { xs: "flex", md: "none" },
+            borderBottom: (t) => `1px solid ${t.palette.divider}`,
+            bgcolor: (t) => t.palette.background.paper,
+            zIndex: (t) => t.zIndex.drawer + 1,
+          }}
+        >
+          <Toolbar sx={{ px: 2 }}>
+            <IconButton
+              edge="start"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Otwórz menu"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="subtitle1" fontWeight={800} noWrap>
+              {pageTitleMap[activePage] ?? "Diet Zynzi"}
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
         {showTopPanel && (
           <TopPanel
             activePage={activePage}
@@ -144,7 +219,7 @@ export default function DashboardLayout() {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 4,
+            p: { xs: 2, md: 4 },
             overflowY: "auto",
             display: "flex",
             alignItems: "flex-start",

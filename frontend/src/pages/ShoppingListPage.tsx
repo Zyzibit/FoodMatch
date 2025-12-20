@@ -10,6 +10,10 @@ import {
   TextField,
   Typography,
   Alert,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { Add, Clear, Delete } from "@mui/icons-material";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,6 +25,7 @@ import {
   clearShoppingList,
   type ShoppingListItem,
 } from "../services/shoppingListService";
+import { getAllUnits, type UnitDto } from "../services/unitService";
 
 export default function ShoppingListPage() {
   const [search, setSearch] = useState("");
@@ -31,16 +36,8 @@ export default function ShoppingListPage() {
   const [quantity, setQuantity] = useState("");
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-  const [localItems, setLocalItems] = useState<
-    Array<{
-      id: string;
-      productName: string;
-      quantity: number;
-    }>
-  >([]);
-  const [checkedLocalItems, setCheckedLocalItems] = useState<Set<string>>(
-    new Set()
-  );
+  const [units, setUnits] = useState<UnitDto[]>([]);
+  const [selectedUnit, setSelectedUnit] = useState<number>(1); // Domyślnie gram
   const [productSuggestions, setProductSuggestions] = useState<ProductDto[]>(
     []
   );
@@ -65,6 +62,27 @@ export default function ShoppingListPage() {
     };
 
     fetchList();
+  }, []);
+
+  // Fetch units on mount
+  useEffect(() => {
+    const fetchUnits = async () => {
+      try {
+        const unitsData = await getAllUnits();
+        setUnits(unitsData);
+        // Ustaw domyślnie gramy (unitId = 1) jeśli istnieje
+        const gramUnit = unitsData.find(u => u.name.toLowerCase() === 'gram');
+        if (gramUnit) {
+          setSelectedUnit(gramUnit.unitId);
+        } else if (unitsData.length > 0) {
+          setSelectedUnit(unitsData[0].unitId);
+        }
+      } catch (err) {
+        console.error("Error fetching units:", err);
+      }
+    };
+
+    fetchUnits();
   }, []);
 
   const handleSearchProducts = useCallback(async (query: string) => {
@@ -102,39 +120,28 @@ export default function ShoppingListPage() {
 
     setError(null);
 
-    // If user selected from database
-    if (selectedProduct) {
-      try {
-        const result = await addItemToShoppingList(
-          selectedProduct.id,
-          parseFloat(quantity)
-        );
-        if (result.success && result.item) {
-          setItems((prev) => [...prev, result.item!]);
-          setSearch("");
-          setSelectedProduct(null);
-          setCustomProductName("");
-          setQuantity("");
-        } else {
-          setError(result.message || "Nie udało się dodać produktu");
-        }
-      } catch (err) {
-        console.error("Error adding item:", err);
-        setError("Nie udało się dodać produktu");
+    const productName = selectedProduct?.name || customProductName.trim();
+    const productIdToSend = selectedProduct?.id || null;
+
+    try {
+      const result = await addItemToShoppingList(
+        productName,
+        parseFloat(quantity),
+        selectedUnit,
+        productIdToSend
+      );
+      if (result.success && result.item) {
+        setItems((prev) => [...prev, result.item!]);
+        setSearch("");
+        setSelectedProduct(null);
+        setCustomProductName("");
+        setQuantity("");
+      } else {
+        setError(result.message || "Nie udało się dodać produktu");
       }
-    } else if (customProductName.trim()) {
-      // If user entered custom name (not from database)
-      setLocalItems((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          productName: customProductName.trim(),
-          quantity: parseFloat(quantity),
-        },
-      ]);
-      setSearch("");
-      setCustomProductName("");
-      setQuantity("");
+    } catch (err) {
+      console.error("Error adding item:", err);
+      setError("Nie udało się dodać produktu");
     }
   };
 
@@ -149,15 +156,6 @@ export default function ShoppingListPage() {
     }
   };
 
-  const handleRemoveLocal = (id: string) => {
-    setLocalItems((prev) => prev.filter((item) => item.id !== id));
-    setCheckedLocalItems((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  };
-
   const handleToggle = (id: number) => {
     setCheckedItems((prev) => {
       const newSet = new Set(prev);
@@ -170,21 +168,8 @@ export default function ShoppingListPage() {
     });
   };
 
-  const handleToggleLocal = (id: string) => {
-    setCheckedLocalItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
   const handleClearChecked = () => {
     setCheckedItems(new Set());
-    setCheckedLocalItems(new Set());
   };
 
   const handleClear = async () => {
@@ -192,7 +177,6 @@ export default function ShoppingListPage() {
     try {
       await clearShoppingList();
       setItems([]);
-      setLocalItems([]);
     } catch (err) {
       console.error("Error clearing list:", err);
       setError("Nie udało się wyczyścić listy");
@@ -206,7 +190,7 @@ export default function ShoppingListPage() {
           const isChecked = checkedItems.has(item.id);
           return (
             <Box
-              key={`db-${item.id}`}
+              key={`item-${item.id}`}
               sx={{
                 display: "flex",
                 alignItems: "center",
@@ -245,7 +229,7 @@ export default function ShoppingListPage() {
                       textDecoration: isChecked ? "line-through" : "none",
                     }}
                   >
-                    {item.quantity} g
+                    {item.quantity} {item.unitName}
                   </Typography>
                   {item.brands && (
                     <Typography
@@ -258,6 +242,19 @@ export default function ShoppingListPage() {
                       {item.brands}
                     </Typography>
                   )}
+                  {!item.productId && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontStyle="italic"
+                      sx={{
+                        textDecoration: isChecked ? "line-through" : "none",
+                        display: "block",
+                      }}
+                    >
+                      (własny produkt)
+                    </Typography>
+                  )}
                 </Box>
               </Box>
               <IconButton onClick={() => handleRemove(item.id)}>
@@ -266,73 +263,9 @@ export default function ShoppingListPage() {
             </Box>
           );
         })}
-        {localItems.map((item) => {
-          const isChecked = checkedLocalItems.has(item.id);
-          return (
-            <Box
-              key={`local-${item.id}`}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: (theme) => `1px solid ${theme.palette.grey[200]}`,
-                py: 1.5,
-                px: 1,
-                bgcolor: "action.hover",
-                cursor: "pointer",
-                "&:hover": {
-                  bgcolor: "action.selected",
-                },
-              }}
-            >
-              <Box
-                sx={{ display: "flex", alignItems: "center", flex: 1, gap: 1 }}
-                onClick={() => handleToggleLocal(item.id)}
-              >
-                <Checkbox
-                  checked={isChecked}
-                  onChange={() => handleToggleLocal(item.id)}
-                />
-                <Box>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      textDecoration: isChecked ? "line-through" : "none",
-                      color: isChecked ? "text.disabled" : "text.primary",
-                    }}
-                  >
-                    {item.productName}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      textDecoration: isChecked ? "line-through" : "none",
-                    }}
-                  >
-                    {item.quantity} g
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    fontStyle="italic"
-                    sx={{
-                      textDecoration: isChecked ? "line-through" : "none",
-                    }}
-                  >
-                    (własny produkt)
-                  </Typography>
-                </Box>
-              </Box>
-              <IconButton onClick={() => handleRemoveLocal(item.id)}>
-                <Delete />
-              </IconButton>
-            </Box>
-          );
-        })}
       </>
     ),
-    [items, localItems, checkedItems, checkedLocalItems]
+    [items, checkedItems]
   );
 
   return (
@@ -405,12 +338,27 @@ export default function ShoppingListPage() {
           <TextField
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            label="Ilość (g)"
+            label="Ilość"
             placeholder="500"
             type="number"
             inputProps={{ min: 0.01, step: 0.01 }}
-            sx={{ width: 160 }}
+            sx={{ width: 120 }}
           />
+
+          <FormControl sx={{ width: 140 }}>
+            <InputLabel>Jednostka</InputLabel>
+            <Select
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(Number(e.target.value))}
+              label="Jednostka"
+            >
+              {units.map((unit) => (
+                <MenuItem key={unit.unitId} value={unit.unitId}>
+                  {unit.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <Button
             variant="contained"
@@ -428,7 +376,7 @@ export default function ShoppingListPage() {
             <Box sx={{ p: 3, textAlign: "center" }}>
               <CircularProgress />
             </Box>
-          ) : items.length === 0 && localItems.length === 0 ? (
+          ) : items.length === 0 ? (
             <Box sx={{ p: 3, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
                 Brak produktów na liście. Dodaj coś powyżej.
@@ -450,7 +398,7 @@ export default function ShoppingListPage() {
             startIcon={<Clear />}
             onClick={handleClearChecked}
             sx={{ textTransform: "none" }}
-            disabled={checkedItems.size === 0 && checkedLocalItems.size === 0}
+            disabled={checkedItems.size === 0}
           >
             Odznacz zaznaczone
           </Button>

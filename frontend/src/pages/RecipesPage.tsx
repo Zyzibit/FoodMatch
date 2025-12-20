@@ -4,10 +4,14 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Button,
+  Box,
 } from "@mui/material";
+import { Add } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import SavedRecipeList from "../components/recipes/SavedRecipeList";
+import { CreateRecipeModal } from "../components/recipes/CreateRecipeModal";
 import type { SavedRecipe } from "../types/recipes";
 import {
   getUserRecipes,
@@ -31,6 +35,19 @@ const convertRecipeDetailsToSavedRecipe = (
   const totalCarbs = recipe.carbohydrates;
   const totalFat = recipe.fats;
 
+  const baseIngredients = recipe.ingredients.map((ing) => ({
+    name: ing.productName,
+    productId: ing.productId,
+    source: ing.source as any,
+  }));
+
+  const additionalIngredients =
+    recipe.additionalProducts?.map((name) => ({
+      name,
+      source: "User" as const,
+      isAdditional: true,
+    })) ?? [];
+
   return {
     id: recipe.id.toString(),
     title: recipe.title,
@@ -42,11 +59,8 @@ const convertRecipeDetailsToSavedRecipe = (
       carbs: Math.round(totalCarbs),
     },
     tags: [],
-    ingredients: recipe.ingredients.map((ing) => ({
-      name: ing.productName,
-      productId: ing.productId,
-      source: ing.source as any,
-    })),
+    ingredients: [...baseIngredients, ...additionalIngredients],
+    additionalProducts: recipe.additionalProducts ?? [],
     createdAt: recipe.createdAt
       ? new Date(recipe.createdAt).toISOString().split("T")[0]
       : undefined,
@@ -65,6 +79,7 @@ export default function RecipesPage() {
   const [error, setError] = useState<string | null>(null);
   const [copyingRecipeId, setCopyingRecipeId] = useState<number | null>(null);
   const [sharingRecipeId, setSharingRecipeId] = useState<number | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const isOwnTab = !activeTab || activeTab === "moje";
 
   const notice = useMemo(() => {
@@ -170,15 +185,48 @@ export default function RecipesPage() {
     }
   };
 
+  const handleCreateRecipeSuccess = async () => {
+    // Reload recipes after creating a new one
+    setLoading(true);
+    try {
+      const result = await getUserRecipes();
+      const convertedRecipes = result.recipes.map(
+        convertRecipeDetailsToSavedRecipe
+      );
+      setRecipes(convertedRecipes);
+    } catch (err) {
+      console.error("Error reloading recipes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Paper
       elevation={1}
       sx={{ p: 3, width: "100%", maxWidth: 1100, mx: "auto" }}
     >
       <Stack spacing={2}>
-        <Typography variant="h5" fontWeight={800}>
-          Przepisy
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h5" fontWeight={800}>
+            Przepisy
+          </Typography>
+          {isOwnTab && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              Stwórz przepis
+            </Button>
+          )}
+        </Box>
         <Typography variant="subtitle1">Zakładka: {label}</Typography>
         <Typography variant="body2" color="text.secondary">
           {notice}
@@ -205,6 +253,12 @@ export default function RecipesPage() {
           />
         )}
       </Stack>
+
+      <CreateRecipeModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={handleCreateRecipeSuccess}
+      />
     </Paper>
   );
 }
