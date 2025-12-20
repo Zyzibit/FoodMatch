@@ -194,7 +194,6 @@ if (app.Environment.IsDevelopment()) {
 //     }
 // }
 
-// Przekierowanie HTTPS tylko w środowisku produkcyjnym
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
