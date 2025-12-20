@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("inzynierka.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f94630c494d2fff3440810e1560014bd580c2fc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d6b4968bb82695b63fbd0b68c34a06bb46c0e9d")]
 [assembly: System.Reflection.AssemblyProductAttribute("inzynierka.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("inzynierka.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
