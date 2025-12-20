@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using StackExchange.Redis;
 using inzynierka.Auth.Services;
 using inzynierka.MealPlans.Repositories;
 using inzynierka.MealPlans.Services;
@@ -29,54 +28,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
-{
-    var configuration = provider.GetService<IConfiguration>();
-    var logger = provider.GetService<ILogger<Program>>();
-    var connectionString = configuration!.GetConnectionString("Redis") ?? "127.0.0.1:6379";
-    
-    var options = ConfigurationOptions.Parse(connectionString);
-    
-    // Connection settings
-    options.AbortOnConnectFail = false;
-    options.ConnectTimeout = 30000; 
-    options.SyncTimeout = 30000; 
-    options.AsyncTimeout = 30000; 
-    options.ConnectRetry = 10; 
-    options.ReconnectRetryPolicy = new ExponentialRetry(1000, 30000); 
-    
-    options.KeepAlive = 180; 
-    options.DefaultDatabase = 0;
-    
-    try 
-    {
-        var multiplexer = ConnectionMultiplexer.Connect(options);
-        
-        // Log connection events
-        multiplexer.ConnectionFailed += (_, args) =>
-        {
-            logger?.LogError("Redis connection failed: {Exception}", args.Exception?.Message);
-        };
-        
-        multiplexer.ConnectionRestored += (_, _) =>
-        {
-            logger?.LogInformation("Redis connection restored");
-        };
-        
-        multiplexer.ErrorMessage += (_, args) =>
-        {
-            logger?.LogError("Redis error: {Message}", args.Message);
-        };
-        
-        logger?.LogInformation("Redis connection established successfully");
-        return multiplexer;
-    }
-    catch (Exception ex)
-    {
-        logger?.LogError(ex, "Failed to connect to Redis. Using fallback configuration.");
-        throw;
-    }
-});
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -205,19 +156,46 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwaggerUI();
 }
 
-using (var scope = app.Services.CreateScope())
-{
-    var sp = scope.ServiceProvider;
-    var db = sp.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+// using (var scope = app.Services.CreateScope())
+// {
+//     var sp = scope.ServiceProvider;
+//     var db = sp.GetRequiredService<AppDbContext>();
+//     var roleInit = sp.GetRequiredService<IRoleInitializationService>();
+//
+//     if (app.Environment.IsDevelopment())
+//     {
+//         // lokalnie - apply migrations i seed synchronnie
+//         await db.Database.MigrateAsync();
+//         await roleInit.InitializeRolesAsync();
+//         await DbSeeder.SeedData(app);
+//     }
+//     else
+//     {
+//         // produkcja - uruchom migracje/seed w tle, aby nie blokować startu serwera
+//         _ = Task.Run(async () =>
+//         {
+//             try
+//             {
+//                 using var bgScope = app.Services.CreateScope();
+//                 var bgSp = bgScope.ServiceProvider;
+//                 var bgDb = bgSp.GetRequiredService<AppDbContext>();
+//                 var bgRoleInit = bgSp.GetRequiredService<IRoleInitializationService>();
+//
+//                 await bgDb.Database.MigrateAsync();
+//                 await bgRoleInit.InitializeRolesAsync();
+//                 await DbSeeder.SeedData(app);
+//             }
+//             catch (Exception ex)
+//             {
+//                 var logger = app.Services.GetService<ILogger<Program>>();
+//                 logger?.LogError(ex, "Błąd podczas migracji/seed w tle");
+//             }
+//         });
+//     }
+// }
 
-    var roleInit = sp.GetRequiredService<IRoleInitializationService>();
-    await roleInit.InitializeRolesAsync();
-
-    await DbSeeder.SeedData(app);
-}
 app.UseHttpsRedirection();
 
-await DbSeeder.SeedData(app);
+// await DbSeeder.SeedData(app);
 
 app.Run();

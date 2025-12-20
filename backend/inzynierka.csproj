@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
       <UserSecretsId>a71d9531-9fd8-4ddc-bf5f-afeac3aff539</UserSecretsId>
+      <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
     <ItemGroup>
@@ -40,7 +41,7 @@
       <None Remove="Auth\README_DeviceTracking.md" />
       <None Remove="Products\OpenFoodFacts\Repositories\README.md" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
         <PackageReference Include="AutoMapper" Version="14.0.0" />
@@ -50,24 +51,28 @@
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.14" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-          <PrivateAssets>all</PrivateAssets>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.14" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.14">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.14">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.10" />
-        <PackageReference Include="Npgsql" Version="9.0.3" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+
+        <PackageReference Include="Npgsql" Version="8.0.6" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
+
         <PackageReference Include="OpenAI" Version="2.1.0" />
         <PackageReference Include="StackExchange.Redis" Version="2.9.25" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.7.0" />
+        <PackageReference Include="xunit.extensibility.core" Version="2.5.3" />
     </ItemGroup>
+    
     
     <ItemGroup>
       <None Update="Recipes\Config\prompt_config.json">

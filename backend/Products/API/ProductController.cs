@@ -173,8 +173,7 @@ public class ProductController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-
+    
     [HttpPost("import")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ImportProducts([FromBody] ProductImportRequest request)
