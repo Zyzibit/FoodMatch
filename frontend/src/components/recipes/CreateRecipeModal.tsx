@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -52,8 +52,21 @@ export function CreateRecipeModal({
   const [units, setUnits] = useState<UnitDto[]>([]);
   const [productSuggestions, setProductSuggestions] = useState<ProductDto[][]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean[]>([]);
+  const [isCalculatingMacros, setIsCalculatingMacros] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    productErrors: Record<number, string>;
+    quantityErrors: Record<number, string>;
+  }>({ productErrors: {}, quantityErrors: {} });
+
+  useEffect(() => {
+    if (open) {
+      setFieldErrors({ productErrors: {}, quantityErrors: {} });
+      setError(null);
+    }
+  }, [open]);
 
   const resolveProductId = (product: ProductDto | null): number => {
     if (!product) return 0;
@@ -80,7 +93,7 @@ export function CreateRecipeModal({
   };
 
   // Load units on mount
-  useState(() => {
+  useEffect(() => {
     const loadUnits = async () => {
       try {
         const unitsData = await getAllUnits();
@@ -90,7 +103,7 @@ export function CreateRecipeModal({
       }
     };
     loadUnits();
-  });
+  }, []);
 
   const handleSearchProducts = async (query: string, index: number) => {
     if (!query || query.trim().length < 2) {
@@ -127,20 +140,75 @@ export function CreateRecipeModal({
   };
 
   const addIngredient = () => {
-    setIngredients([
+    const productErrors: Record<number, string> = {};
+    const quantityErrors: Record<number, string> = {};
+    let hasError = false;
+
+    ingredients.forEach((ing, idx) => {
+      if (!ing.product) {
+        productErrors[idx] = "Wybierz produkt";
+        hasError = true;
+      }
+      const qty = parseFloat(ing.quantity);
+      if (!ing.quantity || Number.isNaN(qty) || qty <= 0) {
+        quantityErrors[idx] = "Podaj ilość > 0";
+        hasError = true;
+      }
+    });
+
+    if (hasError) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        productErrors: { ...prev.productErrors, ...productErrors },
+        quantityErrors: { ...prev.quantityErrors, ...quantityErrors },
+      }));
+      setError("Uzupełnij bieżący składnik przed dodaniem następnego");
+      return;
+    }
+
+    const updated = [
       ...ingredients,
       { product: null, productSearch: "", quantity: "", unitId: 1 },
-    ]);
+    ];
+    setError(null);
+    setFieldErrors((prev) => ({ ...prev, productErrors: {}, quantityErrors: {} }));
+    setIngredients(updated);
+    populateMacrosFromIngredients(updated);
   };
 
   const removeIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
+    const updated = ingredients.filter((_, i) => i !== index);
+    setIngredients(updated);
+    populateMacrosFromIngredients(updated);
+
+    setFieldErrors((prev) => {
+      const productErrors = { ...prev.productErrors };
+      const quantityErrors = { ...prev.quantityErrors };
+      delete productErrors[index];
+      delete quantityErrors[index];
+      return { ...prev, productErrors, quantityErrors };
+    });
   };
 
   const updateIngredient = (index: number, field: keyof RecipeIngredient, value: any) => {
     const newIngredients = [...ingredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
     setIngredients(newIngredients);
+
+    // Wyczyść błąd dla danego pola po zmianie
+    setFieldErrors((prev) => {
+      if (field === "product") {
+        const productErrors = { ...prev.productErrors };
+        delete productErrors[index];
+        return { ...prev, productErrors };
+      }
+      if (field === "quantity") {
+        const quantityErrors = { ...prev.quantityErrors };
+        delete quantityErrors[index];
+        return { ...prev, quantityErrors };
+      }
+      return prev;
+    });
   };
 
   const addAdditionalProduct = () => {
@@ -157,8 +225,9 @@ export function CreateRecipeModal({
     setAdditionalProducts(newProducts);
   };
 
-  const calculateNutrients = async () => {
+  const calculateNutrients = async (sourceIngredients?: RecipeIngredient[]) => {
     // Calculate nutrients based on ingredients and their nutritional data
+    const list = sourceIngredients ?? ingredients;
     let totalCalories = 0;
     let totalProteins = 0;
     let totalCarbohydrates = 0;
@@ -166,7 +235,7 @@ export function CreateRecipeModal({
     let totalWeight = 0;
 
     try {
-      for (const ing of ingredients) {
+      for (const ing of list) {
         if (ing.product && ing.quantity) {
           const qty = parseFloat(ing.quantity);
           if (!isNaN(qty)) {
@@ -229,24 +298,81 @@ export function CreateRecipeModal({
     };
   };
 
+  const populateMacrosFromIngredients = async (
+    sourceIngredients?: RecipeIngredient[]
+  ) => {
+    setIsCalculatingMacros(true);
+    try {
+      const nutrients = await calculateNutrients(sourceIngredients);
+      setCalories(nutrients.calories ? String(nutrients.calories) : "");
+      setProteins(nutrients.proteins ? String(nutrients.proteins) : "");
+      setCarbohydrates(
+        nutrients.carbohydrates ? String(nutrients.carbohydrates) : ""
+      );
+      setFats(nutrients.fats ? String(nutrients.fats) : "");
+      return nutrients;
+    } catch (err) {
+      console.error("Error populating macros:", err);
+      return null;
+    } finally {
+      setIsCalculatingMacros(false);
+    }
+  };
+
   const handleSave = async () => {
     setError(null);
+    setFieldErrors({ productErrors: {}, quantityErrors: {} });
 
     // Validation
+    const productErrors: Record<number, string> = {};
+    const quantityErrors: Record<number, string> = {};
+    let hasError = false;
+
     if (!title.trim()) {
-      setError("Tytuł jest wymagany");
+      hasError = true;
+    }
+
+    if (ingredients.length === 0) {
+      hasError = true;
+      setError("Dodaj co najmniej jeden składnik");
+      setFieldErrors({
+        title: !title.trim() ? "Tytuł jest wymagany" : undefined,
+        productErrors,
+        quantityErrors,
+      });
       return;
     }
 
-    if (ingredients.length === 0 || !ingredients[0].product) {
-      setError("Dodaj co najmniej jeden składnik");
+    ingredients.forEach((ing, idx) => {
+      if (!ing.product) {
+        productErrors[idx] = "Wybierz produkt";
+        hasError = true;
+      }
+      const qty = parseFloat(ing.quantity);
+      if (!ing.quantity || Number.isNaN(qty) || qty <= 0) {
+        quantityErrors[idx] = "Podaj ilość > 0";
+        hasError = true;
+      }
+    });
+
+    if (!title.trim()) {
+      setError("Tytuł jest wymagany");
+    }
+
+    if (hasError) {
+      setFieldErrors({
+        title: !title.trim() ? "Tytuł jest wymagany" : undefined,
+        productErrors,
+        quantityErrors,
+      });
       return;
     }
 
     setSaving(true);
 
     try {
-      const nutrients = await calculateNutrients();
+      const nutrients =
+        (await populateMacrosFromIngredients()) ?? (await calculateNutrients());
       // Mapuj składniki i upewnij się, że mamy prawidłowe productId
       const mappedIngredients = ingredients
         .filter((ing) => ing.product && ing.quantity)
@@ -309,6 +435,7 @@ export function CreateRecipeModal({
     setIngredients([{ product: null, productSearch: "", quantity: "", unitId: 1 }]);
     setAdditionalProducts([""]);
     setError(null);
+    setFieldErrors({ productErrors: {}, quantityErrors: {} });
     onClose();
   };
 
@@ -327,7 +454,10 @@ export function CreateRecipeModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
-            required         />
+            required
+            error={Boolean(fieldErrors.title)}
+            helperText={fieldErrors.title}
+          />
           <TextField
             label="Opis"
             value={description}
@@ -352,7 +482,7 @@ export function CreateRecipeModal({
             <Typography variant="h6" gutterBottom>
               Makroskładniki (opcjonalnie)
             </Typography>
-            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
               <TextField
                 label="Kalorie (kcal)"
                 type="number"
@@ -406,6 +536,8 @@ export function CreateRecipeModal({
                     <TextField
                       {...params}
                       label="Produkt"
+                      error={Boolean(fieldErrors.productErrors[index])}
+                      helperText={fieldErrors.productErrors[index]}
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
@@ -426,6 +558,8 @@ export function CreateRecipeModal({
                   value={ing.quantity}
                   onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
                   sx={{ width: 100 }}
+                  error={Boolean(fieldErrors.quantityErrors[index])}
+                  helperText={fieldErrors.quantityErrors[index]}
                 />
                 <Autocomplete
                   sx={{ width: 120 }}
