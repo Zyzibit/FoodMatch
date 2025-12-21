@@ -13,7 +13,7 @@ using inzynierka.Data;
 namespace inzynierka.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251208213025_init")]
+    [Migration("20251221000216_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -21,7 +21,7 @@ namespace inzynierka.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "8.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -225,6 +225,9 @@ namespace inzynierka.Migrations
 
                     b.Property<int?>("RecipeId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("ServingMultiplier")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -485,7 +488,7 @@ namespace inzynierka.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.PrimitiveCollection<List<string>>("AdditionalProducts")
+                    b.Property<List<string>>("AdditionalProducts")
                         .HasColumnType("text[]");
 
                     b.Property<decimal>("Calories")

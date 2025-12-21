@@ -1,19 +1,18 @@
 using inzynierka.MealPlans.Model;
 using inzynierka.Users.Model;
 using inzynierka.UserPreferences.Requests;
-using Microsoft.Extensions.Logging;
 
 namespace inzynierka.UserPreferences.Extensions;
 
 public static class FoodPreferencesUpdateExtensions
 {
-    public static void UpdateFrom(this FoodPreferences preferences, UpdateFoodPreferencesRequest request, ILogger? logger = null)
+    public static void UpdateFrom(this FoodPreferences preferences, UpdateFoodPreferencesRequest request)
     {
         preferences.UpdateBasicPreferences(request);
         
         preferences.UpdateDailyGoals(request);
         
-        preferences.UpdateHealthMetrics(request, logger);
+        preferences.UpdateHealthMetrics(request);
         
         preferences.UpdateMealDistributions(request);
     }
@@ -32,7 +31,7 @@ public static class FoodPreferencesUpdateExtensions
             preferences.Allergies = request.Allergies;
     }
 
-    private static void UpdateHealthMetrics(this FoodPreferences preferences, UpdateFoodPreferencesRequest request, ILogger? logger = null)
+    private static void UpdateHealthMetrics(this FoodPreferences preferences, UpdateFoodPreferencesRequest request)
     {
         bool shouldRecalculate = false;
         
@@ -42,15 +41,11 @@ public static class FoodPreferencesUpdateExtensions
             shouldRecalculate = true;
         }
         
-        if (!string.IsNullOrEmpty(request.Gender))
+        if (!string.IsNullOrEmpty(request.Gender) && 
+            Enum.TryParse<Gender>(request.Gender, ignoreCase: true, out var gender))
         {
-            if (Enum.TryParse<Gender>(request.Gender, ignoreCase: true, out var gender))
-            {
-                preferences.Gender = gender;
-                shouldRecalculate = true;
-            }
-            else
-                logger?.LogWarning("Invalid Gender value: {Gender}", request.Gender);
+            preferences.Gender = gender;
+            shouldRecalculate = true;
         }
         
         if (request.Weight.HasValue)
@@ -65,26 +60,18 @@ public static class FoodPreferencesUpdateExtensions
             shouldRecalculate = true;
         }
         
-        if (!string.IsNullOrEmpty(request.ActivityLevel))
+        if (!string.IsNullOrEmpty(request.ActivityLevel) && 
+            Enum.TryParse<PhysicalActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
         {
-            if (Enum.TryParse<PhysicalActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
-            {
-                preferences.ActivityLevel = activityLevel;
-                shouldRecalculate = true;
-            }
-            else
-                logger?.LogWarning("Invalid ActivityLevel value: {ActivityLevel}", request.ActivityLevel);
+            preferences.ActivityLevel = activityLevel;
+            shouldRecalculate = true;
         }
         
-        if (!string.IsNullOrEmpty(request.FitnessGoal))
+        if (!string.IsNullOrEmpty(request.FitnessGoal) && 
+            Enum.TryParse<FitnessGoal>(request.FitnessGoal, ignoreCase: true, out var fitnessGoal))
         {
-            if (Enum.TryParse<FitnessGoal>(request.FitnessGoal, ignoreCase: true, out var fitnessGoal))
-            {
-                preferences.FitnessGoal = fitnessGoal;
-                shouldRecalculate = true;
-            }
-            else
-                logger?.LogWarning("Invalid FitnessGoal value: {FitnessGoal}", request.FitnessGoal);
+            preferences.FitnessGoal = fitnessGoal;
+            shouldRecalculate = true;
         }
         
         if (shouldRecalculate)
@@ -98,20 +85,17 @@ public static class FoodPreferencesUpdateExtensions
             if (!hasManualProtein) preferences.DailyProteinGoal = 0;
             if (!hasManualCarbs) preferences.DailyCarbohydrateGoal = 0;
             if (!hasManualFat) preferences.DailyFatGoal = 0;
-            
-            logger?.LogDebug("Health metrics changed - will recalculate nutritional goals");
         }
         
-        preferences.RecalculateNutritionalGoals(logger);
+        preferences.RecalculateNutritionalGoals();
     }
     
-    private static void RecalculateNutritionalGoals(this FoodPreferences preferences, ILogger? logger = null)
+    private static void RecalculateNutritionalGoals(this FoodPreferences preferences)
     {
         if (!preferences.Age.HasValue || !preferences.Gender.HasValue || 
             !preferences.Weight.HasValue || !preferences.Height.HasValue ||
             !preferences.ActivityLevel.HasValue || !preferences.FitnessGoal.HasValue)
         {
-            logger?.LogDebug("Skipping auto-calculation: missing required data for nutritional goals");
             return;
         }
         
@@ -122,56 +106,19 @@ public static class FoodPreferencesUpdateExtensions
             preferences.Height.Value);
         
         var tdee = (int)(bmr * NutritionalCalculations.GetPALMultiplier(preferences.ActivityLevel.Value));
-        
         var targetCalories = NutritionalCalculations.ApplyFitnessGoalAdjustment(tdee, preferences.FitnessGoal.Value);
         
-        var (protein, carbs, fat) = NutritionalCalculations.CalculateMacros(targetCalories, preferences.FitnessGoal.Value, preferences.Weight.Value, preferences.ActivityLevel.Value);
+        var caloriesForMacros = preferences.DailyCalorieGoal == 0 ? targetCalories : preferences.DailyCalorieGoal;
+        var (protein, carbs, fat) = NutritionalCalculations.CalculateMacros(
+            caloriesForMacros, 
+            preferences.FitnessGoal.Value, 
+            preferences.Weight.Value, 
+            preferences.ActivityLevel.Value);
         
-        if (preferences.DailyCalorieGoal == 0)
-        {
-            preferences.DailyCalorieGoal = targetCalories;
-            logger?.LogInformation("Auto-calculated DailyCalorieGoal: {Calories} kcal", targetCalories);
-        }
-        else
-        {
-            var manualCalories = preferences.DailyCalorieGoal;
-            var (manualProtein, manualCarbs, manualFat) = NutritionalCalculations.CalculateMacros(manualCalories, preferences.FitnessGoal.Value, preferences.Weight.Value, preferences.ActivityLevel.Value);
-            
-            if (preferences.DailyProteinGoal == 0)
-            {
-                preferences.DailyProteinGoal = manualProtein;
-                logger?.LogInformation("Auto-calculated DailyProteinGoal based on manual calories: {Protein}g", manualProtein);
-            }
-            if (preferences.DailyCarbohydrateGoal == 0)
-            {
-                preferences.DailyCarbohydrateGoal = manualCarbs;
-                logger?.LogInformation("Auto-calculated DailyCarbohydrateGoal based on manual calories: {Carbs}g", manualCarbs);
-            }
-            if (preferences.DailyFatGoal == 0)
-            {
-                preferences.DailyFatGoal = manualFat;
-                logger?.LogInformation("Auto-calculated DailyFatGoal based on manual calories: {Fat}g", manualFat);
-            }
-            return;
-        }
-        
-        if (preferences.DailyProteinGoal == 0)
-        {
-            preferences.DailyProteinGoal = protein;
-            logger?.LogInformation("Auto-calculated DailyProteinGoal: {Protein}g", protein);
-        }
-        
-        if (preferences.DailyCarbohydrateGoal == 0)
-        {
-            preferences.DailyCarbohydrateGoal = carbs;
-            logger?.LogInformation("Auto-calculated DailyCarbohydrateGoal: {Carbs}g", carbs);
-        }
-        
-        if (preferences.DailyFatGoal == 0)
-        {
-            preferences.DailyFatGoal = fat;
-            logger?.LogInformation("Auto-calculated DailyFatGoal: {Fat}g", fat);
-        }
+        preferences.DailyCalorieGoal = preferences.DailyCalorieGoal == 0 ? targetCalories : preferences.DailyCalorieGoal;
+        preferences.DailyProteinGoal = preferences.DailyProteinGoal == 0 ? protein : preferences.DailyProteinGoal;
+        preferences.DailyCarbohydrateGoal = preferences.DailyCarbohydrateGoal == 0 ? carbs : preferences.DailyCarbohydrateGoal;
+        preferences.DailyFatGoal = preferences.DailyFatGoal == 0 ? fat : preferences.DailyFatGoal;
     }
 
     private static void UpdateDailyGoals(this FoodPreferences preferences, UpdateFoodPreferencesRequest request)

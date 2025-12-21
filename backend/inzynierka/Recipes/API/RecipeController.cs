@@ -303,5 +303,46 @@ public class RecipeController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchRecipes(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        [FromQuery] bool isPublicOnly = false)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var request = new SearchRecipesRequest
+            {
+                SearchTerm = searchTerm,
+                Limit = limit,
+                Offset = offset,
+                IsPublicOnly = isPublicOnly,
+                UserId = userId
+            };
+
+            var result = await _recipeService.SearchRecipesAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(new { message = "Failed to search recipes" });
+            }
+
+            return Ok(new {
+                recipes = result.Recipes,
+                totalCount = result.TotalCount,
+                limit,
+                offset,
+                hasMore = result.TotalCount > (offset + limit),
+                searchTerm
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
 }
 

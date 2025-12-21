@@ -32,6 +32,7 @@ public class RecipeIngredientReadDto
     public int ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
+    public string UnitName { get; set; } = string.Empty;
     public decimal Calories { get; set; }
     public decimal Proteins { get; set; }
     public decimal Carbohydrates { get; set; }

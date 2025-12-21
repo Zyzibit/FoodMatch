@@ -134,7 +134,6 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
                     LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
                 };
-                Console.WriteLine(product);
                 return product;
             }
 

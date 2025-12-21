@@ -17,4 +17,5 @@ public interface IRecipeService
     Task<GenerateRecipePreviewResult> GenerateRecipePreviewAsync(string userId, GenerateRecipeRequest request);
     Task<CreateRecipeResult> SaveGeneratedRecipeAsync(string userId, SaveGeneratedRecipeRequest request);
     
+    Task<RecipeListResult> SearchRecipesAsync(SearchRecipesRequest request);
 }

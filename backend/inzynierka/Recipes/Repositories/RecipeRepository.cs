@@ -106,4 +106,43 @@ public class RecipeRepository : IRecipeRepository
                 .ThenInclude(ri => ri.Product)
             .FirstOrDefaultAsync(r => r.Id == id && r.IsPublic);
     }
+
+    public async Task<(List<Recipe> Recipes, int TotalCount)> SearchRecipesAsync(
+        string? searchTerm, 
+        bool isPublicOnly, 
+        string? userId, 
+        int limit = 50, 
+        int offset = 0)
+    {
+        var query = _db.Recipes.AsQueryable();
+
+        // Filter by public/user
+        if (isPublicOnly || string.IsNullOrEmpty(userId))
+        {
+            query = query.Where(r => r.IsPublic);
+        }
+        else
+        {
+            query = query.Where(r => r.UserId == userId || r.IsPublic);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+            query = query.Where(r => r.Title.ToLower().Contains(lowerSearchTerm));
+        }
+
+        var total = await query.CountAsync();
+        var recipes = await query
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Unit)
+            .Include(r => r.Ingredients)
+                .ThenInclude(ri => ri.Product)
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync();
+
+        return (recipes, total);
+    }
 }

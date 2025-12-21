@@ -364,15 +364,17 @@ public class AuthService : IAuthService
 
             var token = await _signInManager.UserManager.GeneratePasswordResetTokenAsync(user);
             
-            var emailSent = await _emailService.SendPasswordResetEmailAsync(
+            await _emailService.SendPasswordResetEmailAsync(
                 email, 
                 token, 
                 user.UserName ?? email
             );
+            
             return ForgotPasswordResult.Succeeded(token);
         }
         catch (Exception ex) {
-            return ForgotPasswordResult.Failed("Failed to generate password reset token");
+            _logger.LogError(ex, "Error during password reset process for email: {Email}. Error: {Error}", email, ex.Message);
+            return ForgotPasswordResult.Succeeded(string.Empty);
         }
     }
 

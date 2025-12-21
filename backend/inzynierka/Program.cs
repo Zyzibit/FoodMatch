@@ -20,6 +20,7 @@ using inzynierka.ShoppingList.Services;
 using inzynierka.Units.Repositories;
 using inzynierka.Units.Services;
 using inzynierka.UserPreferences.Extensions;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +64,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5127")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5127","http://127.0.0.1:5173")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials()
@@ -138,6 +139,12 @@ var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath))
 {
     Directory.CreateDirectory(uploadsPath);
+}
+
+var keysPath = Path.Combine(builder.Environment.ContentRootPath, "keys");
+if (!Directory.Exists(keysPath))
+{
+    Directory.CreateDirectory(keysPath);
 }
 
 app.UseStaticFiles(new StaticFileOptions

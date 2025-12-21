@@ -448,6 +448,37 @@ public class RecipeService : IRecipeService
             return new CreateRecipeResult { Success = false, ErrorMessage = ex.Message };
         }
     }
+
+    public async Task<RecipeListResult> SearchRecipesAsync(SearchRecipesRequest request)
+    {
+        try
+        {
+            var (recipes, total) = await _recipeRepository.SearchRecipesAsync(
+                request.SearchTerm,
+                request.IsPublicOnly,
+                request.UserId,
+                request.Limit,
+                request.Offset
+            );
+            
+            var dtoList = recipes.ToDtoList().ToList();
+            return new RecipeListResult 
+            { 
+                Success = true, 
+                Recipes = dtoList, 
+                TotalCount = total 
+            };
+        }
+        catch (Exception ex)
+        {
+            return new RecipeListResult 
+            { 
+                Success = false, 
+                Recipes = new List<RecipeDto>(), 
+                TotalCount = 0 
+            };
+        }
+    }
 }
 
 
