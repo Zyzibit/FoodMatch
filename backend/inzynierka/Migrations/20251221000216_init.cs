@@ -485,7 +485,8 @@ namespace inzynierka.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RecipeId = table.Column<int>(type: "integer", nullable: true),
-                    UserId = table.Column<string>(type: "text", nullable: false)
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    ServingMultiplier = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {

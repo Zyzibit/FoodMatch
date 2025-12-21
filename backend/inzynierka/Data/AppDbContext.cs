@@ -92,6 +92,11 @@ public class AppDbContext : IdentityDbContext<User> {
             .HasForeignKey(mp => mp.RecipeId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<MealPlan>()
+            .Property(mp => mp.ServingMultiplier)
+            .HasDefaultValue(1.0m)
+            .IsRequired();
+
         modelBuilder.Entity<ShoppingList.Model.ShoppingList>()
             .HasKey(sl => sl.Id);
 

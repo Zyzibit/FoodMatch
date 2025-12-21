@@ -34,6 +34,13 @@ public class MealPlanService: IMealPlanService
                 Success = false,
                 Message = $"Recipe with ID {request.RecipeId} not found"
             };
+        
+        if (request.ServingMultiplier <= 0)
+            return new AddMealPlanResponse
+            {
+                Success = false,
+                Message = "Serving multiplier must be greater than 0"
+            };
 
         var dateUtc = request.Date.Kind == DateTimeKind.Unspecified 
             ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
@@ -48,6 +55,7 @@ public class MealPlanService: IMealPlanService
         {
             existingPlan.RecipeId = request.RecipeId;
             existingPlan.Date = dateUtc;
+            existingPlan.ServingMultiplier = request.ServingMultiplier;
             await _mealPlanRepository.UpdateMealPlanAsync(existingPlan);
             return existingPlan.ToAddMealPlanResponse("Meal plan updated successfully");
         }
@@ -57,7 +65,8 @@ public class MealPlanService: IMealPlanService
             Name = request.MealName,
             Date = dateUtc,
             RecipeId = request.RecipeId,
-            UserId = userId
+            UserId = userId,
+            ServingMultiplier = request.ServingMultiplier
         };
 
         await _mealPlanRepository.AddMealPlanAsync(mealPlan);

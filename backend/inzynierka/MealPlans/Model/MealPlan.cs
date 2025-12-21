@@ -15,4 +15,5 @@ public class MealPlan
     public string UserId { get; set; } = string.Empty;
     public User? User { get; set; }
     
+    public decimal ServingMultiplier { get; set; } = 1.0m;
 }

@@ -15,15 +15,16 @@ public static class MealPlanMappingExtensions
             Id = model.Id,
             Name = model.Name,
             Date = model.Date,
+            ServingMultiplier = model.ServingMultiplier,
             Recipe = model.Recipe != null ? new MealPlanRecipeDto
             {
                 Id = model.Recipe.Id,
                 Title = model.Recipe.Title,
                 Description = model.Recipe.Description ?? string.Empty,
-                Calories = model.Recipe.Calories,
-                Proteins = model.Recipe.Protein,
-                Carbohydrates = model.Recipe.Carbohydrates,
-                Fats = model.Recipe.Fats,
+                Calories = model.Recipe.Calories * model.ServingMultiplier,
+                Proteins = model.Recipe.Protein * model.ServingMultiplier,
+                Carbohydrates = model.Recipe.Carbohydrates * model.ServingMultiplier,
+                Fats = model.Recipe.Fats * model.ServingMultiplier,
                 PreparationTimeMinutes = model.Recipe.PreparationTimeMinutes
             } : null
         };
@@ -38,6 +39,7 @@ public static class MealPlanMappingExtensions
             Id = dto.Id,
             Name = dto.Name,
             Date = dto.Date,
+            ServingMultiplier = dto.ServingMultiplier
         };
     }
 }
