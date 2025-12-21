@@ -94,10 +94,10 @@ export default function ProductDetailsDialog({
         allergens: [],
         countries: [],
         nutrition: {
-          estimatedCalories: ingredientData.estimatedCalories ? ingredientData.estimatedCalories * scaleTo100g : undefined,
-          estimatedProteins: ingredientData.estimatedProteins ? ingredientData.estimatedProteins * scaleTo100g : undefined,
-          estimatedCarbohydrates: ingredientData.estimatedCarbohydrates ? ingredientData.estimatedCarbohydrates * scaleTo100g : undefined,
-          estimatedFats: ingredientData.estimatedFats ? ingredientData.estimatedFats * scaleTo100g : undefined,
+          estimatedCalories: ingredientData.estimatedCalories !== undefined ? ingredientData.estimatedCalories * scaleTo100g : undefined,
+          estimatedProteins: ingredientData.estimatedProteins !== undefined ? ingredientData.estimatedProteins * scaleTo100g : undefined,
+          estimatedCarbohydrates: ingredientData.estimatedCarbohydrates !== undefined ? ingredientData.estimatedCarbohydrates * scaleTo100g : undefined,
+          estimatedFats: ingredientData.estimatedFats !== undefined ? ingredientData.estimatedFats * scaleTo100g : undefined,
         },
         source: "AI",
       });
