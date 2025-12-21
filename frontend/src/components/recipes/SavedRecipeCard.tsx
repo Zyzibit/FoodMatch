@@ -14,6 +14,15 @@ import { useState } from "react";
 import ProductDetailsDialog from "../products/ProductDetailsDialog";
 import { colors } from "../../theme";
 
+type SelectedIngredientData = {
+  productName: string;
+  estimatedCalories?: number;
+  estimatedProteins?: number;
+  estimatedCarbohydrates?: number;
+  estimatedFats?: number;
+  normalizedQuantityInGrams?: number;
+};
+
 type SavedRecipeCardProps = {
   recipe: SavedRecipe;
   isExpanded?: boolean;
@@ -38,7 +47,9 @@ export default function SavedRecipeCard({
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   );
-  const [selectedIngredientData, setSelectedIngredientData] = useState<any>(null);
+  const [selectedIngredientData, setSelectedIngredientData] = useState<
+    SelectedIngredientData | null
+  >(null);
 
   const handleToggle = () => onToggle?.(recipe);
   const handleRemove = () => onRemove?.(recipe);
@@ -189,81 +200,81 @@ export default function SavedRecipeCard({
           )}
 
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Składniki
+            Produkty
           </Typography>
-          <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0, mb: 2 }}>
+          <Stack spacing={1}>
             {recipe.ingredients.map((ingredient, index) => (
               <Box
                 key={index}
-                component="li"
                 onClick={() => handleIngredientClick(ingredient)}
                 sx={{
+                  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                  pb: 1,
                   cursor:
                     typeof ingredient !== "string" &&
-                    (ingredient.productId ||
-                      ingredient.calories !== undefined)
+                    (ingredient.productId || ingredient.calories !== undefined)
                       ? "pointer"
                       : "default",
                 }}
               >
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    "&:hover":
-                      typeof ingredient !== "string" &&
-                      (ingredient.productId ||
-                        ingredient.calories !== undefined)
-                        ? { textDecoration: "underline" }
-                        : {},
-                  }}
-                >
-                  {typeof ingredient === "string"
-                    ? ingredient
-                    : `${ingredient.name}${
-                        ingredient.quantity
-                          ? ` - ${ingredient.quantity}${
-                              ingredient.unitName ? " " + ingredient.unitName : ""
-                            }`
-                          : ""
-                      }`}
-                </Typography>
-                {typeof ingredient !== "string" &&
-                  ingredient.isAdditional && (
-                    <Typography variant="caption" color="text.secondary">
-                      dodany ręcznie
-                    </Typography>
-                  )}
-                {typeof ingredient !== "string" &&
-                  ingredient.source === "OpenFoodFacts" && (
+                {typeof ingredient === "string" ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {ingredient}
+                  </Typography>
+                ) : (
+                  <Box>
                     <Typography
-                      variant="caption"
+                      fontWeight={700}
                       sx={{
-                        color: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.5)"
-                            : colors.elements.openFoodFactsBadge,
-                        fontSize: "0.7rem",
+                        "&:hover":
+                          ingredient.productId || ingredient.calories !== undefined
+                            ? { textDecoration: "underline" }
+                            : {},
                       }}
                     >
-                      produkt z bazy openfoodfacts
+                      {ingredient.name}
                     </Typography>
-                  )}
-                {typeof ingredient !== "string" &&
-                  ingredient.source === "AI" && (
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.5)"
-                            : "#9c27b0",
-                        fontSize: "0.7rem",
-                      }}
-                    >
-                      produkt wygenerowany przez AI
-                    </Typography>
-                  )}
+                    {ingredient.quantity && (
+                      <Typography variant="body2" color="text.secondary">
+                        {ingredient.quantity}
+                        {ingredient.unitName ? " " + ingredient.unitName : ""}
+                      </Typography>
+                    )}
+                    {ingredient.isAdditional && (
+                      <Typography variant="caption" color="text.secondary">
+                        dodany ręcznie
+                      </Typography>
+                    )}
+                    {ingredient.source === "OpenFoodFacts" && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255,255,255,0.5)"
+                              : colors.elements.openFoodFactsBadge,
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        produkt z bazy openfoodfacts
+                      </Typography>
+                    )}
+                    {ingredient.source === "AI" && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255,255,255,0.5)"
+                              : "rgba(0,0,0,0.5)",
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        wygenerowany przez AI
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </Box>
             ))}
           </Stack>
@@ -271,9 +282,13 @@ export default function SavedRecipeCard({
           {recipe.instructions && (
             <Box>
               <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                Instrukcje przygotowania
+                Instrukcje
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ whiteSpace: "pre-line" }}
+              >
                 {recipe.instructions}
               </Typography>
             </Box>
@@ -288,7 +303,7 @@ export default function SavedRecipeCard({
           setSelectedIngredientData(null);
         }}
         productId={selectedProductId || ""}
-        ingredientData={selectedIngredientData}
+        ingredientData={selectedIngredientData ?? undefined}
       />
     </Box>
   );

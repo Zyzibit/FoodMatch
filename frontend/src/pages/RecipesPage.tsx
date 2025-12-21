@@ -6,9 +6,12 @@ import {
   Alert,
   Button,
   Box,
+  TextField,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { Add, ArrowBack, ArrowForward } from "@mui/icons-material";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { Add, ArrowBack, ArrowForward, Search, Clear } from "@mui/icons-material";
+import { useEffect, useMemo, useState } from "react";
 import { useDashboardContext } from "../layouts/DashboardLayout";
 import SavedRecipeList from "../components/recipes/SavedRecipeList";
 import { CreateRecipeModal } from "../components/recipes/CreateRecipeModal";
@@ -91,12 +94,13 @@ export default function RecipesPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecipes, setTotalRecipes] = useState(0);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [ownSearchQuery, setOwnSearchQuery] = useState<string>("");
+  const [communitySearchQuery, setCommunitySearchQuery] = useState<string>("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
   const [recipesPerPage, setRecipesPerPage] = useState(15);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const searchFieldRef = useRef<HTMLInputElement>(null);
   const RECIPES_PER_PAGE = recipesPerPage;
   const isOwnTab = !activeTab || activeTab === "moje";
+  const activeSearchQuery = isOwnTab ? ownSearchQuery : communitySearchQuery;
 
   const totalPages = Math.ceil(totalRecipes / RECIPES_PER_PAGE);
 
@@ -114,9 +118,13 @@ export default function RecipesPage() {
       try {
         const offset = (currentPage - 1) * RECIPES_PER_PAGE;
         let result;
-        if (searchQuery.trim().length > 0) {
+          if (debouncedSearchQuery.trim().length > 0) {
           // Jeśli jest query, szukaj zawsze ze searchRecipes (niezależnie od tabu)
-          result = await searchRecipes(searchQuery, RECIPES_PER_PAGE, offset);
+            result = await searchRecipes(
+              debouncedSearchQuery,
+              RECIPES_PER_PAGE,
+              offset
+            );
         } else if (isOwnTab) {
           result = await getUserRecipes(RECIPES_PER_PAGE, offset);
         } else {
@@ -140,33 +148,29 @@ export default function RecipesPage() {
     };
 
     loadRecipes();
-  }, [isOwnTab, activeTab, searchQuery, currentPage]);
+  }, [isOwnTab, activeTab, debouncedSearchQuery, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, recipesPerPage]);
 
-  // Utrzymaj focus na polu wyszukiwania podczas wpisywania
-  useEffect(() => {
-    if (searchQuery.length > 0) {
-      searchFieldRef.current?.focus();
-    }
-  }, [searchQuery]);
-
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1); // Reset do pierwszej strony
-
-    // Wyczyść poprzedni timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+    if (isOwnTab) {
+      setOwnSearchQuery(value);
+    } else {
+      setCommunitySearchQuery(value);
     }
-
-    // Ustaw nowy timer (debounce 300ms)
-    debounceTimerRef.current = setTimeout(() => {
-      // loadRecipes będzie wywoływana automatycznie przez useEffect
-    }, 300);
+    setCurrentPage(1); // Reset do pierwszej strony
   };
+
+  // Debounce wyszukiwania, żeby nie odpalać zapytań na każdą literę
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(activeSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activeSearchQuery, isOwnTab]);
 
   const handleToggle = (recipe: SavedRecipe) => {
     setExpandedId((prev) => (prev === recipe.id ? null : recipe.id));
@@ -267,7 +271,63 @@ export default function RecipesPage() {
       sx={{ p: 3, width: "100%", maxWidth: 1100, mx: "auto" }}
     >
       <Stack spacing={2}>
-        {}
+        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+          <Box>
+            <Typography variant="h5" fontWeight={600}>
+              {label}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {notice}
+            </Typography>
+          </Box>
+
+          {isOwnTab && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setCreateModalOpen(true)}
+              size="small"
+            >
+              Dodaj przepis
+            </Button>
+          )}
+        </Stack>
+
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <TextField
+            fullWidth
+            value={activeSearchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder={
+              isOwnTab
+                ? "Szukaj w Twoich przepisach"
+                : "Szukaj w przepisach społeczności"
+            }
+            size="small"
+            InputProps={useMemo(
+              () => ({
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: activeSearchQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Wyczyść wyszukiwanie"
+                      onClick={() => handleSearchChange("")}
+                      edge="end"
+                      size="small"
+                    >
+                      <Clear fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }),
+              [activeSearchQuery]
+            )}
+          />
+        </Box>
 
         {loading && (
           <Stack alignItems="center" py={4}>
