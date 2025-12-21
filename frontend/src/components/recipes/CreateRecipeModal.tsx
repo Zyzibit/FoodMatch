@@ -17,6 +17,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { searchProducts, type ProductDto } from "../../services/productService";
 import { getAllUnits, type UnitDto } from "../../services/unitService";
 import { createRecipe, type CreateRecipeRequest } from "../../services/recipeService";
+import { API_BASE_URL } from "../../config";
 
 interface CreateRecipeModalProps {
   open: boolean;
@@ -156,25 +157,74 @@ export function CreateRecipeModal({
     setAdditionalProducts(newProducts);
   };
 
-  const calculateNutrients = () => {
-    // Simplified calculation - returns default values since we don't have nutrient data in ProductDto
+  const calculateNutrients = async () => {
+    // Calculate nutrients based on ingredients and their nutritional data
+    let totalCalories = 0;
+    let totalProteins = 0;
+    let totalCarbohydrates = 0;
+    let totalFats = 0;
     let totalWeight = 0;
 
-    ingredients.forEach((ing) => {
-      if (ing.product && ing.quantity) {
-        const qty = parseFloat(ing.quantity);
-        if (!isNaN(qty)) {
-          totalWeight += qty;
+    try {
+      for (const ing of ingredients) {
+        if (ing.product && ing.quantity) {
+          const qty = parseFloat(ing.quantity);
+          if (!isNaN(qty)) {
+            totalWeight += qty;
+
+            // Try to get product details to calculate nutrients
+            const productId = resolveProductId(ing.product);
+            if (productId > 0) {
+              try {
+                const response = await fetch(
+                  `${API_BASE_URL}/products/${productId}`,
+                  {
+                    method: "GET",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                  }
+                );
+
+                if (response.ok) {
+                  const productData = await response.json();
+                  const nutrition = productData.nutrition || productData.Nutrition;
+
+                  if (nutrition) {
+                    const calories = nutrition.calories ?? nutrition.Calories ?? nutrition.estimatedCalories ?? nutrition.EstimatedCalories ?? 0;
+                    const proteins = nutrition.proteins ?? nutrition.Proteins ?? nutrition.estimatedProteins ?? nutrition.EstimatedProteins ?? 0;
+                    const carbs = nutrition.carbohydrates ?? nutrition.Carbohydrates ?? nutrition.estimatedCarbohydrates ?? nutrition.EstimatedCarbohydrates ?? 0;
+                    const fats = nutrition.fat ?? nutrition.Fat ?? nutrition.estimatedFats ?? nutrition.EstimatedFats ?? 0;
+
+                    // Assume calories/proteins/carbs/fats are per 100g
+                    const caloriesPerGram = calories / 100;
+                    const proteinsPerGram = proteins / 100;
+                    const carbsPerGram = carbs / 100;
+                    const fatsPerGram = fats / 100;
+
+                    totalCalories += caloriesPerGram * qty;
+                    totalProteins += proteinsPerGram * qty;
+                    totalCarbohydrates += carbsPerGram * qty;
+                    totalFats += fatsPerGram * qty;
+                  }
+                }
+              } catch (err) {
+                console.warn(`Could not fetch nutrition data for product ${productId}:`, err);
+              }
+            }
+          }
         }
       }
-    });
+    } catch (err) {
+      console.error("Error calculating nutrients:", err);
+    }
 
-    // Return default values - user should manually adjust these if needed
     return {
-      calories: 0,
-      proteins: 0,
-      carbohydrates: 0,
-      fats: 0,
+      calories: Math.round(totalCalories),
+      proteins: Math.round(totalProteins * 10) / 10,
+      carbohydrates: Math.round(totalCarbohydrates * 10) / 10,
+      fats: Math.round(totalFats * 10) / 10,
       totalWeight,
     };
   };
@@ -196,7 +246,7 @@ export function CreateRecipeModal({
     setSaving(true);
 
     try {
-      const nutrients = calculateNutrients();
+      const nutrients = await calculateNutrients();
       // Mapuj składniki i upewnij się, że mamy prawidłowe productId
       const mappedIngredients = ingredients
         .filter((ing) => ing.product && ing.quantity)
@@ -220,10 +270,11 @@ export function CreateRecipeModal({
       }
 
       // Jeśli użytkownik wpisał makroskładniki, użyj ich zamiast domyślnych
-      const caloriesValue = calories.trim() ? parseFloat(calories) : nutrients.calories;
-      const proteinsValue = proteins.trim() ? parseFloat(proteins) : nutrients.proteins;
-      const carbohydratesValue = carbohydrates.trim() ? parseFloat(carbohydrates) : nutrients.carbohydrates;
-      const fatsValue = fats.trim() ? parseFloat(fats) : nutrients.fats;
+      // Ale jeśli wartość to 0 lub pusta, zawsze użyj obliczonej
+      const caloriesValue = calories.trim() && parseFloat(calories) > 0 ? parseFloat(calories) : nutrients.calories;
+      const proteinsValue = proteins.trim() && parseFloat(proteins) > 0 ? parseFloat(proteins) : nutrients.proteins;
+      const carbohydratesValue = carbohydrates.trim() && parseFloat(carbohydrates) > 0 ? parseFloat(carbohydrates) : nutrients.carbohydrates;
+      const fatsValue = fats.trim() && parseFloat(fats) > 0 ? parseFloat(fats) : nutrients.fats;
 
       const request: CreateRecipeRequest = {
         title: title.trim(),

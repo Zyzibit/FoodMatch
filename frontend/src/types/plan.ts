@@ -5,7 +5,13 @@ export type PlanMealProduct = {
   productId?: number;
   name: string;
   quantityLabel?: string;
+  code?: string;
   source?: ProductSource;
+  calories?: number;
+  proteins?: number;
+  carbohydrates?: number;
+  fats?: number;
+  normalizedQuantityInGrams?: number;
 };
 
 export type PlanMeal = {

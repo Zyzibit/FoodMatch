@@ -8,11 +8,20 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Delete, Add, Share, Public } from "@mui/icons-material";
-import type { SavedRecipe } from "../../types/recipes";
+import type { SavedRecipe, SavedRecipeIngredient } from "../../types/recipes";
 import PlanMealMacroSummary from "../plan/PlanMealMacroSummary";
 import { useState } from "react";
 import ProductDetailsDialog from "../products/ProductDetailsDialog";
 import { colors } from "../../theme";
+
+type SelectedIngredientData = {
+  productName: string;
+  estimatedCalories?: number;
+  estimatedProteins?: number;
+  estimatedCarbohydrates?: number;
+  estimatedFats?: number;
+  normalizedQuantityInGrams?: number;
+};
 
 type SavedRecipeCardProps = {
   recipe: SavedRecipe;
@@ -38,22 +47,41 @@ export default function SavedRecipeCard({
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   );
+  const [selectedIngredientData, setSelectedIngredientData] = useState<
+    SelectedIngredientData | null
+  >(null);
+
   const handleToggle = () => onToggle?.(recipe);
   const handleRemove = () => onRemove?.(recipe);
   const handleCopy = () => onCopy?.(recipe);
   const handleShare = () => onShare?.(recipe);
 
-  const handleIngredientClick = (
-    ingredient:
-      | string
-      | { name: string; productId?: number | string; source?: string }
-  ) => {
-    if (
-      typeof ingredient !== "string" &&
-      ingredient.source === "OpenFoodFacts" &&
-      ingredient.productId
-    ) {
-      setSelectedProductId(String(ingredient.productId));
+  const handleIngredientClick = (ingredient: SavedRecipeIngredient) => {
+    if (typeof ingredient !== "string") {
+      if (ingredient.productId) {
+        setSelectedProductId(String(ingredient.productId));
+      } else {
+        setSelectedProductId("ai-product-" + Math.random());
+      }
+      
+      if (
+        ingredient.calories !== undefined ||
+        ingredient.proteins !== undefined ||
+        ingredient.carbohydrates !== undefined ||
+        ingredient.fats !== undefined
+      ) {
+        setSelectedIngredientData({
+          productName: ingredient.name,
+          estimatedCalories: ingredient.calories,
+          estimatedProteins: ingredient.proteins,
+          estimatedCarbohydrates: ingredient.carbohydrates,
+          estimatedFats: ingredient.fats,
+          normalizedQuantityInGrams: ingredient.normalizedQuantityInGrams,
+        });
+      } else {
+        // Don't pass embedded data if not available - let dialog fetch from API
+        setSelectedIngredientData(null);
+      }
     }
   };
 
@@ -160,69 +188,122 @@ export default function SavedRecipeCard({
             borderTop: (theme) => `1px dashed ${theme.palette.grey[300]}`,
           }}
         >
+          {recipe.description && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Opis
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-wrap" }}>
+                {recipe.description}
+              </Typography>
+            </Box>
+          )}
+
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Składniki
+            Produkty
           </Typography>
-          <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
+          <Stack spacing={1}>
             {recipe.ingredients.map((ingredient, index) => (
               <Box
                 key={index}
-                component="li"
                 onClick={() => handleIngredientClick(ingredient)}
                 sx={{
+                  borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                  pb: 1,
                   cursor:
                     typeof ingredient !== "string" &&
-                    ingredient.source === "OpenFoodFacts"
+                    (ingredient.productId || ingredient.calories !== undefined)
                       ? "pointer"
                       : "default",
                 }}
               >
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    "&:hover":
-                      typeof ingredient !== "string" &&
-                      ingredient.source === "OpenFoodFacts"
-                        ? { textDecoration: "underline" }
-                        : {},
-                  }}
-                >
-                  {typeof ingredient === "string"
-                    ? ingredient
-                    : ingredient.name}
-                </Typography>
-                {typeof ingredient !== "string" &&
-                  ingredient.isAdditional && (
-                    <Typography variant="caption" color="text.secondary">
-                      dodany ręcznie
-                    </Typography>
-                  )}
-                {typeof ingredient !== "string" &&
-                  ingredient.source === "OpenFoodFacts" && (
+                {typeof ingredient === "string" ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {ingredient}
+                  </Typography>
+                ) : (
+                  <Box>
                     <Typography
-                      variant="caption"
+                      fontWeight={700}
                       sx={{
-                        color: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.5)"
-                            : colors.elements.openFoodFactsBadge,
-                        fontSize: "0.7rem",
+                        "&:hover":
+                          ingredient.productId || ingredient.calories !== undefined
+                            ? { textDecoration: "underline" }
+                            : {},
                       }}
                     >
-                      produkt z bazy openfoodfacts
+                      {ingredient.name}
                     </Typography>
-                  )}
+                    {ingredient.quantity && (
+                      <Typography variant="body2" color="text.secondary">
+                        {ingredient.quantity}
+                        {ingredient.unitName ? " " + ingredient.unitName : ""}
+                      </Typography>
+                    )}
+                    {ingredient.isAdditional && (
+                      <Typography variant="caption" color="text.secondary">
+                        dodany ręcznie
+                      </Typography>
+                    )}
+                    {ingredient.source === "OpenFoodFacts" && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255,255,255,0.5)"
+                              : colors.elements.openFoodFactsBadge,
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        produkt z bazy openfoodfacts
+                      </Typography>
+                    )}
+                    {ingredient.source === "AI" && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(255,255,255,0.5)"
+                              : "rgba(0,0,0,0.5)",
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        wygenerowany przez AI
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </Box>
             ))}
           </Stack>
+
+          {recipe.instructions && (
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                Instrukcje
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ whiteSpace: "pre-line" }}
+              >
+                {recipe.instructions}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Collapse>
 
       <ProductDetailsDialog
         open={selectedProductId !== null}
-        onClose={() => setSelectedProductId(null)}
+        onClose={() => {
+          setSelectedProductId(null);
+          setSelectedIngredientData(null);
+        }}
         productId={selectedProductId || ""}
+        ingredientData={selectedIngredientData ?? undefined}
       />
     </Box>
   );
