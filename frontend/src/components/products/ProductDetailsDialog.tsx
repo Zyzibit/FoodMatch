@@ -81,9 +81,7 @@ export default function ProductDetailsDialog({
     }
 
     if (hasIngredientData && ingredientData) {
-      const normalizedQuantity = ingredientData.normalizedQuantityInGrams || 100;
-      const scaleTo100g = 100 / normalizedQuantity;
-      
+      // Dla produktów z osadzonymi danymi - use je
       setProduct({
         id: String(productId),
         name: ingredientData.productName || "Produkt",
@@ -94,10 +92,10 @@ export default function ProductDetailsDialog({
         allergens: [],
         countries: [],
         nutrition: {
-          estimatedCalories: ingredientData.estimatedCalories ? ingredientData.estimatedCalories * scaleTo100g : undefined,
-          estimatedProteins: ingredientData.estimatedProteins ? ingredientData.estimatedProteins * scaleTo100g : undefined,
-          estimatedCarbohydrates: ingredientData.estimatedCarbohydrates ? ingredientData.estimatedCarbohydrates * scaleTo100g : undefined,
-          estimatedFats: ingredientData.estimatedFats ? ingredientData.estimatedFats * scaleTo100g : undefined,
+          estimatedCalories: ingredientData.estimatedCalories,
+          estimatedProteins: ingredientData.estimatedProteins,
+          estimatedCarbohydrates: ingredientData.estimatedCarbohydrates,
+          estimatedFats: ingredientData.estimatedFats,
         },
         source: "AI",
       });
