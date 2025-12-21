@@ -266,7 +266,6 @@ export function CreateRecipeModal({
                     const carbs = nutrition.carbohydrates ?? nutrition.Carbohydrates ?? nutrition.estimatedCarbohydrates ?? nutrition.EstimatedCarbohydrates ?? 0;
                     const fats = nutrition.fat ?? nutrition.Fat ?? nutrition.estimatedFats ?? nutrition.EstimatedFats ?? 0;
 
-                    // Assume calories/proteins/carbs/fats are per 100g
                     const caloriesPerGram = calories / 100;
                     const proteinsPerGram = proteins / 100;
                     const carbsPerGram = carbs / 100;
