@@ -12,4 +12,5 @@ public interface IRecipeRepository
     Task<(List<Recipe> Recipes, int TotalCount)> GetUserRecipesAsync(string userId, int limit = 50, int offset = 0);
     Task<(List<Recipe> Recipes, int TotalCount)> GetPublicRecipesAsync(int limit = 50, int offset = 0);
     Task<Recipe?> GetRecipeByIdForCopyAsync(int id);
+    Task<(List<Recipe> Recipes, int TotalCount)> SearchRecipesAsync(string? searchTerm, bool isPublicOnly, string? userId, int limit = 50, int offset = 0);
 }
