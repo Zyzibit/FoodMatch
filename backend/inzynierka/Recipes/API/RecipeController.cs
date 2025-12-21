@@ -315,9 +315,6 @@ public class RecipeController : ControllerBase
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            _logger.LogInformation("Search recipes - searchTerm: '{SearchTerm}', limit: {Limit}, offset: {Offset}, isPublicOnly: {IsPublicOnly}, userId: {UserId}", 
-                searchTerm, limit, offset, isPublicOnly, userId);
-
             var request = new SearchRecipesRequest
             {
                 SearchTerm = searchTerm,

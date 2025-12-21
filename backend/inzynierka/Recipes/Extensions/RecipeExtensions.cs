@@ -29,6 +29,7 @@ public static class RecipeExtensions
                     ProductId = productInfo.ProductId,
                     ProductName = productInfo.ProductName,
                     Source = productInfo.Source,
+                    UnitName = i.Unit.Name,
                     Calories = productInfo.Calories,
                     Proteins = productInfo.Proteins,
                     Carbohydrates = productInfo.Carbohydrates,
