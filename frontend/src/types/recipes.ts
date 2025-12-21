@@ -5,6 +5,13 @@ export type SavedRecipeIngredient = {
   productId?: number | string;
   source?: ProductSource;
   isAdditional?: boolean;
+  quantity?: number;
+  unitName?: string;
+  normalizedQuantityInGrams?: number;
+  calories?: number;
+  proteins?: number;
+  carbohydrates?: number;
+  fats?: number;
 };
 
 export type SavedRecipe = {

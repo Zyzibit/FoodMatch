@@ -26,6 +26,7 @@ export default function PlanMealCard({
   const [selectedProductId, setSelectedProductId] = useState<
     number | string | null
   >(null);
+  const [selectedProductData, setSelectedProductData] = useState<any>(null);
   const isPlaceholder = Boolean(meal.isPlaceholder);
   const primaryLabel = isPlaceholder ? "Dodaj przepis" : "Edytuj";
   const primaryIcon = isPlaceholder ? <Add /> : <Edit />;
@@ -53,12 +54,24 @@ export default function PlanMealCard({
     productId?: number;
     id: string;
     source?: string;
+    name?: string;
+    calories?: number;
+    proteins?: number;
+    carbohydrates?: number;
+    fats?: number;
+    normalizedQuantityInGrams?: number;
   }) => {
-    if (
-      (product.source === "OpenFoodFacts" || product.source === "AI") &&
-      product.productId
-    ) {
-      setSelectedProductId(product.productId);
+    if (product.source === "OpenFoodFacts" || product.source === "AI") {
+      setSelectedProductId(product.productId || product.id);
+      // Zawsze przesłaj dane jeśli mamy normalizedQuantityInGrams
+      setSelectedProductData({
+        productName: product.name,
+        estimatedCalories: product.calories,
+        estimatedProteins: product.proteins,
+        estimatedCarbohydrates: product.carbohydrates,
+        estimatedFats: product.fats,
+        normalizedQuantityInGrams: product.normalizedQuantityInGrams,
+      });
     }
   };
 
@@ -190,14 +203,12 @@ export default function PlanMealCard({
                           sx={{
                             cursor:
                               (product.source === "OpenFoodFacts" ||
-                                product.source === "AI") &&
-                              product.productId
+                                product.source === "AI")
                                 ? "pointer"
                                 : "default",
                             "&:hover":
                               (product.source === "OpenFoodFacts" ||
-                                product.source === "AI") &&
-                              product.productId
+                                product.source === "AI")
                                 ? { textDecoration: "underline" }
                                 : {},
                           }}
@@ -288,8 +299,12 @@ export default function PlanMealCard({
 
       <ProductDetailsDialog
         open={selectedProductId !== null}
-        onClose={() => setSelectedProductId(null)}
+        onClose={() => {
+          setSelectedProductId(null);
+          setSelectedProductData(null);
+        }}
         productId={selectedProductId || ""}
+        ingredientData={selectedProductData}
       />
     </Box>
   );

@@ -33,6 +33,7 @@ import {
   generateRecipePreview,
   saveGeneratedRecipe,
   getUserRecipes,
+  searchRecipes,
   type GeneratedRecipe,
   type GenerateRecipeRequest,
   type RecipeDetails,
@@ -132,7 +133,11 @@ export default function PlanAddRecipeModal({
   const isEditMode = Boolean(meal?.mealPlanId);
   const [mode, setMode] = useState<AddMode>("recipes");
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
+  const [recipeScale, setRecipeScale] = useState<string>("1");
   const [userRecipes, setUserRecipes] = useState<RecipeDetails[]>([]);
+  const [recipeSearchQuery, setRecipeSearchQuery] = useState<string>("");
+  const [recipesCurrentPage, setRecipesCurrentPage] = useState<number>(1);
+  const RECIPES_PER_PAGE = 5;
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
   const [recipesError, setRecipesError] = useState<string | null>(null);
   const [productInputValue, setProductInputValue] = useState("");
@@ -165,6 +170,45 @@ export default function PlanAddRecipeModal({
   const [selectedProductId, setSelectedProductId] = useState<
     number | string | null
   >(null);
+  const [selectedProductData, setSelectedProductData] = useState<any>(null);
+  const [aiRecipeScale, setAiRecipeScale] = useState<string>("1");
+
+  const handleSearchRecipes = useCallback(async (query: string) => {
+    if (!query || query.trim().length === 0) {
+      setIsLoadingRecipes(true);
+      setRecipesError(null);
+      try {
+        const result = await getUserRecipes();
+        setUserRecipes(result.recipes);
+      } catch (error) {
+        console.error("Failed to load user recipes:", error);
+        setRecipesError(
+          error instanceof Error
+            ? error.message
+            : "Nie udało się pobrać przepisów"
+        );
+      } finally {
+        setIsLoadingRecipes(false);
+      }
+      return;
+    }
+
+    setIsLoadingRecipes(true);
+    setRecipesError(null);
+    try {
+      const result = await searchRecipes(query);
+      setUserRecipes(result.recipes);
+    } catch (error) {
+      console.error("Failed to search recipes:", error);
+      setRecipesError(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się wyszukać przepisów"
+      );
+    } finally {
+      setIsLoadingRecipes(false);
+    }
+  }, []);
 
   const handleSearchProducts = useCallback(async (query: string) => {
     if (!query || query.trim().length < 2) {
@@ -193,9 +237,20 @@ export default function PlanAddRecipeModal({
   }, [productInputValue, handleSearchProducts]);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearchRecipes(recipeSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [recipeSearchQuery, handleSearchRecipes]);
+
+  useEffect(() => {
     if (!open) {
       setMode("recipes");
       setSelectedRecipe(null);
+      setRecipeScale("1");
+      setRecipeSearchQuery("");
+      setRecipesCurrentPage(1);
       setUserRecipes([]);
       setIsLoadingRecipes(false);
       setRecipesError(null);
@@ -213,6 +268,7 @@ export default function PlanAddRecipeModal({
       setSaveRecipeError(null);
       setIsAddingToPlan(false);
       setAddToPlanError(null);
+      setAiRecipeScale("1");
       setPreferences({
         isVegan: false,
         isVegetarian: false,
@@ -448,7 +504,22 @@ export default function PlanAddRecipeModal({
       };
 
       const recipe = await generateRecipePreview(requestPayload);
-      setGeneratedRecipe(recipe);
+      // Zastosuj scale factor do wygenerowanego przepisu
+      const scale = parseFloat(aiRecipeScale) || 1;
+      const scaledRecipe = {
+        ...recipe,
+        totalWeightGrams: Math.round((recipe.totalWeightGrams || 0) * scale),
+        calories: Math.round(recipe.calories * scale),
+        proteins: Math.round(recipe.proteins * scale),
+        carbohydrates: Math.round(recipe.carbohydrates * scale),
+        fats: Math.round(recipe.fats * scale),
+        ingredients: recipe.ingredients.map((ing) => ({
+          ...ing,
+          quantity: ing.quantity * scale,
+          normalizedQuantityInGrams: (ing.normalizedQuantityInGrams || 0) * scale,
+        })),
+      };
+      setGeneratedRecipe(scaledRecipe);
     } catch (error) {
       console.error("Error generating recipe preview:", error);
       setGenerationError(
@@ -532,6 +603,7 @@ export default function PlanAddRecipeModal({
         mealName: normalizedMealPlanName,
         date: planDateIso,
         recipeId: savedRecipeId,
+        servingMultiplier: parseFloat(aiRecipeScale) || 1,
       });
 
       onRecipeAdded?.({
@@ -567,10 +639,22 @@ export default function PlanAddRecipeModal({
         mealName: normalizedMealPlanName,
         date: planDateIso,
         recipeId: selectedRecipe,
+        servingMultiplier: parseFloat(recipeScale) || 1,
       });
 
       const recipe = userRecipes.find((r) => r.id === selectedRecipe);
       if (recipe) {
+        // Scale the recipe according to the scale factor
+        const scale = parseFloat(recipeScale) || 1;
+        const scaledIngredients = recipe.ingredients.map((ing) => ({
+          productId: ing.productId,
+          productName: ing.productName,
+          unitId: ing.unitId || 0,
+          unitName: ing.unitName || "",
+          quantity: ing.quantity * scale,
+          normalizedQuantityInGrams: (ing.normalizedQuantityInGrams || 0) * scale,
+        }));
+
         onRecipeAdded?.({
           meal,
           recipe: {
@@ -578,19 +662,12 @@ export default function PlanAddRecipeModal({
             description: recipe.description,
             instructions: recipe.instructions,
             preparationTimeMinutes: recipe.preparationTimeMinutes || 0,
-            totalWeightGrams: recipe.totalWeightGrams || 0,
-            calories: recipe.calories,
-            proteins: recipe.proteins,
-            carbohydrates: recipe.carbohydrates,
-            fats: recipe.fats,
-            ingredients: recipe.ingredients.map((ing) => ({
-              productId: ing.productId,
-              productName: ing.productName,
-              unitId: ing.unitId || 0,
-              unitName: ing.unitName || "",
-              quantity: ing.quantity,
-              normalizedQuantityInGrams: ing.normalizedQuantityInGrams || 0,
-            })),
+            totalWeightGrams: Math.round((recipe.totalWeightGrams || 0) * scale),
+            calories: Math.round(recipe.calories * scale),
+            proteins: Math.round(recipe.proteins * scale),
+            carbohydrates: Math.round(recipe.carbohydrates * scale),
+            fats: Math.round(recipe.fats * scale),
+            ingredients: scaledIngredients,
             additionalProducts: recipe.additionalProducts || [],
           },
           recipeId: selectedRecipe,
@@ -610,8 +687,39 @@ export default function PlanAddRecipeModal({
     }
   };
 
-  const renderRecipePicker = () => (
-    <Stack spacing={1.5}>
+  const renderRecipePicker = () => {
+    // Paginate recipes (już filtrowane z API)
+    const totalPages = Math.ceil(userRecipes.length / RECIPES_PER_PAGE);
+    const startIndex = (recipesCurrentPage - 1) * RECIPES_PER_PAGE;
+    const paginatedRecipes = userRecipes.slice(
+      startIndex,
+      startIndex + RECIPES_PER_PAGE
+    );
+
+    return (
+    <Stack spacing={1.5} sx={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+      <TextField
+        placeholder="Wyszukaj przepis..."
+        value={recipeSearchQuery}
+        onChange={(e) => {
+          setRecipeSearchQuery(e.target.value);
+          setRecipesCurrentPage(1);
+        }}
+        fullWidth
+        size="small"
+        slotProps={{
+          input: {
+            startAdornment: (
+              <Box sx={{ mr: 1, display: "flex", alignItems: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  🔍
+                </Typography>
+              </Box>
+            ),
+          },
+        }}
+      />
+
       {isLoadingRecipes && (
         <Stack alignItems="center" py={4}>
           <CircularProgress />
@@ -634,69 +742,209 @@ export default function PlanAddRecipeModal({
 
       {!isLoadingRecipes &&
         !recipesError &&
-        userRecipes.length > 0 &&
-        userRecipes.map((recipe) => {
-          const isActive = selectedRecipe === recipe.id;
-          return (
-            <Paper
-              key={recipe.id}
-              variant={isActive ? "outlined" : "elevation"}
-              onClick={() => setSelectedRecipe(recipe.id)}
-              sx={{
-                p: 2,
-                borderColor: (theme) =>
-                  isActive ? theme.palette.secondary.main : undefined,
-                cursor: "pointer",
-                transition: "border-color 0.2s ease",
-              }}
-            >
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.5}
-                alignItems="flex-start"
-              >
-                <Box flex={1}>
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    {recipe.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={1}>
-                    {recipe.description}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {recipe.preparationTimeMinutes && (
-                      <Chip
-                        label={`${recipe.preparationTimeMinutes} min`}
-                        size="small"
-                      />
-                    )}
-                    {recipe.totalWeightGrams && (
-                      <Chip
-                        label={`${recipe.totalWeightGrams} g`}
-                        size="small"
-                      />
-                    )}
+        recipeSearchQuery.length > 0 &&
+        userRecipes.length === 0 && (
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Nie znaleziono przepisów pasujących do wyszukiwania.
+            </Typography>
+          </Paper>
+        )}
+
+      {/* Scrollowalny kontener z listą przepisów */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          pr: 1,
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "#888",
+            borderRadius: "4px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            background: "#555",
+          },
+        }}
+      >
+        <Stack spacing={1.5} sx={{ pr: 1 }}>
+          {!isLoadingRecipes &&
+            !recipesError &&
+            userRecipes.length > 0 &&
+            paginatedRecipes.map((recipe) => {
+              const isActive = selectedRecipe === recipe.id;
+              return (
+                <Paper
+                  key={recipe.id}
+                  variant={isActive ? "outlined" : "elevation"}
+                  onClick={() => {
+                    setSelectedRecipe(recipe.id);
+                    setRecipeScale("1");
+                  }}
+                  sx={{
+                    p: 2,
+                    borderColor: (theme) =>
+                      isActive ? theme.palette.secondary.main : undefined,
+                    cursor: "pointer",
+                    transition: "border-color 0.2s ease",
+                  }}
+                >
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.5}
+                    alignItems="flex-start"
+                  >
+                    <Box flex={1}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {recipe.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" mb={1}>
+                        {recipe.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap">
+                        {recipe.preparationTimeMinutes && (
+                          <Chip
+                            label={`${recipe.preparationTimeMinutes} min`}
+                            size="small"
+                          />
+                        )}
+                        {recipe.totalWeightGrams && (
+                          <Chip
+                            label={`${recipe.totalWeightGrams} g`}
+                            size="small"
+                          />
+                        )}
+                      </Stack>
+                    </Box>
+                    <Box sx={{ minWidth: 120 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        {Math.round(recipe.calories)} kcal
+                      </Typography>
+                      <Typography variant="body2">
+                        B: {Math.round(recipe.proteins)} g
+                      </Typography>
+                      <Typography variant="body2">
+                        T: {Math.round(recipe.fats)} g
+                      </Typography>
+                      <Typography variant="body2">
+                        W: {Math.round(recipe.carbohydrates)} g
+                      </Typography>
+                    </Box>
                   </Stack>
-                </Box>
-                <Box sx={{ minWidth: 120 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {Math.round(recipe.calories)} kcal
-                  </Typography>
-                  <Typography variant="body2">
-                    B: {Math.round(recipe.proteins)} g
-                  </Typography>
-                  <Typography variant="body2">
-                    T: {Math.round(recipe.fats)} g
-                  </Typography>
-                  <Typography variant="body2">
-                    W: {Math.round(recipe.carbohydrates)} g
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
-          );
-        })}
+                  
+                  {isActive && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: (theme) => `1px solid ${theme.palette.divider}` }}>
+                      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        Skalowanie przepisu
+                      </Typography>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <TextField
+                          label="Skala"
+                          value={recipeScale}
+                          onChange={(e) => {
+                            let input = e.target.value.replace(",", ".");
+                            if (input === "" || /^[\d.]*$/.test(input)) {
+                              const parts = input.split(".");
+                              if (parts.length > 2) {
+                                input = parts[0] + "." + parts.slice(1).join("");
+                              }
+                              setRecipeScale(input);
+                            }
+                          }}
+                          sx={{ width: 120 }}
+                          inputProps={{ inputMode: "decimal" }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          {parseFloat(recipeScale) === 1
+                            ? "Oryginalna wielkość"
+                            : `${recipeScale}x wielkości`}
+                        </Typography>
+                      </Stack>
+
+                      {parseFloat(recipeScale) > 0 && (() => {
+                        const scale = parseFloat(recipeScale) || 1;
+                        return (
+                          <Stack spacing={1} mt={2}>
+                            <Typography variant="subtitle2" fontWeight={700} color="primary">
+                              Przeskalowane wartości:
+                            </Typography>
+                            <Stack direction="row" spacing={2}>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  Kalorie
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                  {Math.round((recipe.calories || 0) * scale)} kcal
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  Białko
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                  {Math.round((recipe.proteins || 0) * scale)} g
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  Węglowodany
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                  {Math.round((recipe.carbohydrates || 0) * scale)} g
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  Tłuszcze
+                                </Typography>
+                                <Typography variant="subtitle1">
+                                  {Math.round((recipe.fats || 0) * scale)} g
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Stack>
+                        );
+                      })()}
+                    </Box>
+                  )}
+                </Paper>
+              );
+            })}
+        </Stack>
+      </Box>
+
+      {!isLoadingRecipes && !recipesError && userRecipes.length > RECIPES_PER_PAGE && (
+        <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={recipesCurrentPage === 1}
+            onClick={() => setRecipesCurrentPage((p) => p - 1)}
+          >
+            Poprzednia
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            Strona {recipesCurrentPage} z {totalPages}
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={recipesCurrentPage === totalPages}
+            onClick={() => setRecipesCurrentPage((p) => p + 1)}
+          >
+            Następna
+          </Button>
+        </Stack>
+      )}
     </Stack>
-  );
+    );
+  };
 
   const renderAiBuilder = () => {
     return (
@@ -727,6 +975,24 @@ export default function PlanAddRecipeModal({
               onChange={(e) => setPreparationTime(e.target.value)}
               placeholder="np. 30"
               inputProps={{ min: 1 }}
+            />
+            <TextField
+              label="Skala"
+              value={aiRecipeScale}
+              onChange={(e) => {
+                let input = e.target.value.replace(",", ".");
+                // Akceptuj tylko liczby i jedną kropkę
+                if (input === "" || /^[\d.]*$/.test(input)) {
+                  // Usuń wszystkie kropki oprócz pierwszej
+                  const parts = input.split(".");
+                  if (parts.length > 2) {
+                    input = parts[0] + "." + parts.slice(1).join("");
+                  }
+                  setAiRecipeScale(input);
+                }
+              }}
+              sx={{ width: 120 }}
+              inputProps={{ inputMode: "decimal" }}
             />
           </Stack>
         </Box>
@@ -1151,6 +1417,57 @@ export default function PlanAddRecipeModal({
                   )}
                 </Stack>
 
+                {parseFloat(aiRecipeScale) > 0 && parseFloat(aiRecipeScale) !== 1 && (
+                  <Paper
+                    sx={{
+                      p: 1.5,
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(33, 150, 243, 0.1)"
+                          : "rgba(33, 150, 243, 0.05)",
+                      border: (theme) => `1px dashed ${theme.palette.primary.main}`,
+                    }}
+                  >
+                    <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
+                      Przeskalowane wartości ({aiRecipeScale}x):
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Kalorie
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {Math.round((generatedRecipe.calories) * (parseFloat(aiRecipeScale) || 1))} kcal
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Białko
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {Math.round((generatedRecipe.proteins) * (parseFloat(aiRecipeScale) || 1))} g
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Węglowodany
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {Math.round((generatedRecipe.carbohydrates) * (parseFloat(aiRecipeScale) || 1))} g
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Tłuszcze
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {Math.round((generatedRecipe.fats) * (parseFloat(aiRecipeScale) || 1))} g
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                )}
+
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
                   spacing={2}
@@ -1224,6 +1541,20 @@ export default function PlanAddRecipeModal({
                                     ingredient.source === "AI"
                                   ) {
                                     setSelectedProductId(ingredient.productId);
+                                    if (ingredient.source === "AI") {
+                                      setSelectedProductData({
+                                        productName: ingredient.productName,
+                                        estimatedCalories: ingredient.estimatedCalories,
+                                        estimatedProteins: ingredient.estimatedProteins,
+                                        estimatedCarbohydrates:
+                                          ingredient.estimatedCarbohydrates,
+                                        estimatedFats: ingredient.estimatedFats,
+                                        normalizedQuantityInGrams:
+                                          ingredient.normalizedQuantityInGrams,
+                                      });
+                                    } else {
+                                      setSelectedProductData(null);
+                                    }
                                   }
                                 }}
                                 sx={{
@@ -1412,7 +1743,7 @@ export default function PlanAddRecipeModal({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" keepMounted>
         <DialogTitle
           sx={{
             display: "flex",
@@ -1507,6 +1838,7 @@ export default function PlanAddRecipeModal({
                   overflowY: "auto",
                   overflowX: "hidden",
                   pr: 1,
+                  p: 2,
                   "&::-webkit-scrollbar": {
                     width: "8px",
                   },
@@ -1552,9 +1884,13 @@ export default function PlanAddRecipeModal({
       </Dialog>
 
       <ProductDetailsDialog
-        open={selectedProductId !== null}
-        onClose={() => setSelectedProductId(null)}
+        open={selectedProductId !== null || selectedProductData !== null}
+        onClose={() => {
+          setSelectedProductId(null);
+          setSelectedProductData(null);
+        }}
         productId={selectedProductId || ""}
+        ingredientData={selectedProductData}
       />
     </>
   );

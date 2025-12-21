@@ -108,6 +108,10 @@ type IngredientForDisplay = {
   normalizedQuantityInGrams?: number;
   code?: string;
   source?: ProductSource;
+  calories?: number;
+  proteins?: number;
+  carbohydrates?: number;
+  fats?: number;
 };
 
 const formatIngredientQuantityLabel = (
@@ -159,6 +163,11 @@ const mapIngredientToProduct = (
   }),
   code: ingredient.code,
   source: ingredient.source,
+  calories: ingredient.calories,
+  proteins: ingredient.proteins,
+  carbohydrates: ingredient.carbohydrates,
+  fats: ingredient.fats,
+  normalizedQuantityInGrams: ingredient.normalizedQuantityInGrams,
 });
 
 const defaultSlotLookup = defaultMealSlots.reduce<

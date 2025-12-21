@@ -10,6 +10,10 @@ import {
   Divider,
   CircularProgress,
   Link,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
@@ -45,22 +49,62 @@ type ProductDetailsDialogProps = {
   open: boolean;
   onClose: () => void;
   productId: number | string;
+  ingredientData?: {
+    productName: string;
+    estimatedCalories?: number;
+    estimatedProteins?: number;
+    estimatedCarbohydrates?: number;
+    estimatedFats?: number;
+    normalizedQuantityInGrams?: number;
+  };
 };
 
 export default function ProductDetailsDialog({
   open,
   onClose,
   productId,
+  ingredientData,
 }: ProductDetailsDialogProps) {
   const [product, setProduct] = useState<ProductDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasIngredientData =
+    ingredientData &&
+    (ingredientData.estimatedCalories !== undefined ||
+      ingredientData.estimatedProteins !== undefined ||
+      ingredientData.estimatedCarbohydrates !== undefined ||
+      ingredientData.estimatedFats !== undefined);
 
   useEffect(() => {
-    if (!open || !productId) {
+    if (!open) {
       return;
     }
 
+    if (hasIngredientData && ingredientData) {
+      // Dla produktów z osadzonymi danymi - use je
+      setProduct({
+        id: String(productId),
+        name: ingredientData.productName || "Produkt",
+        brand: "Wygenerowany przez AI",
+        barcode: "",
+        categories: [],
+        ingredients: [],
+        allergens: [],
+        countries: [],
+        nutrition: {
+          estimatedCalories: ingredientData.estimatedCalories,
+          estimatedProteins: ingredientData.estimatedProteins,
+          estimatedCarbohydrates: ingredientData.estimatedCarbohydrates,
+          estimatedFats: ingredientData.estimatedFats,
+        },
+        source: "AI",
+      });
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Dla produktów bez danych osadzonych - pobierz z API
     const fetchProduct = async () => {
       setLoading(true);
       setError(null);
@@ -86,13 +130,27 @@ export default function ProductDetailsDialog({
     };
 
     fetchProduct();
-  }, [open, productId]);
+  }, [open, productId, hasIngredientData, ingredientData]);
 
   const getNutritionValue = (
     estimated?: number,
     actual?: number
   ): number | undefined => {
     return estimated ?? actual;
+  };
+
+  const calculateNutritionForQuantity = (
+    valuePer100g: number | undefined,
+    quantityInGrams: number | undefined
+  ): number | undefined => {
+    if (valuePer100g === undefined || quantityInGrams === undefined) {
+      return undefined;
+    }
+    return (valuePer100g / 100) * quantityInGrams;
+  };
+
+  const getDisplayQuantity = (): number => {
+    return ingredientData?.normalizedQuantityInGrams ?? 30;
   };
 
   const getSourceLabel = (source: string, barcode?: string) => {
@@ -216,62 +274,163 @@ export default function ProductDetailsDialog({
             {product.nutrition && (
               <Box>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                  Wartości odżywcze (na 100g)
+                  Wartości odżywcze
                 </Typography>
-                <Stack spacing={0.5}>
-                  {getNutritionValue(
-                    product.nutrition.estimatedCalories,
-                    product.nutrition.calories
-                  ) !== undefined && (
-                    <Typography variant="body2">
-                      Kalorie:{" "}
+                {getNutritionValue(
+                  product.nutrition.estimatedCalories,
+                  product.nutrition.calories
+                ) === undefined ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Brak dostępnych danych nutrycji
+                  </Typography>
+                ) : (
+                  <Table size="small" sx={{ mb: 2 }}>
+                    <TableBody>
                       {getNutritionValue(
                         product.nutrition.estimatedCalories,
                         product.nutrition.calories
-                      )?.toFixed(1)}{" "}
-                      kcal
-                    </Typography>
-                  )}
-                  {getNutritionValue(
-                    product.nutrition.estimatedProteins,
-                    product.nutrition.proteins
-                  ) !== undefined && (
-                    <Typography variant="body2">
-                      Białko:{" "}
-                      {getNutritionValue(
-                        product.nutrition.estimatedProteins,
-                        product.nutrition.proteins
-                      )?.toFixed(1)}{" "}
-                      g
-                    </Typography>
-                  )}
-                  {getNutritionValue(
-                    product.nutrition.estimatedCarbohydrates,
-                    product.nutrition.carbohydrates
-                  ) !== undefined && (
-                    <Typography variant="body2">
-                      Węglowodany:{" "}
-                      {getNutritionValue(
-                        product.nutrition.estimatedCarbohydrates,
-                        product.nutrition.carbohydrates
-                      )?.toFixed(1)}{" "}
-                      g
-                    </Typography>
-                  )}
-                  {getNutritionValue(
-                    product.nutrition.estimatedFats,
-                    product.nutrition.fat
-                  ) !== undefined && (
-                    <Typography variant="body2">
-                      Tłuszcze:{" "}
-                      {getNutritionValue(
-                        product.nutrition.estimatedFats,
-                        product.nutrition.fat
-                      )?.toFixed(1)}{" "}
-                      g
-                    </Typography>
-                  )}
-                </Stack>
+                      ) !== undefined && (
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)", width: "30%" }}>
+                            <Typography variant="body2" fontWeight={600}>
+                              Kalorie
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)", width: "35%" }}>
+                            <Typography variant="body2">
+                              {getNutritionValue(
+                                product.nutrition.estimatedCalories,
+                                product.nutrition.calories
+                              )?.toFixed(1)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              kcal/100g
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)", width: "35%" }}>
+                            <Typography variant="body2">
+                              {calculateNutritionForQuantity(
+                                getNutritionValue(
+                                  product.nutrition.estimatedCalories,
+                                  product.nutrition.calories
+                                ),
+                                getDisplayQuantity()
+                              )?.toFixed(1)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              kcal/{getDisplayQuantity()}g
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    {getNutritionValue(
+                      product.nutrition.estimatedProteins,
+                      product.nutrition.proteins
+                    ) !== undefined && (
+                      <TableRow>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">Białko</Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">
+                            {getNutritionValue(
+                              product.nutrition.estimatedProteins,
+                              product.nutrition.proteins
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/100g
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">
+                            {calculateNutritionForQuantity(
+                              getNutritionValue(
+                                product.nutrition.estimatedProteins,
+                                product.nutrition.proteins
+                              ),
+                              getDisplayQuantity()
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/{getDisplayQuantity()}g
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {getNutritionValue(
+                      product.nutrition.estimatedCarbohydrates,
+                      product.nutrition.carbohydrates
+                    ) !== undefined && (
+                      <TableRow>
+                        <TableCell sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">Węglowodany</Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">
+                            {getNutritionValue(
+                              product.nutrition.estimatedCarbohydrates,
+                              product.nutrition.carbohydrates
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/100g
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ borderBottom: "1px solid rgba(224, 224, 224, 1)" }}>
+                          <Typography variant="body2">
+                            {calculateNutritionForQuantity(
+                              getNutritionValue(
+                                product.nutrition.estimatedCarbohydrates,
+                                product.nutrition.carbohydrates
+                              ),
+                              getDisplayQuantity()
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/{getDisplayQuantity()}g
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {getNutritionValue(
+                      product.nutrition.estimatedFats,
+                      product.nutrition.fat
+                    ) !== undefined && (
+                      <TableRow>
+                        <TableCell>
+                          <Typography variant="body2">Tłuszcze</Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2">
+                            {getNutritionValue(
+                              product.nutrition.estimatedFats,
+                              product.nutrition.fat
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/100g
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2">
+                            {calculateNutritionForQuantity(
+                              getNutritionValue(
+                                product.nutrition.estimatedFats,
+                                product.nutrition.fat
+                              ),
+                              getDisplayQuantity()
+                            )?.toFixed(1)}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            g/{getDisplayQuantity()}g
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                )}
               </Box>
             )}
 

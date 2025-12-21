@@ -8,7 +8,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Delete, Add, Share, Public } from "@mui/icons-material";
-import type { SavedRecipe } from "../../types/recipes";
+import type { SavedRecipe, SavedRecipeIngredient } from "../../types/recipes";
 import PlanMealMacroSummary from "../plan/PlanMealMacroSummary";
 import { useState } from "react";
 import ProductDetailsDialog from "../products/ProductDetailsDialog";
@@ -38,22 +38,39 @@ export default function SavedRecipeCard({
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   );
+  const [selectedIngredientData, setSelectedIngredientData] = useState<any>(null);
+
   const handleToggle = () => onToggle?.(recipe);
   const handleRemove = () => onRemove?.(recipe);
   const handleCopy = () => onCopy?.(recipe);
   const handleShare = () => onShare?.(recipe);
 
-  const handleIngredientClick = (
-    ingredient:
-      | string
-      | { name: string; productId?: number | string; source?: string }
-  ) => {
-    if (
-      typeof ingredient !== "string" &&
-      ingredient.source === "OpenFoodFacts" &&
-      ingredient.productId
-    ) {
-      setSelectedProductId(String(ingredient.productId));
+  const handleIngredientClick = (ingredient: SavedRecipeIngredient) => {
+    if (typeof ingredient !== "string") {
+      if (ingredient.productId) {
+        setSelectedProductId(String(ingredient.productId));
+      } else {
+        setSelectedProductId("ai-product-" + Math.random());
+      }
+      
+      if (
+        ingredient.calories !== undefined ||
+        ingredient.proteins !== undefined ||
+        ingredient.carbohydrates !== undefined ||
+        ingredient.fats !== undefined
+      ) {
+        setSelectedIngredientData({
+          productName: ingredient.name,
+          estimatedCalories: ingredient.calories,
+          estimatedProteins: ingredient.proteins,
+          estimatedCarbohydrates: ingredient.carbohydrates,
+          estimatedFats: ingredient.fats,
+          normalizedQuantityInGrams: ingredient.normalizedQuantityInGrams,
+        });
+      } else {
+        // Don't pass embedded data if not available - let dialog fetch from API
+        setSelectedIngredientData(null);
+      }
     }
   };
 
@@ -183,7 +200,8 @@ export default function SavedRecipeCard({
                 sx={{
                   cursor:
                     typeof ingredient !== "string" &&
-                    ingredient.source === "OpenFoodFacts"
+                    (ingredient.productId ||
+                      ingredient.calories !== undefined)
                       ? "pointer"
                       : "default",
                 }}
@@ -194,14 +212,21 @@ export default function SavedRecipeCard({
                   sx={{
                     "&:hover":
                       typeof ingredient !== "string" &&
-                      ingredient.source === "OpenFoodFacts"
+                      (ingredient.productId ||
+                        ingredient.calories !== undefined)
                         ? { textDecoration: "underline" }
                         : {},
                   }}
                 >
                   {typeof ingredient === "string"
                     ? ingredient
-                    : ingredient.name}
+                    : `${ingredient.name}${
+                        ingredient.quantity
+                          ? ` - ${ingredient.quantity}${
+                              ingredient.unitName ? " " + ingredient.unitName : ""
+                            }`
+                          : ""
+                      }`}
                 </Typography>
                 {typeof ingredient !== "string" &&
                   ingredient.isAdditional && (
@@ -224,6 +249,21 @@ export default function SavedRecipeCard({
                       produkt z bazy openfoodfacts
                     </Typography>
                   )}
+                {typeof ingredient !== "string" &&
+                  ingredient.source === "AI" && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.5)"
+                            : "#9c27b0",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      produkt wygenerowany przez AI
+                    </Typography>
+                  )}
               </Box>
             ))}
           </Stack>
@@ -243,8 +283,12 @@ export default function SavedRecipeCard({
 
       <ProductDetailsDialog
         open={selectedProductId !== null}
-        onClose={() => setSelectedProductId(null)}
+        onClose={() => {
+          setSelectedProductId(null);
+          setSelectedIngredientData(null);
+        }}
         productId={selectedProductId || ""}
+        ingredientData={selectedIngredientData}
       />
     </Box>
   );

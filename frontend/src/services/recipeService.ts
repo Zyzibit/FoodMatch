@@ -39,6 +39,10 @@ export interface RecipeIngredient {
   quantity: number;
   normalizedQuantityInGrams: number;
   source?: ProductSource;
+  estimatedCalories?: number;
+  estimatedProteins?: number;
+  estimatedCarbohydrates?: number;
+  estimatedFats?: number;
 }
 
 export interface GeneratedRecipe {
@@ -84,6 +88,10 @@ export interface RecipeDetailsIngredient {
   normalizedQuantityInGrams?: number;
   code?: string;
   source?: ProductSource;
+  calories?: number;
+  proteins?: number;
+  carbohydrates?: number;
+  fats?: number;
 }
 
 export interface RecipeDetails {
@@ -124,6 +132,12 @@ const parseRecipeDetailsIngredient = (data: any): RecipeDetailsIngredient => ({
   ),
   code: data?.code ?? data?.Code,
   source: data?.source ?? data?.Source,
+  calories: parseOptionalNumber(data?.calories ?? data?.Calories),
+  proteins: parseOptionalNumber(data?.proteins ?? data?.Proteins ?? data?.protein ?? data?.Protein),
+  carbohydrates: parseOptionalNumber(
+    data?.carbohydrates ?? data?.Carbohydrates
+  ),
+  fats: parseOptionalNumber(data?.fats ?? data?.Fats),
 });
 
 const parseRecipeDetails = (data: any): RecipeDetails => ({
@@ -178,6 +192,16 @@ const parseGeneratedRecipe = (data: any): GeneratedRecipe => ({
           ing?.normalizedQuantityInGrams ?? ing?.NormalizedQuantityInGrams
         ),
         source: ing?.source ?? ing?.Source,
+        estimatedCalories: parseNumber(
+          ing?.estimatedCalories ?? ing?.EstimatedCalories ?? ing?.calories ?? ing?.Calories
+        ),
+        estimatedProteins: parseNumber(
+          ing?.estimatedProteins ?? ing?.EstimatedProteins ?? ing?.protein ?? ing?.Protein
+        ),
+        estimatedCarbohydrates: parseNumber(
+          ing?.estimatedCarbohydrates ?? ing?.EstimatedCarbohydrates ?? ing?.carbohydrates ?? ing?.Carbohydrates
+        ),
+        estimatedFats: parseNumber(ing?.estimatedFats ?? ing?.EstimatedFats ?? ing?.fats ?? ing?.Fats),
       }))
     : [],
   additionalProducts: Array.isArray(
@@ -411,6 +435,36 @@ export const createRecipe = async (
       .json()
       .catch(() => ({ message: "Nie udało się utworzyć przepisu" }));
     throw new Error(error.message || "Nie udało się utworzyć przepisu");
+  }
+
+  return response.json();
+};
+
+export const searchRecipes = async (
+  query: string,
+  limit: number = 50,
+  offset: number = 0
+): Promise<RecipeListResult> => {
+  const params = new URLSearchParams({
+    searchTerm: query,
+    limit: limit.toString(),
+    offset: offset.toString(),
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/recipes/search?${params.toString()}`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ message: "Nie udało się wyszukać przepisów" }));
+    throw new Error(error.message || "Nie udało się wyszukać przepisów");
   }
 
   return response.json();

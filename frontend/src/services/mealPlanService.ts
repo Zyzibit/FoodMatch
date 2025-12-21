@@ -23,6 +23,7 @@ export interface CreateMealPlanRequest {
   mealName: string;
   date: string;
   recipeId: number;
+  servingMultiplier?: number;
 }
 
 export interface CreateMealPlanResponse {
