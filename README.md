@@ -4,6 +4,11 @@
 
 FoodMatch is a comprehensive web application that helps users efficiently plan meals, manage recipes, and automatically generate shopping lists. Leveraging OpenAI's artificial intelligence, the application offers personalized culinary suggestions tailored to user dietary preferences.
 
+This project was successfully defended as an Engineering Thesis and awarded with honors.
+
+---
+##Tech stack
+
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
