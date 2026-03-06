@@ -7,7 +7,7 @@ FoodMatch is a comprehensive web application that helps users efficiently plan m
 This project was successfully defended as an Engineering Thesis and awarded with honors.
 
 ---
-##Tech stack
+## Tech stack
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
