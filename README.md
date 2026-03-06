@@ -2,16 +2,17 @@
 
 > An intelligent meal planning system with AI integration, supporting recipe management, products, and shopping lists.
 
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-4169E1?logo=postgresql)](https://www.postgresql.org/)
+
+
 FoodMatch is a comprehensive web application that helps users efficiently plan meals, manage recipes, and automatically generate shopping lists. Leveraging OpenAI's artificial intelligence, the application offers personalized culinary suggestions tailored to user dietary preferences.
 
 This project was successfully defended as an Engineering Thesis and awarded with honors.
 
 <img width="1215" height="547" alt="image" src="https://github.com/user-attachments/assets/1401941a-9bd4-4c74-bf85-f5e1a56929fb" />
-
-[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-4169E1?logo=postgresql)](https://www.postgresql.org/)
 
 ---
 
