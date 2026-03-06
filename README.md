@@ -8,9 +8,6 @@ This project was successfully defended as an Engineering Thesis and awarded with
 
 <img width="1215" height="547" alt="image" src="https://github.com/user-attachments/assets/1401941a-9bd4-4c74-bf85-f5e1a56929fb" />
 
----
-## Tech stack
-
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
