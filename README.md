@@ -6,6 +6,8 @@ FoodMatch is a comprehensive web application that helps users efficiently plan m
 
 This project was successfully defended as an Engineering Thesis and awarded with honors.
 
+<img width="1215" height="547" alt="image" src="https://github.com/user-attachments/assets/1401941a-9bd4-4c74-bf85-f5e1a56929fb" />
+
 ---
 ## Tech stack
 
@@ -15,10 +17,6 @@ This project was successfully defended as an Engineering Thesis and awarded with
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-4169E1?logo=postgresql)](https://www.postgresql.org/)
 
 ---
-
-<img width="1215" height="547" alt="image" src="https://github.com/user-attachments/assets/1401941a-9bd4-4c74-bf85-f5e1a56929fb" />
-
-
 
 ## ✨ Key Features
 
