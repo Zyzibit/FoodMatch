@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private readonly IProductBulkRepository _bulkRepository;
         private readonly ILogger<ProductImporter> _logger;
 
-        private const int ProductBatchSize = 50;
+        private const int ProductBatchSize = 500;
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             AllowTrailingCommas = true,
@@ -38,6 +39,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
         public async Task ImportJsonlAsync(string filePath, CancellationToken ct = default)
         {
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"Import file not found: {filePath}", filePath);
+
             _bulkRepository.PrepareForBulkImport();
 
             try
@@ -47,6 +51,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
                 var processed = 0;
                 var readLines = 0;
+                var skippedNutrition = 0;
+                var skippedCode = 0;
+                var deserializeFailed = 0;
 
                 await foreach (var rawLine in ReadLinesAsync(filePath, ct))
                 {
@@ -54,24 +61,25 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                     if (string.IsNullOrWhiteSpace(rawLine)) continue;
 
                     var src = TryDeserialize(rawLine);
-                    if (src is null) continue;
+                    if (src is null) { deserializeFailed++; continue; }
 
                     var code = Sanitizer(src.Code);
-                    if (string.IsNullOrWhiteSpace(code)) continue;
+                    if (string.IsNullOrWhiteSpace(code)) { skippedCode++; continue; }
                     code = code.Trim();
-                    
+
                     var product = MapToProduct(src);
-                    if (product != null) {
-                        products.Add(product);
-                    }
-                    
+                    if (product is null) { skippedNutrition++; continue; }
+
+                    products.Add(product);
                     CollectTags(src, code, tags);
 
                     if (products.Count < ProductBatchSize) continue;
 
                     await FlushAsync(products, tags, ct);
                     processed += products.Count;
-                    _logger.LogInformation("Imported so far: {Count} products (read lines: {Read})", processed, readLines);
+                    _logger.LogInformation(
+                        "Imported so far: {Count} products (read lines: {Read})",
+                        processed, readLines);
 
                     products.Clear();
                     tags.Clear();
@@ -83,7 +91,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                     processed += products.Count;
                 }
 
-                _logger.LogInformation("Import finished. Total imported products (attempted): {Count}", processed);
+                _logger.LogInformation(
+                    "Import finished. Imported: {Ok}, NoNutrition: {Nutrition}, NoCode: {Code}, ParseFailed: {Parse}, TotalLines: {Lines}",
+                    processed, skippedNutrition, skippedCode, deserializeFailed, readLines);
             }
             finally
             {
@@ -101,43 +111,42 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private static Product? MapToProduct(OpenFoodFactsProduct src)
         {
             var n = src.OpenFoodFactsNutriments;
-            if ((n?.Carbohydrates100g != null && n?.Fat100g != null && n?.Proteins100g != null && n?.EnergyKcal100g != null)) {
-                var product = new Product {
-                    Code = Sanitizer(src.Code) ?? string.Empty,
-                    ProductName = Sanitizer(src.ProductName),
+            if (n?.Carbohydrates100g is null || n.Fat100g is null || n.Proteins100g is null || n.EnergyKcal100g is null)
+                return null;
 
-                    BrandOwner = Sanitizer(src.BrandOwner),
-                    Brands = Sanitizer(src.Brands),
+            return new Product
+            {
+                Code = Sanitizer(src.Code) ?? string.Empty,
+                ProductName = Sanitizer(src.ProductName),
 
-                    Language = Sanitizer(src.Language),
-                    LanguageCode = Sanitizer(src.LanguageCode),
-                    IngredientsText = Sanitizer(src.IngredientsText),
+                BrandOwner = Sanitizer(src.BrandOwner),
+                Brands = Sanitizer(src.Brands),
 
-                    NutritionGrade = Sanitizer(src.NutritionGrade),
-                    NovaGroup = src.NovaGroup,
-                    EcoScoreGrade = Sanitizer(src.EcoScoreGrade),
-                    ServingSize = Sanitizer(src.ServingSize),
-                    IsVegetarian = Sanitizer(src.IsVegetarian),
-                    IsVegan = Sanitizer(src.IsVegan),
+                Language = Sanitizer(src.Language),
+                LanguageCode = Sanitizer(src.LanguageCode),
+                IngredientsText = Sanitizer(src.IngredientsText),
 
-                    Energy100g = n.Energy100g,
-                    EnergyKcal100g = n.EnergyKcal100g,
-                    Fat100g = n.Fat100g,
-                    SaturatedFat100g = n?.SaturatedFat100g,
-                    Carbohydrates100g = n?.Carbohydrates100g,
-                    Sugars100g = n?.Sugars100g,
-                    Fiber100g = n?.Fiber100g,
-                    Proteins100g = n?.Proteins100g,
-                    Salt100g = n?.Salt100g,
-                    Sodium100g = n?.Sodium100g,
-                    EnergyKcalServing = n?.EnergyKcalServing,
+                NutritionGrade = Sanitizer(src.NutritionGrade),
+                NovaGroup = src.NovaGroup,
+                EcoScoreGrade = Sanitizer(src.EcoScoreGrade),
+                ServingSize = Sanitizer(src.ServingSize),
+                IsVegetarian = Sanitizer(src.IsVegetarian),
+                IsVegan = Sanitizer(src.IsVegan),
 
-                    LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
-                };
-                return product;
-            }
+                Energy100g = n.Energy100g,
+                EnergyKcal100g = n.EnergyKcal100g,
+                Fat100g = n.Fat100g,
+                SaturatedFat100g = n.SaturatedFat100g,
+                Carbohydrates100g = n.Carbohydrates100g,
+                Sugars100g = n.Sugars100g,
+                Fiber100g = n.Fiber100g,
+                Proteins100g = n.Proteins100g,
+                Salt100g = n.Salt100g,
+                Sodium100g = n.Sodium100g,
+                EnergyKcalServing = n.EnergyKcalServing,
 
-            return null;
+                LastUpdated = ConvertUnixToDateTime(src.LastUpdatedT)
+            };
         }
 
 
@@ -156,7 +165,6 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 tags.AddIngredient(code, t);
         }
 
-        
 
         private async Task FlushAsync(List<Product> products, TagBuffers tags, CancellationToken ct)
         {
@@ -172,7 +180,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             await _bulkRepository.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
             await _bulkRepository.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
         }
-        
+
 
         private static async IAsyncEnumerable<string> ReadLinesAsync(string filePath, [EnumeratorCancellation] CancellationToken ct = default)
         {
@@ -194,17 +202,27 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 yield return line;
             }
         }
-        
-        
+
+
         private static string? Sanitizer(string? s)
         {
             if (string.IsNullOrEmpty(s)) return s;
-            var cleaned = new string(s.Where(ch => ch != '\0' && ch >= ' ' || ch is '\t' or '\n' or '\r').ToArray());
-            cleaned = cleaned.Trim();
-            return cleaned.Length == 0 ? null : cleaned;
+
+            var sb = new StringBuilder(s.Length);
+            foreach (var ch in s)
+                if (ch != '\0' && (ch >= ' ' || ch is '\t' or '\n' or '\r'))
+                    sb.Append(ch);
+
+            var start = 0;
+            var end = sb.Length - 1;
+            while (start <= end && sb[start] is ' ' or '\t' or '\n' or '\r') start++;
+            while (end >= start && sb[end] is ' ' or '\t' or '\n' or '\r') end--;
+
+            if (start > end) return null;
+            return sb.ToString(start, end - start + 1);
         }
 
-        
+
         private static DateTime? ConvertUnixToDateTime(long? unix)
         {
             if (unix is null) return null;
@@ -219,7 +237,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 return null;
             }
         }
-        
+
         private sealed class TagBuffers
         {
             public HashSet<string> IngredientNames { get; }
@@ -245,29 +263,10 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 AllergenLinks   = new List<(string, string)>(batchCapacity * 1);
             }
 
-            public void AddIngredient(string code, string tag)
-            {
-                IngredientNames.Add(tag);
-                IngredientLinks.Add((code, tag));
-            }
-
-            public void AddCountry(string code, string tag)
-            {
-                CountryNames.Add(tag);
-                CountryLinks.Add((code, tag));
-            }
-
-            public void AddCategory(string code, string tag)
-            {
-                CategoryNames.Add(tag);
-                CategoryLinks.Add((code, tag));
-            }
-
-            public void AddAllergen(string code, string tag)
-            {
-                AllergenNames.Add(tag);
-                AllergenLinks.Add((code, tag));
-            }
+            public void AddIngredient(string code, string tag) { IngredientNames.Add(tag); IngredientLinks.Add((code, tag)); }
+            public void AddCountry(string code, string tag)    { CountryNames.Add(tag);    CountryLinks.Add((code, tag)); }
+            public void AddCategory(string code, string tag)   { CategoryNames.Add(tag);   CategoryLinks.Add((code, tag)); }
+            public void AddAllergen(string code, string tag)   { AllergenNames.Add(tag);   AllergenLinks.Add((code, tag)); }
 
             public void Clear()
             {
