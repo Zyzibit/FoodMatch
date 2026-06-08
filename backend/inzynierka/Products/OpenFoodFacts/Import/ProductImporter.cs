@@ -45,6 +45,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                         o.BatchSize = ProductBatchSize;
                         o.ErrorPolicy = ErrorPolicy.Skip;
                     })
+                    .Where(p => p.OpenFoodFactsNutriments != null)
                     .ReportProgress(progress)
                     .WriteBatchesTo(sink, ct);
 

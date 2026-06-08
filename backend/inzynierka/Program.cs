@@ -163,43 +163,43 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwaggerUI();
 }
 
-// using (var scope = app.Services.CreateScope())
-// {
-//     var sp = scope.ServiceProvider;
-//     var db = sp.GetRequiredService<AppDbContext>();
-//     var roleInit = sp.GetRequiredService<IRoleInitializationService>();
-//
-//     if (app.Environment.IsDevelopment())
-//     {
-//         // lokalnie - apply migrations i seed synchronnie
-//         await db.Database.MigrateAsync();
-//         await roleInit.InitializeRolesAsync();
-//         await DbSeeder.SeedData(app);
-//     }
-//     else
-//     {
-//         // produkcja - uruchom migracje/seed w tle, aby nie blokować startu serwera
-//         _ = Task.Run(async () =>
-//         {
-//             try
-//             {
-//                 using var bgScope = app.Services.CreateScope();
-//                 var bgSp = bgScope.ServiceProvider;
-//                 var bgDb = bgSp.GetRequiredService<AppDbContext>();
-//                 var bgRoleInit = bgSp.GetRequiredService<IRoleInitializationService>();
-//
-//                 await bgDb.Database.MigrateAsync();
-//                 await bgRoleInit.InitializeRolesAsync();
-//                 await DbSeeder.SeedData(app);
-//             }
-//             catch (Exception ex)
-//             {
-//                 var logger = app.Services.GetService<ILogger<Program>>();
-//                 logger?.LogError(ex, "Błąd podczas migracji/seed w tle");
-//             }
-//         });
-//     }
-// }
+using (var scope = app.Services.CreateScope())
+{
+    var sp = scope.ServiceProvider;
+    var db = sp.GetRequiredService<AppDbContext>();
+    var roleInit = sp.GetRequiredService<IRoleInitializationService>();
+
+    if (app.Environment.IsDevelopment())
+    {
+        // lokalnie - apply migrations i seed synchronnie
+        await db.Database.MigrateAsync();
+        await roleInit.InitializeRolesAsync();
+        await DbSeeder.SeedData(app);
+    }
+    else
+    {
+        // produkcja - uruchom migracje/seed w tle, aby nie blokować startu serwera
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var bgScope = app.Services.CreateScope();
+                var bgSp = bgScope.ServiceProvider;
+                var bgDb = bgSp.GetRequiredService<AppDbContext>();
+                var bgRoleInit = bgSp.GetRequiredService<IRoleInitializationService>();
+
+                await bgDb.Database.MigrateAsync();
+                await bgRoleInit.InitializeRolesAsync();
+                await DbSeeder.SeedData(app);
+            }
+            catch (Exception ex)
+            {
+                var logger = app.Services.GetService<ILogger<Program>>();
+                logger?.LogError(ex, "Błąd podczas migracji/seed w tle");
+            }
+        });
+    }
+}
 
 if (!app.Environment.IsDevelopment())
 {
