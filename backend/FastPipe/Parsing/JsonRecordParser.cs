@@ -21,12 +21,8 @@ namespace FastPipe.Parsing;
 /// the supplied <see cref="JsonTypeInfo{T}"/> was generated with. The same input may therefore
 /// parse differently depending on which constructor was used — configure them to match if you
 /// need identical behaviour.</para>
-///
-/// <para><b>Intended for reference types.</b> A JSON <c>null</c> line is reported as a drop
-/// (<c>TryParse</c> returns <c>false</c>). For a value-type <typeparamref name="T"/> there is no
-/// null to detect, so this drop signal does not apply.</para>
 /// </summary>
-public sealed class JsonRecordParser<T> : IRecordParser<T>
+public sealed class JsonRecordParser<T> : IRecordParser<T> where T : class
 {
     private readonly JsonSerializerOptions? _options;
     private readonly JsonTypeInfo<T>? _typeInfo;
@@ -44,26 +40,32 @@ public sealed class JsonRecordParser<T> : IRecordParser<T>
         ReadCommentHandling = JsonCommentHandling.Skip
     };
 
-    /// <summary>
-    /// Parses one UTF-8 line. Returns <c>true</c> with the value on success; <c>false</c> when the
-    /// line should be dropped (empty span, or a JSON <c>null</c> literal). Malformed JSON throws a
-    /// <see cref="JsonException"/> — the caller (pipeline) maps that to its error policy.
-    /// </summary>
-    public bool TryParse(ReadOnlySpan<byte> utf8Line, [MaybeNullWhen(false)] out T value)
+    /// <inheritdoc/>
+    public T? Parse(ReadOnlySpan<byte> utf8Line)
     {
         // Empty input is a drop, not a parse error — Deserialize would otherwise throw
-        // ("no JSON tokens"). Honours the IRecordParser contract for empty/incomplete lines.
-        // O(1): the pipeline already filters blank lines, so we deliberately don't scan for
-        // all-whitespace here; such input is treated as malformed and throws.
+        // ("no JSON tokens"). The pipeline already filters blank lines, so we deliberately
+        // don't scan for all-whitespace here; such input is treated as malformed and throws.
         if (utf8Line.IsEmpty)
-        {
-            value = default;
-            return false;
-        }
+            return null;
 
-        value = _typeInfo is not null
+        return _typeInfo is not null
             ? JsonSerializer.Deserialize(utf8Line, _typeInfo)
             : JsonSerializer.Deserialize<T>(utf8Line, _options);
-        return value is not null;
+    }
+
+    /// <inheritdoc/>
+    public bool TryParse(ReadOnlySpan<byte> utf8Line, [MaybeNullWhen(false)] out T value)
+    {
+        try
+        {
+            value = Parse(utf8Line)!;
+            return value is not null;
+        }
+        catch (JsonException)
+        {
+            value = null;
+            return false;
+        }
     }
 }

@@ -97,19 +97,21 @@ public sealed class PipelineSource
     }
 
     /// <summary>Parse each line as JSON into <typeparamref name="T"/> (from UTF-8 bytes, reflection-based).</summary>
-    public DataPipelineBuilder<T> DeserializeJson<T>(JsonSerializerOptions? jsonOptions = null) =>
+    public DataPipelineBuilder<T> DeserializeJson<T>(JsonSerializerOptions? jsonOptions = null) where T : class =>
         Parse(new JsonRecordParser<T>(jsonOptions));
 
     /// <summary>Parse as JSON using source-gen metadata (<c>JsonSerializerContext</c>) — no reflection.</summary>
-    public DataPipelineBuilder<T> DeserializeJson<T>(JsonTypeInfo<T> typeInfo) =>
+    public DataPipelineBuilder<T> DeserializeJson<T>(JsonTypeInfo<T> typeInfo) where T : class =>
         Parse(new JsonRecordParser<T>(typeInfo));
 
     /// <summary>Use a custom, hand-written parser (e.g. a <c>Utf8JsonReader</c> over fields).</summary>
-    public DataPipelineBuilder<T> Parse<T>(IRecordParser<T> parser)
+    public DataPipelineBuilder<T> Parse<T>(IRecordParser<T> parser) where T : class
     {
+        // Use Parse (not TryParse): malformed lines must throw so the worker can route them
+        // through he configured ErrorPolicy instead of being silently dropped.
         RecordProjection<T> projection = line =>
             new ValueTask<ProjectionOutcome<T>>(
-                parser.TryParse(line.Span, out var value)
+                parser.Parse(line.Span) is { } value
                     ? ProjectionOutcome<T>.Keep(value)
                     : ProjectionOutcome<T>.Drop);
 
