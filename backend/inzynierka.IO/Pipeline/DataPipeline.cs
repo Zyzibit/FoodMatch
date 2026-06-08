@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using inzynierka.IO.Parsing;
 
 namespace inzynierka.IO.Pipeline;
@@ -35,9 +36,13 @@ public sealed class FileSource
         return this;
     }
 
-    /// <summary>Parsuj każdą linię jako JSON do <typeparamref name="T"/> (z bajtów UTF-8).</summary>
+    /// <summary>Parsuj każdą linię jako JSON do <typeparamref name="T"/> (z bajtów UTF-8, reflection-based).</summary>
     public DataPipelineBuilder<T> DeserializeJson<T>(JsonSerializerOptions? jsonOptions = null) =>
         Parse(new JsonRecordParser<T>(jsonOptions));
+
+    /// <summary>Parsuj jako JSON używając metadanych source-gen (<c>JsonSerializerContext</c>) — bez refleksji.</summary>
+    public DataPipelineBuilder<T> DeserializeJson<T>(JsonTypeInfo<T> typeInfo) =>
+        Parse(new JsonRecordParser<T>(typeInfo));
 
     /// <summary>Użyj własnego, ręcznie pisanego parsera (np. <c>Utf8JsonReader</c> po polach).</summary>
     public DataPipelineBuilder<T> Parse<T>(IRecordParser<T> parser)

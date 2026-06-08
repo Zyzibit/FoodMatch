@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace inzynierka.IO.Parsing;
 
@@ -9,15 +10,20 @@ namespace inzynierka.IO.Parsing;
 /// W porównaniu z klasycznym <c>Deserialize&lt;T&gt;(string)</c> omija:
 /// (1) alokację <see cref="string"/> na każdą linię oraz
 /// (2) transkodowanie UTF-16 → UTF-8 wykonywane wewnętrznie przy wariancie stringowym.
+///
+/// Dla maksymalnej wydajności przekaż <see cref="JsonTypeInfo{T}"/> z kontekstu source-gen
+/// (<c>JsonSerializerContext</c>) — wtedy parsowanie nie używa refleksji w runtime.
 /// </summary>
 public sealed class JsonRecordParser<T> : IRecordParser<T>
 {
-    private readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions? _options;
+    private readonly JsonTypeInfo<T>? _typeInfo;
 
-    public JsonRecordParser(JsonSerializerOptions? options = null)
-    {
-        _options = options ?? DefaultOptions;
-    }
+    /// <summary>Tryb reflection-based (wygodny, wolniejszy).</summary>
+    public JsonRecordParser(JsonSerializerOptions? options = null) => _options = options ?? DefaultOptions;
+
+    /// <summary>Tryb source-gen (bez refleksji) — przekaż metadane z <c>JsonSerializerContext</c>.</summary>
+    public JsonRecordParser(JsonTypeInfo<T> typeInfo) => _typeInfo = typeInfo;
 
     public static JsonSerializerOptions DefaultOptions { get; } = new()
     {
@@ -28,7 +34,9 @@ public sealed class JsonRecordParser<T> : IRecordParser<T>
 
     public bool TryParse(ReadOnlySpan<byte> utf8Line, out T value)
     {
-        value = JsonSerializer.Deserialize<T>(utf8Line, _options)!;
+        value = _typeInfo is not null
+            ? JsonSerializer.Deserialize(utf8Line, _typeInfo)!
+            : JsonSerializer.Deserialize<T>(utf8Line, _options)!;
         return value is not null;
     }
 }
