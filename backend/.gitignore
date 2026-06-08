@@ -224,7 +224,7 @@ csx/
 ecf/
 rcf/
 
-.openfoodfacts-products.jsonl
+inzynierka/openfoodfacts-products.jsonl
 
 # Windows Store app package directories and files
 AppPackages/
