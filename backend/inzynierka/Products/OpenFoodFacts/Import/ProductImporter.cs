@@ -30,12 +30,12 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 throw new FileNotFoundException($"Import file not found: {filePath}", filePath);
 
             _bulkRepository.PrepareForBulkImport();
+            var sink = new ProductBulkSink(_bulkRepository);
             try
             {
-                var sink = new ProductBulkSink(_bulkRepository);
-
                 var progress = new Progress<PipelineProgress>(p =>
-                    _logger.LogInformation("Imported so far: {Items} (read lines: {Read})", p.ItemsWritten, p.LinesRead));
+                    _logger.LogInformation("Pipeline status: sent to sink {Items} (read lines: {Read}). Real DB inserted so far: {DbImported}", 
+                        p.ItemsWritten, p.LinesRead, sink.Imported));
 
                 var report = await DataPipeline
                     .FromJsonlFile(filePath)
@@ -51,6 +51,13 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 _logger.LogInformation(
                     "Import finished. Imported: {Ok}, NoNutrition: {Nutrition}, NoCode: {Code}, ParseFailed: {Parse}, TotalLines: {Lines}, Throughput: {Tput:N0} lines/s",
                     sink.Imported, sink.SkippedNoNutrition, sink.SkippedNoCode, report.Failed, report.LinesRead, report.LinesPerSecond);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning(
+                    "Import cancelled by user (or client). DB imported until cancellation: {Ok}, Skipped NoNutrition: {Nutrition}, Skipped NoCode: {Code}",
+                    sink.Imported, sink.SkippedNoNutrition, sink.SkippedNoCode);
+                throw; // rethrow is fine, or just swallow if we want normal execution flow
             }
             finally
             {

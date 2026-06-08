@@ -1,12 +1,6 @@
 using System.Buffers;
 
 namespace inzynierka.IO.Internal;
-
-/// <summary>
-/// Współdzielona logika podziału ciągłego strumienia bajtów na linie (framing po '\n')
-/// na poziomie <see cref="ReadOnlySequence{T}"/> — bez alokowania buforów pośrednich.
-/// Używana zarówno przez <see cref="PipelineFileReader"/>, jak i przez silnik potoku.
-/// </summary>
 internal static class ByteLineFraming
 {
     /// <summary>
@@ -25,11 +19,6 @@ internal static class ByteLineFraming
         line = default;
         return false;
     }
-
-    /// <summary>
-    /// Czy linia jest pusta lub złożona wyłącznie z białych znaków ASCII (spacja/tab/CR).
-    /// Odpowiednik <c>string.IsNullOrWhiteSpace</c> na poziomie bajtów.
-    /// </summary>
     public static bool IsBlank(in ReadOnlySequence<byte> line)
     {
         foreach (var segment in line)
