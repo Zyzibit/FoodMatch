@@ -1,4 +1,4 @@
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Co robić, gdy parsowanie pojedynczego rekordu rzuci wyjątek.

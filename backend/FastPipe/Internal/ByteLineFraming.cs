@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace inzynierka.IO.Internal;
+namespace FastPipe.Internal;
 internal static class ByteLineFraming
 {
     /// <summary>

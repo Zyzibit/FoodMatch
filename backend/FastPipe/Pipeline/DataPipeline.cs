@@ -1,10 +1,10 @@
 using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using inzynierka.IO.Internal;
-using inzynierka.IO.Parsing;
+using FastPipe.Internal;
+using FastPipe.Parsing;
 
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Punkt wejścia fluentowego API biblioteki.

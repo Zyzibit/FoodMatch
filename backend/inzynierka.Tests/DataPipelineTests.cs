@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using inzynierka.IO.Pipeline;
+using FastPipe.Pipeline;
 
 namespace inzynierka.Tests.DataPipelineTests
 {

@@ -1,4 +1,4 @@
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Podsumowanie przebiegu potoku — twarde liczby do logów, metryk i benchmarków.

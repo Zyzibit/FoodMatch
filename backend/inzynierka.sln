@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "inzynierka.IntegrationTests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "inzynierka.Tests", "inzynierka.Tests\inzynierka.Tests.csproj", "{808A5360-5F30-4E4D-9F39-BA82AEC73A5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "inzynierka.IO", "inzynierka.IO\inzynierka.IO.csproj", "{FD2CCB50-A566-42D5-9C4F-08E0A47A2CFC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastPipe", "FastPipe\FastPipe.csproj", "{FD2CCB50-A566-42D5-9C4F-08E0A47A2CFC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "inzynierka.Benchmarks", "inzynierka.Benchmarks\inzynierka.Benchmarks.csproj", "{A6DD8578-8794-4B92-B2BE-D0282D4871C4}"
 EndProject

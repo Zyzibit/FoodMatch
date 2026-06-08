@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
-using inzynierka.IO.Parsing;
+using FastPipe.Parsing;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 
 namespace inzynierka.Benchmarks;

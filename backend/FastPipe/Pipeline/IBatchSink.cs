@@ -1,4 +1,4 @@
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Odbiornik paczek rekordów — miejsce docelowe potoku (np. masowy zapis do bazy

@@ -4,6 +4,20 @@
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>FastPipe</RootNamespace>
+        <AssemblyName>FastPipe</AssemblyName>
+    </PropertyGroup>
+
+    <!-- Metadane pakietu — biblioteka jest samodzielna (zero zależności od projektu)
+         i gotowa do wydzielenia jako NuGet / osobne repo. -->
+    <PropertyGroup>
+        <PackageId>FastPipe</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>FoodMatch</Authors>
+        <Description>Wysokowydajny, strumieniowy potok ETL dla plików line-delimited (JSONL): PipeReader → równoległe parsowanie z backpressure → batchujący sink. Źródła: plik, dowolny Stream (gzip/sieć), PipeReader, wiele plików z checkpointem.</Description>
+        <PackageTags>etl;jsonl;pipeline;streaming;bulk-import;pipereader;ingestion</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

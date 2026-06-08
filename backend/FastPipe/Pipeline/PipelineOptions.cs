@@ -1,4 +1,4 @@
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Strojenie silnika potoku. Sensowne domyślne wartości — w prostym użyciu

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace inzynierka.IO.Parsing;
+namespace FastPipe.Parsing;
 
 /// <summary>
 /// Parser JSONL oparty o <see cref="JsonSerializer"/> działający wprost na
@@ -19,10 +19,8 @@ public sealed class JsonRecordParser<T> : IRecordParser<T>
     private readonly JsonSerializerOptions? _options;
     private readonly JsonTypeInfo<T>? _typeInfo;
 
-    /// <summary>Tryb reflection-based (wygodny, wolniejszy).</summary>
     public JsonRecordParser(JsonSerializerOptions? options = null) => _options = options ?? DefaultOptions;
 
-    /// <summary>Tryb source-gen (bez refleksji) — przekaż metadane z <c>JsonSerializerContext</c>.</summary>
     public JsonRecordParser(JsonTypeInfo<T> typeInfo) => _typeInfo = typeInfo;
 
     public static JsonSerializerOptions DefaultOptions { get; } = new()

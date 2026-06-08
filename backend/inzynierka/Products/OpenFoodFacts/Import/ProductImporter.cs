@@ -1,4 +1,4 @@
-using inzynierka.IO.Pipeline;
+using FastPipe.Pipeline;
 using inzynierka.Products.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -6,7 +6,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 {
     /// <summary>
     /// Import dumpu JSONL OpenFoodFacts. Czytanie, parsowanie, równoległość i backpressure
-    /// realizuje reużywalny potok z biblioteki <c>inzynierka.IO</c>; tutaj zostaje jedynie
+    /// realizuje reużywalny potok z biblioteki <c>FastPipe</c>; tutaj zostaje jedynie
     /// kompozycja potoku, lifecycle bulk-importu i logowanie.
     /// </summary>
     public sealed class ProductImporter : IProductImporter

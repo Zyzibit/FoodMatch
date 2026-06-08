@@ -1,6 +1,6 @@
 using System.IO.Pipelines;
 
-namespace inzynierka.IO.Internal;
+namespace FastPipe.Internal;
 
 /// <summary>
 /// Źródło bajtów dla potoku. Abstrahuje od konkretnego nośnika (plik, dowolny

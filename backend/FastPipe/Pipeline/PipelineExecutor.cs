@@ -4,9 +4,9 @@ using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
-using inzynierka.IO.Internal;
+using FastPipe.Internal;
 
-namespace inzynierka.IO.Pipeline;
+namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Silnik potoku ETL. Trzy etapy spięte ograniczonymi kanałami (backpressure):

@@ -85,7 +85,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\inzynierka.IO\inzynierka.IO.csproj" />
+      <ProjectReference Include="..\FastPipe\FastPipe.csproj" />
     </ItemGroup>
     
 </Project>

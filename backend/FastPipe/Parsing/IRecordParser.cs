@@ -1,4 +1,4 @@
-namespace inzynierka.IO.Parsing;
+namespace FastPipe.Parsing;
 
 public interface IRecordParser<T>
 {
