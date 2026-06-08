@@ -85,4 +85,8 @@
       <Folder Include="UserPreferences\API\" />
     </ItemGroup>
     
+    <ItemGroup>
+      <ProjectReference Include="..\inzynierka.IO\inzynierka.IO.csproj" />
+    </ItemGroup>
+    
 </Project>
