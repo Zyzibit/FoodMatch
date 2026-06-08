@@ -7,6 +7,7 @@ namespace inzynierka.Tests.DataPipelineTests
     public class DataPipelineTests : IDisposable
     {
         private readonly List<string> _tempFiles = new();
+        private readonly List<string> _tempDirs = new();
 
         private sealed record Item(int Id, string Name);
 
@@ -174,11 +175,131 @@ namespace inzynierka.Tests.DataPipelineTests
                 await DataPipeline.FromJsonlFile(missing).DeserializeJson<Item>().WriteBatchesTo(write));
         }
 
+        [Fact]
+        public async Task Pipeline_SelectAsync_MapsType()
+        {
+            var path = WriteJsonl(Enumerable.Range(1, 10).Select(i => Json(i, $"n{i}")));
+            var (sink, write) = Collector<int>();
+
+            await DataPipeline
+                .FromJsonlFile(path)
+                .DeserializeJson<Item>()
+                .SelectAsync(async i => { await Task.Yield(); return i.Id * 10; })
+                .WriteBatchesTo(write);
+
+            Assert.Equal(Enumerable.Range(1, 10).Select(i => i * 10).ToHashSet(), sink.Items.ToHashSet());
+        }
+
+        [Fact]
+        public async Task Pipeline_WhereAsync_DropsNonMatching()
+        {
+            var path = WriteJsonl(Enumerable.Range(1, 10).Select(i => Json(i, $"n{i}")));
+            var (sink, write) = Collector<Item>();
+
+            var report = await DataPipeline
+                .FromJsonlFile(path)
+                .DeserializeJson<Item>()
+                .WhereAsync(async i => { await Task.Yield(); return i.Id % 2 == 0; })
+                .WriteBatchesTo(write);
+
+            Assert.Equal(5, report.ItemsWritten);
+            Assert.Equal(5, report.Dropped);
+            Assert.All(sink.Items, i => Assert.Equal(0, i.Id % 2));
+        }
+
+        [Fact]
+        public async Task Pipeline_FromStream_ReadsAllRecords()
+        {
+            var path = WriteJsonl(Enumerable.Range(1, 200).Select(i => Json(i, $"n{i}")));
+            var (sink, write) = Collector<Item>();
+
+            await using var fs = File.OpenRead(path);
+            var report = await DataPipeline.FromStream(fs).DeserializeJson<Item>().WriteBatchesTo(write);
+
+            Assert.Equal(200, report.ItemsWritten);
+            Assert.Equal(200, sink.Items.Count);
+        }
+
+        [Fact]
+        public async Task Pipeline_FromGZipStream_ReadsAllRecords()
+        {
+            var raw = string.Join('\n', Enumerable.Range(1, 150).Select(i => Json(i, $"n{i}")));
+            var gzPath = Path.GetTempFileName();
+            _tempFiles.Add(gzPath);
+            await using (var file = File.Create(gzPath))
+            await using (var gz = new System.IO.Compression.GZipStream(file, System.IO.Compression.CompressionLevel.Fastest))
+                await gz.WriteAsync(System.Text.Encoding.UTF8.GetBytes(raw));
+
+            var (sink, write) = Collector<Item>();
+            await using var read = File.OpenRead(gzPath);
+            await using var decompress = new System.IO.Compression.GZipStream(read, System.IO.Compression.CompressionMode.Decompress);
+
+            var report = await DataPipeline.FromStream(decompress).DeserializeJson<Item>().WriteBatchesTo(write);
+
+            Assert.Equal(150, report.ItemsWritten);
+            Assert.Equal(Enumerable.Range(1, 150).ToHashSet(), sink.Items.Select(i => i.Id).ToHashSet());
+        }
+
+        [Fact]
+        public async Task Pipeline_FromFiles_ProcessesAllFiles()
+        {
+            var dir = NewTempDir();
+            WriteJsonlTo(Path.Combine(dir, "a.jsonl"), Enumerable.Range(1, 50).Select(i => Json(i, $"a{i}")));
+            WriteJsonlTo(Path.Combine(dir, "b.jsonl"), Enumerable.Range(51, 50).Select(i => Json(i, $"b{i}")));
+
+            var (sink, write) = Collector<Item>();
+            var report = await DataPipeline.FromFiles(Path.Combine(dir, "*.jsonl")).DeserializeJson<Item>().WriteBatchesTo(write);
+
+            Assert.Equal(100, report.ItemsWritten);
+            Assert.Equal(Enumerable.Range(1, 100).ToHashSet(), sink.Items.Select(i => i.Id).ToHashSet());
+        }
+
+        [Fact]
+        public async Task Pipeline_Checkpoint_SkipsCompletedFilesOnRerun()
+        {
+            var dir = NewTempDir();
+            WriteJsonlTo(Path.Combine(dir, "a.jsonl"), Enumerable.Range(1, 10).Select(i => Json(i, $"a{i}")));
+            WriteJsonlTo(Path.Combine(dir, "b.jsonl"), Enumerable.Range(11, 10).Select(i => Json(i, $"b{i}")));
+            var checkpoint = Path.Combine(dir, "state.json");
+
+            // First run imports everything and records both files as done.
+            var (sink1, write1) = Collector<Item>();
+            var first = await DataPipeline.FromFiles(Path.Combine(dir, "*.jsonl"))
+                .WithCheckpoint(checkpoint)
+                .DeserializeJson<Item>()
+                .WriteBatchesTo(write1);
+            Assert.Equal(20, first.ItemsWritten);
+
+            // Second run with the same checkpoint skips both files — nothing re-imported.
+            var (sink2, write2) = Collector<Item>();
+            var second = await DataPipeline.FromFiles(Path.Combine(dir, "*.jsonl"))
+                .WithCheckpoint(checkpoint)
+                .DeserializeJson<Item>()
+                .WriteBatchesTo(write2);
+            Assert.Equal(0, second.ItemsWritten);
+            Assert.Empty(sink2.Items);
+        }
+
+        private string NewTempDir()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "fastpipe_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            _tempDirs.Add(dir);
+            return dir;
+        }
+
+        private static void WriteJsonlTo(string path, IEnumerable<string> lines) =>
+            File.WriteAllText(path, string.Join('\n', lines));
+
         public void Dispose()
         {
             foreach (var path in _tempFiles)
             {
                 try { File.Delete(path); } catch { /* best effort */ }
+            }
+            foreach (var dir in _tempDirs)
+            {
+                try { Directory.Delete(dir, recursive: true); } catch { /* best effort */ }
             }
         }
     }

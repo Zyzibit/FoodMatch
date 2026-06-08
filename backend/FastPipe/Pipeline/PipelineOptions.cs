@@ -1,36 +1,35 @@
 namespace FastPipe.Pipeline;
 
 /// <summary>
-/// Strojenie silnika potoku. Sensowne domyślne wartości — w prostym użyciu
-/// nie trzeba ustawiać niczego.
+/// Engine tuning. Sensible defaults — simple usage needs nothing set.
 /// </summary>
 public sealed class PipelineOptions
 {
-    /// <summary>Liczba równoległych workerów parsujących. Domyślnie = liczba rdzeni.</summary>
+    /// <summary>Number of parallel parsing workers. Defaults to the processor count.</summary>
     public int Parallelism { get; set; } = Environment.ProcessorCount;
 
-    /// <summary>Pojemność bufora między etapami (backpressure). Im więcej, tym większy bufor RAM.</summary>
+    /// <summary>Buffer capacity between stages (backpressure). Higher means a larger RAM buffer.</summary>
     public int ChannelCapacity { get; set; } = 10_000;
 
-    /// <summary>Rozmiar paczki przekazywanej do <see cref="IBatchSink{T}"/>.</summary>
+    /// <summary>Size of the batch handed to <see cref="IBatchSink{T}"/>.</summary>
     public int BatchSize { get; set; } = 500;
 
-    /// <summary>Rozmiar segmentu bufora czytania pliku (bajty).</summary>
+    /// <summary>Read buffer segment size for the source (bytes).</summary>
     public int ReadBufferSize { get; set; } = 1_048_576; // 1 MB
 
-    /// <summary>Reakcja na błąd parsowania rekordu.</summary>
+    /// <summary>Reaction to a record parse error.</summary>
     public ErrorPolicy ErrorPolicy { get; set; } = ErrorPolicy.Skip;
 
-    /// <summary>Pomijaj puste/białe linie bez liczenia ich jako błąd. Domyślnie tak.</summary>
+    /// <summary>Skip empty/whitespace lines without counting them as errors. Defaults to true.</summary>
     public bool SkipBlankLines { get; set; } = true;
 
-    /// <summary>Zdejmij UTF-8 BOM z pierwszej linii. Domyślnie tak.</summary>
+    /// <summary>Strip the UTF-8 BOM from the first line. Defaults to true.</summary>
     public bool StripByteOrderMark { get; set; } = true;
 
     /// <summary>
-    /// Usuwaj bajty NUL (0x00) z każdej linii przed parsowaniem. Domyślnie tak —
-    /// dumpy bywają zanieczyszczone NUL-ami, które wywracają parsery. Ustaw na
-    /// <c>false</c>, gdy potrzebujesz bajt-w-bajt wiernego wejścia.
+    /// Remove NUL bytes (0x00) from every line before parsing. Defaults to true — dumps are
+    /// sometimes polluted with NULs that break parsers. Set to <c>false</c> when you need a
+    /// byte-for-byte faithful input.
     /// </summary>
     public bool StripNullBytes { get; set; } = true;
 

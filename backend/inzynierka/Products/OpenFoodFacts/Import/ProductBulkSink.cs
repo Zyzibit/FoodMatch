@@ -7,11 +7,11 @@ using inzynierka.Products.Repositories;
 namespace inzynierka.Products.OpenFoodFacts.Import
 {
     /// <summary>
-    /// Odbiornik paczek dla potoku ETL: mapuje surowe rekordy OpenFoodFacts na encje
-    /// <see cref="Product"/>, zbiera linki tagów i oddaje całą paczkę do masowego zapisu
-    /// w jednej transakcji (<see cref="IProductBulkRepository.BulkImportBatchAsync"/>).
+    /// Batch sink for the ETL pipeline: maps raw OpenFoodFacts records to <see cref="Product"/>
+    /// entities, collects tag links and hands the whole batch to the bulk write in a single
+    /// transaction (<see cref="IProductBulkRepository.BulkImportBatchAsync"/>).
     ///
-    /// Silnik woła <see cref="WriteBatchAsync"/> sekwencyjnie, więc liczniki nie wymagają synchronizacji.
+    /// The engine calls <see cref="WriteBatchAsync"/> sequentially, so the counters need no synchronization.
     /// </summary>
     public sealed class ProductBulkSink : IBatchSink<OpenFoodFactsProduct>
     {
@@ -29,7 +29,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
             foreach (var src in batch)
             {
-                // Sanitizer już przycina białe znaki na brzegach — bez dodatkowego Trim().
+                // Sanitizer already trims edge whitespace — no extra Trim() needed.
                 var code = Sanitizer(src.Code);
                 if (string.IsNullOrWhiteSpace(code)) { SkippedNoCode++; continue; }
 
@@ -43,7 +43,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             if (payload.Products.Count == 0)
                 return;
 
-            // Licz faktycznie zapisane wiersze (po deduplikacji i ON CONFLICT), nie liczbę wysłanych.
+            // Count rows actually written (after dedup and ON CONFLICT), not the number sent.
             Imported += await _bulkRepository.BulkImportBatchAsync(payload, cancellationToken);
         }
 

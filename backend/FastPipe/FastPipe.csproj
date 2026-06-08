@@ -8,13 +8,13 @@
         <AssemblyName>FastPipe</AssemblyName>
     </PropertyGroup>
 
-    <!-- Metadane pakietu — biblioteka jest samodzielna (zero zależności od projektu)
-         i gotowa do wydzielenia jako NuGet / osobne repo. -->
+    <!-- Package metadata — the library is self-contained (zero project dependencies)
+         and ready to be extracted as a NuGet package / separate repo. -->
     <PropertyGroup>
         <PackageId>FastPipe</PackageId>
         <Version>0.1.0</Version>
         <Authors>FoodMatch</Authors>
-        <Description>Wysokowydajny, strumieniowy potok ETL dla plików line-delimited (JSONL): PipeReader → równoległe parsowanie z backpressure → batchujący sink. Źródła: plik, dowolny Stream (gzip/sieć), PipeReader, wiele plików z checkpointem.</Description>
+        <Description>High-performance streaming ETL pipeline for line-delimited files (JSONL): PipeReader -&gt; parallel parsing with backpressure -&gt; batching sink. Sources: a file, any Stream (gzip/network), a PipeReader, or many files with a checkpoint.</Description>
         <PackageTags>etl;jsonl;pipeline;streaming;bulk-import;pipereader;ingestion</PackageTags>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);CS1591</NoWarn>

@@ -6,10 +6,10 @@ public interface IProductBulkRepository
     void RestoreAfterBulkImport();
 
     /// <summary>
-    /// Importuje całą paczkę (produkty + linki tagów) w jednej transakcji:
-    /// binary COPY do tabel tymczasowych, upsert produktów (ON CONFLICT),
-    /// dosianie brakujących tagów i MERGE linków.
+    /// Imports a whole batch (products + tag links) in a single transaction:
+    /// binary COPY into temp tables, product upsert (ON CONFLICT),
+    /// seeding of missing tags and a MERGE of links.
     /// </summary>
-    /// <returns>Liczba faktycznie zapisanych wierszy produktów (wstawione + zaktualizowane).</returns>
+    /// <returns>Number of product rows actually written (inserted + updated).</returns>
     Task<int> BulkImportBatchAsync(ProductBatch batch, CancellationToken ct = default);
 }

@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
@@ -9,15 +8,15 @@ using FastPipe.Internal;
 namespace FastPipe.Pipeline;
 
 /// <summary>
-/// Silnik potoku ETL. Trzy etapy spięte ograniczonymi kanałami (backpressure):
+/// ETL pipeline engine. Three stages connected by bounded channels (backpressure):
 ///
-///   [producent]  PipeReader czyta plik → framing linii → kopia do bufora z ArrayPool
+///   [producer]   PipeReader reads the source → line framing → copy into a pooled buffer
 ///        │  (Channel&lt;LineSegment&gt;, bounded)
-///   [N workerów] równoległe parsowanie z bajtów → projekcja (parse+Where+Select)
+///   [N workers]  parallel parse from bytes → projection (parse + Where + Select)
 ///        │  (Channel&lt;TOut&gt;, bounded)
-///   [konsument]  batchowanie i zapis do IBatchSink (sekwencyjnie)
+///   [consumer]   batching and writing to IBatchSink (sequentially)
 ///
-/// Pojedynczy producent, wielu workerów, pojedynczy konsument batchujący.
+/// Single producer, many workers, single batching consumer.
 /// </summary>
 internal static class PipelineExecutor
 {
@@ -38,7 +37,7 @@ internal static class PipelineExecutor
             Interlocked.Read(ref Failed));
     }
 
-    // ---- Tryb PUSH: pełny przebieg do sinka, zwraca raport -------------------
+    // ---- PUSH mode: full run into the sink, returns a report ------------------
 
     public static async Task<IngestionReport> RunAsync<TOut>(
         PipelineDataSource source,
@@ -63,7 +62,7 @@ internal static class PipelineExecutor
 
         var (output, completion, producer) = StartCore(source, projection, options, counters, OnFatal, ct);
 
-        // Konsument batchujący — sekwencyjny zapis do sinka.
+        // Batching consumer — sequential writes to the sink.
         try
         {
             var batch = new List<TOut>(options.BatchSize);
@@ -81,15 +80,15 @@ internal static class PipelineExecutor
         }
         catch (OperationCanceledException) when (fatal is not null)
         {
-            // Błąd krytyczny anulował potok — prawdziwy wyjątek rzucimy niżej.
+            // A fatal error cancelled the pipeline — the real exception is rethrown below.
         }
         finally
         {
-            // Zatrzymaj producenta/workerów i poczekaj na nich, niezależnie od ścieżki
-            // wyjścia (sukces, anulowanie, wyjątek sinka) — bez wycieku zadań i uchwytów.
+            // Stop the producer/workers and await them regardless of the exit path
+            // (success, cancellation, sink exception) — no leaked tasks or handles.
             cts.Cancel();
-            try { await producer; } catch { /* zgłoszone przez fatal lub nieistotne przy sprzątaniu */ }
-            try { await completion; } catch { /* j.w. */ }
+            try { await producer; } catch { /* surfaced via fatal, or irrelevant during cleanup */ }
+            try { await completion; } catch { /* as above */ }
         }
 
         fatal?.Throw();
@@ -117,7 +116,7 @@ internal static class PipelineExecutor
         progress?.Report(counters.Snapshot());
     }
 
-    // ---- Tryb PULL: strumień wyjściowy jako IAsyncEnumerable -----------------
+    // ---- PULL mode: output stream as IAsyncEnumerable ------------------------
 
     public static async IAsyncEnumerable<TOut> StreamAsync<TOut>(
         PipelineDataSource source,
@@ -149,11 +148,11 @@ internal static class PipelineExecutor
         }
         finally
         {
-            // Także gdy konsument przerwie iterację (break/wyjątek): anuluj i domknij
-            // producenta/workerów, by nie zawisły na zapisie do kanału ani nie trzymały pliku.
+            // Also when the consumer breaks out early (break/exception): cancel and drain
+            // the producer/workers so they don't hang writing to the channel or hold the file.
             cts.Cancel();
-            try { await producer; } catch { /* nieistotne przy sprzątaniu */ }
-            try { await completion; } catch { /* j.w. */ }
+            try { await producer; } catch { /* irrelevant during cleanup */ }
+            try { await completion; } catch { /* as above */ }
         }
 
         fatal?.Throw();
@@ -203,13 +202,14 @@ internal static class PipelineExecutor
             workers[i] = Task.Run(() => RunWorkerAsync(
                 lineChannel.Reader, outputChannel.Writer, projection, options.ErrorPolicy, counters, onFatal, ct), ct);
 
+        // No token: this task must always run to completion to close the output channel.
         var completion = Task.Run(async () =>
         {
             Exception? error = null;
             try { await Task.WhenAll(workers); }
             catch (Exception ex) { error = ex; }
             finally { outputChannel.Writer.Complete(error is OperationCanceledException ? null : error); }
-        });
+        }, CancellationToken.None);
 
         return (outputChannel.Reader, completion, producer);
     }
@@ -272,7 +272,7 @@ internal static class PipelineExecutor
     }
 
     /// <summary>
-    /// Kopiuje linię do bufora z puli, opcjonalnie zdejmując BOM (pierwsza linia) i bajty NUL.
+    /// Copies the line into a pooled buffer, optionally stripping the BOM (first line) and NUL bytes.
     /// </summary>
     private static LineSegment CopyLine(in ReadOnlySequence<byte> line, ref bool firstLine, bool stripBom, bool stripNul)
     {
@@ -288,11 +288,11 @@ internal static class PipelineExecutor
                 start = 3;
         }
 
-        // Nic do zdjęcia — oddaj linię bez kompaktowania.
+        // Nothing to strip — hand the line over without compaction.
         if (start == 0 && !stripNul)
             return new LineSegment(rented, len);
 
-        // Kompaktowanie: zdejmij BOM (start>0) i — gdy włączone — usuń bajty NUL.
+        // Compaction: drop the BOM (start>0) and — when enabled — remove NUL bytes.
         var w = 0;
         for (var i = start; i < len; i++)
         {
@@ -310,13 +310,15 @@ internal static class PipelineExecutor
     {
         await foreach (var segment in reader.ReadAllAsync(ct))
         {
-            TOut value;
-            bool ok;
+            ProjectionOutcome<TOut> outcome;
             try
             {
                 try
                 {
-                    ok = projection(new ReadOnlyMemory<byte>(segment.Buffer, 0, segment.Length), out value);
+                    // The projection parses synchronously and may then run an async transform.
+                    // The pooled buffer is only touched during parsing; returning it after the
+                    // projection completes is safe (the async map operates on the parsed value).
+                    outcome = await projection(new ReadOnlyMemory<byte>(segment.Buffer, 0, segment.Length));
                 }
                 finally
                 {
@@ -334,8 +336,8 @@ internal static class PipelineExecutor
                 continue;
             }
 
-            if (ok)
-                await output.WriteAsync(value!, ct);
+            if (outcome.Produced)
+                await output.WriteAsync(outcome.Value, ct);
             else
                 Interlocked.Increment(ref counters.Dropped);
         }

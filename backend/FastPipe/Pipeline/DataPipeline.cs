@@ -1,4 +1,5 @@
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FastPipe.Internal;
@@ -7,12 +8,12 @@ using FastPipe.Parsing;
 namespace FastPipe.Pipeline;
 
 /// <summary>
-/// Punkt wejścia fluentowego API biblioteki.
+/// Entry point of the fluent API.
 ///
 /// <code>
 /// var report = await DataPipeline
 ///     .FromJsonlFile(path)
-///     .DeserializeJson&lt;OpenFoodFactsProduct&gt;()
+///     .DeserializeJson&lt;Product&gt;()
 ///     .Where(p =&gt; p.Code is not null)
 ///     .WithParallelism(Environment.ProcessorCount)
 ///     .WithBatchSize(500)
@@ -20,31 +21,67 @@ namespace FastPipe.Pipeline;
 ///     .WriteBatchesTo(sink, ct);
 /// </code>
 ///
-/// Źródłem może być plik, dowolny <see cref="Stream"/> (także owinięty w
-/// <c>GZipStream</c>/strumień sieciowy) lub gotowy <see cref="PipeReader"/>.
+/// The source can be a file, any <see cref="Stream"/> (including one wrapped in
+/// <c>GZipStream</c>/a network stream), a ready <see cref="PipeReader"/>, or many files with a
+/// per-file checkpoint.
 /// </summary>
 public static class DataPipeline
 {
-    /// <summary>Czytaj plik JSONL/line-delimited z systemu plików.</summary>
-    public static PipelineSource FromJsonlFile(string filePath) => new(new FilePipelineSource(filePath));
+    /// <summary>Read a single JSONL/line-delimited file from the file system.</summary>
+    public static PipelineSource FromJsonlFile(string filePath) =>
+        new([new SourceEntry(Path.GetFullPath(filePath), new FilePipelineSource(filePath))]);
 
     /// <summary>
-    /// Czytaj z dowolnego strumienia. Dla skompresowanych danych owiń źródło, np.
+    /// Read from any stream. For compressed data wrap the source, e.g.
     /// <c>FromStream(new GZipStream(File.OpenRead(path), CompressionMode.Decompress))</c>.
     /// </summary>
     public static PipelineSource FromStream(Stream stream, bool leaveOpen = false) =>
-        new(new StreamPipelineSource(stream, leaveOpen));
+        new([new SourceEntry(null, new StreamPipelineSource(stream, leaveOpen))]);
 
-    /// <summary>Czytaj z gotowego <see cref="PipeReader"/> (właścicielem pozostaje wołający).</summary>
-    public static PipelineSource FromPipeReader(PipeReader reader) => new(new PipeReaderPipelineSource(reader));
+    /// <summary>Read from a ready <see cref="PipeReader"/> (the caller stays the owner).</summary>
+    public static PipelineSource FromPipeReader(PipeReader reader) =>
+        new([new SourceEntry(null, new PipeReaderPipelineSource(reader))]);
+
+    /// <summary>
+    /// Read many files matching a glob (e.g. <c>"dump/*.jsonl"</c>) or all files in a directory.
+    /// Files are processed sequentially in ordinal path order. Combine with
+    /// <see cref="DataPipelineBuilder{T}.WithCheckpoint"/> to skip already-imported files on a re-run.
+    /// </summary>
+    public static PipelineSource FromFiles(string pathOrGlob) => FromFiles(ExpandFiles(pathOrGlob));
+
+    /// <summary>Read a fixed set of files, processed sequentially in ordinal path order.</summary>
+    public static PipelineSource FromFiles(IEnumerable<string> files)
+    {
+        var entries = files
+            .OrderBy(Path.GetFullPath, StringComparer.Ordinal)
+            .Select(f => new SourceEntry(Path.GetFullPath(f), (PipelineDataSource)new FilePipelineSource(f)))
+            .ToList();
+
+        if (entries.Count == 0)
+            throw new ArgumentException("No files matched.", nameof(files));
+
+        return new PipelineSource(entries);
+    }
+
+    private static IEnumerable<string> ExpandFiles(string pathOrGlob)
+    {
+        if (Directory.Exists(pathOrGlob))
+            return Directory.EnumerateFiles(pathOrGlob);
+
+        var dir = Path.GetDirectoryName(pathOrGlob);
+        var pattern = Path.GetFileName(pathOrGlob);
+        return Directory.EnumerateFiles(string.IsNullOrEmpty(dir) ? "." : dir, pattern);
+    }
 }
 
+/// <summary>Configured source(s) before a parser is chosen.</summary>
 public sealed class PipelineSource
 {
-    private readonly PipelineDataSource _source;
+    private readonly IReadOnlyList<SourceEntry> _sources;
     private readonly PipelineOptions _options = new();
+    private string? _checkpointPath;
 
-    internal PipelineSource(PipelineDataSource source) => _source = source;
+    internal PipelineSource(IReadOnlyList<SourceEntry> sources) => _sources = sources;
 
     public PipelineSource Configure(Action<PipelineOptions> configure)
     {
@@ -52,37 +89,52 @@ public sealed class PipelineSource
         return this;
     }
 
-    /// <summary>Parsuj każdą linię jako JSON do <typeparamref name="T"/> (z bajtów UTF-8, reflection-based).</summary>
+    /// <summary>Persist per-file progress to <paramref name="checkpointPath"/> and skip done files on re-run.</summary>
+    public PipelineSource WithCheckpoint(string checkpointPath)
+    {
+        _checkpointPath = checkpointPath;
+        return this;
+    }
+
+    /// <summary>Parse each line as JSON into <typeparamref name="T"/> (from UTF-8 bytes, reflection-based).</summary>
     public DataPipelineBuilder<T> DeserializeJson<T>(JsonSerializerOptions? jsonOptions = null) =>
         Parse(new JsonRecordParser<T>(jsonOptions));
 
-    /// <summary>Parsuj jako JSON używając metadanych source-gen (<c>JsonSerializerContext</c>) — bez refleksji.</summary>
+    /// <summary>Parse as JSON using source-gen metadata (<c>JsonSerializerContext</c>) — no reflection.</summary>
     public DataPipelineBuilder<T> DeserializeJson<T>(JsonTypeInfo<T> typeInfo) =>
         Parse(new JsonRecordParser<T>(typeInfo));
 
-    /// <summary>Użyj własnego, ręcznie pisanego parsera (np. <c>Utf8JsonReader</c> po polach).</summary>
+    /// <summary>Use a custom, hand-written parser (e.g. a <c>Utf8JsonReader</c> over fields).</summary>
     public DataPipelineBuilder<T> Parse<T>(IRecordParser<T> parser)
     {
-        RecordProjection<T> projection = (ReadOnlyMemory<byte> line, out T value) => parser.TryParse(line.Span, out value);
-        return new DataPipelineBuilder<T>(_source, _options, projection, progress: null);
+        RecordProjection<T> projection = line =>
+            new ValueTask<ProjectionOutcome<T>>(
+                parser.TryParse(line.Span, out var value)
+                    ? ProjectionOutcome<T>.Keep(value)
+                    : ProjectionOutcome<T>.Drop);
+
+        return new DataPipelineBuilder<T>(_sources, _options, projection, progress: null, _checkpointPath);
     }
 }
 
-/// <summary>Konfigurowalny, niemutowalny w łańcuchu builder potoku dla rekordu typu <typeparamref name="T"/>.</summary>
+/// <summary>A pipeline builder for records of type <typeparamref name="T"/> (immutable along the chain).</summary>
 public sealed class DataPipelineBuilder<T>
 {
-    private readonly PipelineDataSource _source;
+    private readonly IReadOnlyList<SourceEntry> _sources;
     private readonly PipelineOptions _options;
     private readonly RecordProjection<T> _projection;
     private IProgress<PipelineProgress>? _progress;
+    private string? _checkpointPath;
 
     internal DataPipelineBuilder(
-        PipelineDataSource source, PipelineOptions options, RecordProjection<T> projection, IProgress<PipelineProgress>? progress)
+        IReadOnlyList<SourceEntry> sources, PipelineOptions options, RecordProjection<T> projection,
+        IProgress<PipelineProgress>? progress, string? checkpointPath)
     {
-        _source = source;
+        _sources = sources;
         _options = options;
         _projection = projection;
         _progress = progress;
+        _checkpointPath = checkpointPath;
     }
 
     public DataPipelineBuilder<T> Configure(Action<PipelineOptions> configure) { configure(_options); return this; }
@@ -91,44 +143,139 @@ public sealed class DataPipelineBuilder<T>
     public DataPipelineBuilder<T> WithChannelCapacity(int capacity) { _options.ChannelCapacity = capacity; return this; }
     public DataPipelineBuilder<T> OnError(ErrorPolicy policy) { _options.ErrorPolicy = policy; return this; }
     public DataPipelineBuilder<T> ReportProgress(IProgress<PipelineProgress> progress) { _progress = progress; return this; }
+    public DataPipelineBuilder<T> WithCheckpoint(string checkpointPath) { _checkpointPath = checkpointPath; return this; }
 
-    /// <summary>Odrzuć rekordy nie spełniające predykatu (liczone jako Dropped).</summary>
+    /// <summary>Drop records that fail the predicate (counted as Dropped).</summary>
     public DataPipelineBuilder<T> Where(Func<T, bool> predicate)
     {
         var prev = _projection;
-        RecordProjection<T> next = (ReadOnlyMemory<byte> line, out T value) => prev(line, out value) && predicate(value);
-        return new DataPipelineBuilder<T>(_source, _options, next, _progress);
+        RecordProjection<T> next = line =>
+        {
+            var vt = prev(line);
+            if (vt.IsCompletedSuccessfully)
+            {
+                var o = vt.Result;
+                return new ValueTask<ProjectionOutcome<T>>(
+                    o.Produced && predicate(o.Value) ? o : ProjectionOutcome<T>.Drop);
+            }
+            return AwaitWhere(vt, predicate);
+        };
+        return With(next);
     }
 
-    /// <summary>Zmapuj rekord na inny typ.</summary>
+    /// <summary>Drop records that fail an async predicate (counted as Dropped).</summary>
+    public DataPipelineBuilder<T> WhereAsync(Func<T, ValueTask<bool>> predicate)
+    {
+        var prev = _projection;
+        RecordProjection<T> next = async line =>
+        {
+            var o = await prev(line);
+            if (!o.Produced) return o;
+            return await predicate(o.Value) ? o : ProjectionOutcome<T>.Drop;
+        };
+        return With(next);
+    }
+
+    /// <summary>Map a record to another type.</summary>
     public DataPipelineBuilder<TOut> Select<TOut>(Func<T, TOut> map)
     {
         var prev = _projection;
-        RecordProjection<TOut> next = (ReadOnlyMemory<byte> line, out TOut value) =>
+        RecordProjection<TOut> next = line =>
         {
-            if (prev(line, out var parsed))
+            var vt = prev(line);
+            if (vt.IsCompletedSuccessfully)
             {
-                value = map(parsed);
-                return true;
+                var o = vt.Result;
+                return new ValueTask<ProjectionOutcome<TOut>>(
+                    o.Produced ? ProjectionOutcome<TOut>.Keep(map(o.Value)) : ProjectionOutcome<TOut>.Drop);
             }
-            value = default!;
-            return false;
+            return AwaitSelect(vt, map);
         };
-        return new DataPipelineBuilder<TOut>(_source, _options, next, _progress);
+        return new DataPipelineBuilder<TOut>(_sources, _options, next, _progress, _checkpointPath);
     }
 
-    // ---- Terminale ----------------------------------------------------------
+    /// <summary>Map a record to another type with an async mapper.</summary>
+    public DataPipelineBuilder<TOut> SelectAsync<TOut>(Func<T, ValueTask<TOut>> map)
+    {
+        var prev = _projection;
+        RecordProjection<TOut> next = async line =>
+        {
+            var o = await prev(line);
+            return o.Produced ? ProjectionOutcome<TOut>.Keep(await map(o.Value)) : ProjectionOutcome<TOut>.Drop;
+        };
+        return new DataPipelineBuilder<TOut>(_sources, _options, next, _progress, _checkpointPath);
+    }
 
-    /// <summary>Tryb PUSH: batchuj i zapisuj do sinka. Zwraca raport przebiegu.</summary>
-    public Task<IngestionReport> WriteBatchesTo(IBatchSink<T> sink, CancellationToken cancellationToken = default) =>
-        PipelineExecutor.RunAsync(_source, _projection, sink, _options, _progress, cancellationToken);
+    private DataPipelineBuilder<T> With(RecordProjection<T> projection) =>
+        new(_sources, _options, projection, _progress, _checkpointPath);
 
-    /// <summary>Tryb PUSH z sinkiem-delegatem.</summary>
+    private static async ValueTask<ProjectionOutcome<T>> AwaitWhere(ValueTask<ProjectionOutcome<T>> vt, Func<T, bool> predicate)
+    {
+        var o = await vt;
+        return o.Produced && predicate(o.Value) ? o : ProjectionOutcome<T>.Drop;
+    }
+
+    private static async ValueTask<ProjectionOutcome<TOut>> AwaitSelect<TOut>(ValueTask<ProjectionOutcome<T>> vt, Func<T, TOut> map)
+    {
+        var o = await vt;
+        return o.Produced ? ProjectionOutcome<TOut>.Keep(map(o.Value)) : ProjectionOutcome<TOut>.Drop;
+    }
+
+    // ---- Terminals ----------------------------------------------------------
+
+    /// <summary>PUSH mode: batch and write to the sink. Returns an aggregated run report across all sources.</summary>
+    public async Task<IngestionReport> WriteBatchesTo(IBatchSink<T> sink, CancellationToken cancellationToken = default)
+    {
+        var checkpoint = _checkpointPath is null ? null : await CheckpointStore.LoadAsync(_checkpointPath, cancellationToken);
+        IngestionReport? total = null;
+
+        foreach (var entry in _sources)
+        {
+            if (checkpoint is not null && entry.Key is not null && checkpoint.IsDone(entry.Key))
+                continue;
+
+            var report = await PipelineExecutor.RunAsync(entry.Source, _projection, sink, _options, _progress, cancellationToken);
+            total = total is null ? report : Combine(total, report);
+
+            if (checkpoint is not null && entry.Key is not null)
+                await checkpoint.MarkDoneAsync(entry.Key, cancellationToken);
+        }
+
+        return total ?? new IngestionReport();
+    }
+
+    /// <summary>PUSH mode with a delegate sink.</summary>
     public Task<IngestionReport> WriteBatchesTo(
         Func<IReadOnlyList<T>, CancellationToken, ValueTask> writeBatch, CancellationToken cancellationToken = default) =>
         WriteBatchesTo(new DelegateBatchSink<T>(writeBatch), cancellationToken);
 
-    /// <summary>Tryb PULL: strumień rekordów jako <see cref="IAsyncEnumerable{T}"/>.</summary>
-    public IAsyncEnumerable<T> StreamAsync(CancellationToken cancellationToken = default) =>
-        PipelineExecutor.StreamAsync(_source, _projection, _options, cancellationToken);
+    /// <summary>PULL mode: stream records as an <see cref="IAsyncEnumerable{T}"/> across all sources.</summary>
+    public async IAsyncEnumerable<T> StreamAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var checkpoint = _checkpointPath is null ? null : await CheckpointStore.LoadAsync(_checkpointPath, cancellationToken);
+
+        foreach (var entry in _sources)
+        {
+            if (checkpoint is not null && entry.Key is not null && checkpoint.IsDone(entry.Key))
+                continue;
+
+            await foreach (var item in PipelineExecutor.StreamAsync(entry.Source, _projection, _options, cancellationToken))
+                yield return item;
+
+            // Reached only when the file streamed fully (an early break skips marking it done).
+            if (checkpoint is not null && entry.Key is not null)
+                await checkpoint.MarkDoneAsync(entry.Key, cancellationToken);
+        }
+    }
+
+    private static IngestionReport Combine(IngestionReport a, IngestionReport b) => new()
+    {
+        LinesRead = a.LinesRead + b.LinesRead,
+        BlankLinesSkipped = a.BlankLinesSkipped + b.BlankLinesSkipped,
+        Dropped = a.Dropped + b.Dropped,
+        Failed = a.Failed + b.Failed,
+        ItemsWritten = a.ItemsWritten + b.ItemsWritten,
+        BatchesWritten = a.BatchesWritten + b.BatchesWritten,
+        Elapsed = a.Elapsed + b.Elapsed
+    };
 }

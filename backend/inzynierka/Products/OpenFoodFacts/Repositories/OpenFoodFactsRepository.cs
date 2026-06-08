@@ -42,9 +42,9 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
         {
             if (batch.IsEmpty) return 0;
 
-            // Deduplikacja produktów w obrębie paczki (po Code, case-insensitive).
-            // Przy duplikatach kodu wybieramy najnowszy rekord (po LastUpdated), spójnie
-            // z regułą rozstrzygania konfliktów w INSERT ... ON CONFLICT poniżej.
+            // Deduplicate products within the batch (by Code, case-insensitive).
+            // On duplicate codes keep the newest record (by LastUpdated), consistent
+            // with the conflict-resolution rule in the INSERT ... ON CONFLICT below.
             var products = batch.Products
                 .Where(p => !string.IsNullOrWhiteSpace(p.Code))
                 .GroupBy(p => p.Code!.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -62,9 +62,9 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             await using var tx = await conn.BeginTransactionAsync(ct);
             try
             {
-                // synchronous_commit=off rezygnuje z fsync na commit dla przepustowości.
-                // Bezpieczne, bo import jest idempotentny i wznawialny (ON CONFLICT/MERGE):
-                // utratę paczki przy awarii serwera naprawia ponowne uruchomienie importu.
+                // synchronous_commit=off drops the fsync on commit for throughput.
+                // Safe because the import is idempotent and resumable (ON CONFLICT/MERGE):
+                // a batch lost to a server crash is recovered by re-running the import.
                 await ExecAsync(conn, tx, @"
                     SET LOCAL statement_timeout = 0;
                     SET LOCAL lock_timeout = 0;
@@ -181,9 +181,9 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 await w.CompleteAsync(ct);
             }
 
-            // Bez ANALYZE: upsert to seq-scan stage'a + INSERT ON CONFLICT, brak JOIN-a do strojenia.
-            // Zwracana liczba = wiersze faktycznie wstawione lub zaktualizowane (pominięte przez
-            // WHERE w DO UPDATE nie są liczone), czyli rzeczywista liczba zapisów do "Products".
+            // No ANALYZE: the upsert is a seq-scan of the stage + INSERT ON CONFLICT, no JOIN to tune.
+            // The returned count = rows actually inserted or updated (rows skipped by the WHERE in
+            // DO UPDATE are not counted), i.e. the real number of writes to "Products".
             return await ExecAsync(conn, tx, @"
                 INSERT INTO ""Products""
                 (

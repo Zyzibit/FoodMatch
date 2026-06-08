@@ -2,12 +2,29 @@ namespace FastPipe.Pipeline;
 
 /// <summary>
 /// Result of projecting a single line: whether a record was produced and, if so, its value.
-/// <see cref="Produced"/> == <c>false</c> means the record was dropped (parse returned false
-/// or a <c>Where</c> predicate rejected it) — this is not an error.
+/// "Not produced" means the record was dropped (parse returned false or a <c>Where</c> predicate
+/// rejected it) — this is not an error.
+///
+/// Use <see cref="Keep"/> to carry a value and <see cref="Drop"/> to signal a dropped record.
+/// <see cref="Drop"/> is the struct's default, so the dropped case needs no value and no
+/// null-forgiving operator. <see cref="Value"/> must only be read when <see cref="Produced"/>.
 /// </summary>
-internal readonly record struct ProjectionOutcome<T>(bool Produced, T Value)
+internal readonly record struct ProjectionOutcome<T>
 {
-    public static ProjectionOutcome<T> Dropped => new(false, default!);
+    public bool Produced { get; }
+    public T Value { get; }
+
+    private ProjectionOutcome(bool produced, T value)
+    {
+        Produced = produced;
+        Value = value;
+    }
+
+    /// <summary>A produced record carrying <paramref name="value"/>.</summary>
+    public static ProjectionOutcome<T> Keep(T value) => new(true, value);
+
+    /// <summary>A dropped record (no value).</summary>
+    public static ProjectionOutcome<T> Drop => default;
 }
 
 /// <summary>

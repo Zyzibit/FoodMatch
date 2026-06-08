@@ -4,8 +4,8 @@ namespace FastPipe.Internal;
 internal static class ByteLineFraming
 {
     /// <summary>
-    /// Próbuje wyciąć jedną linię (do najbliższego '\n', bez delimitera) z bufora.
-    /// Po sukcesie <paramref name="buffer"/> jest przesuwany za zakończenie linii.
+    /// Tries to cut one line (up to the next '\n', delimiter excluded) from the buffer.
+    /// On success <paramref name="buffer"/> is advanced past the end of the line.
     /// </summary>
     public static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
     {

@@ -3,23 +3,29 @@ using System.IO.Pipelines;
 namespace FastPipe.Internal;
 
 /// <summary>
-/// Źródło bajtów dla potoku. Abstrahuje od konkretnego nośnika (plik, dowolny
-/// <see cref="Stream"/>, gotowy <see cref="PipeReader"/>), dzięki czemu silnik nie
-/// jest związany z systemem plików. Dekompresję (gzip itp.) realizuje się przez
-/// owinięcie strumienia po stronie wołającego i podanie go do <c>FromStream</c>.
+/// Byte source for the pipeline. Abstracts over the concrete medium (a file, any
+/// <see cref="Stream"/>, a ready <see cref="PipeReader"/>) so the engine is not tied to the
+/// file system. Decompression (gzip etc.) is handled by wrapping the stream on the caller's
+/// side and passing it to <c>FromStream</c>.
 /// </summary>
 internal abstract class PipelineDataSource
 {
-    /// <summary>Walidacja przed startem (np. istnienie pliku). Domyślnie brak.</summary>
+    /// <summary>Validation before the run (e.g. file existence). No-op by default.</summary>
     public virtual void Validate() { }
 
     /// <summary>
-    /// Tworzy <see cref="PipeReader"/> do czytania źródła. W <paramref name="owned"/>
-    /// zwraca zasób, który silnik ma zwolnić po zakończeniu (lub <c>null</c>, gdy
-    /// właścicielem pozostaje wołający).
+    /// Creates a <see cref="PipeReader"/> over the source. <paramref name="owned"/> returns the
+    /// resource the engine must dispose when done, or <c>null</c> when the caller stays the owner.
     /// </summary>
     public abstract PipeReader OpenReader(int readBufferSize, out IAsyncDisposable? owned);
 }
+
+/// <summary>
+/// A data source paired with an optional stable key. The key (an absolute file path for file
+/// sources) identifies the source for checkpointing; <c>null</c> means the source is not
+/// checkpointable (e.g. a raw stream or pipe reader).
+/// </summary>
+internal readonly record struct SourceEntry(string? Key, PipelineDataSource Source);
 
 internal sealed class FilePipelineSource(string path) : PipelineDataSource
 {
@@ -62,7 +68,7 @@ internal sealed class PipeReaderPipelineSource(PipeReader reader) : PipelineData
 {
     private readonly PipeReader _reader = reader;
 
-    // Czytnik należy do wołającego — silnik go nie zwalnia (poza CompleteAsync na końcu odczytu).
+    // The reader belongs to the caller — the engine does not dispose it (only CompleteAsync at end of read).
     public override PipeReader OpenReader(int readBufferSize, out IAsyncDisposable? owned)
     {
         owned = null;

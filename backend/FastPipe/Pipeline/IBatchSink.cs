@@ -1,10 +1,9 @@
 namespace FastPipe.Pipeline;
 
 /// <summary>
-/// Odbiornik paczek rekordów — miejsce docelowe potoku (np. masowy zapis do bazy
-/// przez PostgreSQL binary COPY). Silnik gwarantuje, że <see cref="WriteBatchAsync"/>
-/// jest wywoływane sekwencyjnie (jedna paczka naraz), więc implementacja nie musi
-/// być thread-safe.
+/// Receiver of record batches — the pipeline's destination (e.g. a bulk write to a database
+/// via PostgreSQL binary COPY). The engine guarantees that <see cref="WriteBatchAsync"/> is
+/// invoked sequentially (one batch at a time), so the implementation need not be thread-safe.
 /// </summary>
 public interface IBatchSink<T>
 {
@@ -12,7 +11,7 @@ public interface IBatchSink<T>
 }
 
 /// <summary>
-/// Sink z delegatu — wygodny do prostych przypadków i testów.
+/// Delegate-backed sink — convenient for simple cases and tests.
 /// </summary>
 public sealed class DelegateBatchSink<T> : IBatchSink<T>
 {

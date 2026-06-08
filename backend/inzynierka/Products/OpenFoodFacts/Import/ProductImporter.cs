@@ -5,17 +5,17 @@ using Microsoft.Extensions.Logging;
 namespace inzynierka.Products.OpenFoodFacts.Import
 {
     /// <summary>
-    /// Import dumpu JSONL OpenFoodFacts. Czytanie, parsowanie, równoległość i backpressure
-    /// realizuje reużywalny potok z biblioteki <c>FastPipe</c>; tutaj zostaje jedynie
-    /// kompozycja potoku, lifecycle bulk-importu i logowanie.
+    /// Imports an OpenFoodFacts JSONL dump. Reading, parsing, parallelism and backpressure are
+    /// handled by the reusable pipeline from the <c>FastPipe</c> library; what remains here is
+    /// just pipeline composition, the bulk-import lifecycle and logging.
     /// </summary>
     public sealed class ProductImporter : IProductImporter
     {
         private readonly IProductBulkRepository _bulkRepository;
         private readonly ILogger<ProductImporter> _logger;
 
-        // Duży batch amortyzuje stały koszt na paczkę (CREATE TEMP + COPY + upsert/MERGE + COMMIT).
-        // Cała paczka idzie w jednej transakcji, więc to główny lewar przepustowości przy 60 GB.
+        // A large batch amortizes the per-batch fixed cost (CREATE TEMP + COPY + upsert/MERGE + COMMIT).
+        // The whole batch runs in one transaction, so this is the main throughput lever at 60 GB.
         private const int ProductBatchSize = 20_000;
 
         public ProductImporter(IProductBulkRepository bulkRepository, ILogger<ProductImporter> logger)
