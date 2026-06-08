@@ -11,7 +11,7 @@ public interface IProductService
     Task<ProductSearchResult> SearchProductsAsync(ProductSearchDto dto);
     Task<ProductSearchResult> GetAllProductsAsync(int limit = 50, int offset = 0);
     Task<ProductCategoryResult> GetProductsByCategoryAsync(string category, int limit = 10, int offset = 0);
-    Task<ProductImportResult> ImportProductsAsync(string filePath);
+    Task<ProductImportResult> ImportProductsAsync(string filePath, CancellationToken cancellationToken = default);
     Task<List<ProductCategory>> GetCategoriesAsync();
     Task<List<string>> GetAllergensAsync();
     Task<List<string>> GetIngredientsAsync();

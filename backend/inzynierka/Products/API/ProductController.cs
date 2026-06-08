@@ -176,11 +176,11 @@ public class ProductController : ControllerBase
     
     [HttpPost("import")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ImportProducts([FromBody] ProductImportRequest request)
+    public async Task<IActionResult> ImportProducts([FromBody] ProductImportRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var result = await _productModule.ImportProductsAsync(request.FilePath);
+            var result = await _productModule.ImportProductsAsync(request.FilePath, cancellationToken);
             
             if (!result.Success)
             {

@@ -1,13 +1,5 @@
 namespace inzynierka.IO.Parsing;
 
-/// <summary>
-/// Parsuje pojedynczy rekord (jedną linię UTF-8) na obiekt domenowy
-/// bezpośrednio z bajtów — bez materializowania pośredniego <see cref="string"/>.
-///
-/// Implementacja musi być bezstanowa i thread-safe: silnik potoku wywołuje
-/// <see cref="TryParse"/> równolegle z wielu workerów.
-/// </summary>
-/// <typeparam name="T">Typ docelowy rekordu.</typeparam>
 public interface IRecordParser<T>
 {
     /// <summary>

@@ -161,11 +161,11 @@ public class ProductService : IProductService
         }
     }
 
-    public async Task<ProductImportResult> ImportProductsAsync(string filePath)
+    public async Task<ProductImportResult> ImportProductsAsync(string filePath, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _productImportService.ImportProductsAsync(filePath);
+            await _productImportService.ImportProductsAsync(filePath, cancellationToken);
 
             return new ProductImportResult
             {
