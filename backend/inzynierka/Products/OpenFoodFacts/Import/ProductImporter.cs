@@ -1,6 +1,4 @@
-using System.Text.Json;
 using inzynierka.IO.Pipeline;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 using inzynierka.Products.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -16,13 +14,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
         private readonly IProductBulkRepository _bulkRepository;
         private readonly ILogger<ProductImporter> _logger;
 
-        private const int ProductBatchSize = 500;
-        private static readonly JsonSerializerOptions JsonOpts = new()
-        {
-            AllowTrailingCommas = true,
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip
-        };
+        // Duży batch amortyzuje stały koszt na paczkę (CREATE TEMP + COPY + upsert/MERGE + COMMIT).
+        // Cała paczka idzie w jednej transakcji, więc to główny lewar przepustowości przy 60 GB.
+        private const int ProductBatchSize = 20_000;
 
         public ProductImporter(IProductBulkRepository bulkRepository, ILogger<ProductImporter> logger)
         {
@@ -45,7 +39,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
                 var report = await DataPipeline
                     .FromJsonlFile(filePath)
-                    .DeserializeJson<OpenFoodFactsProduct>(JsonOpts)
+                    .DeserializeJson(OpenFoodFactsJsonContext.Default.OpenFoodFactsProduct)
                     .Configure(o =>
                     {
                         o.BatchSize = ProductBatchSize;

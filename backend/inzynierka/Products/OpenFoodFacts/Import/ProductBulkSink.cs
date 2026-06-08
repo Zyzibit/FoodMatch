@@ -1,10 +1,6 @@
 using System.Text;
 using inzynierka.IO.Pipeline;
 using inzynierka.Products.Model;
-using inzynierka.Products.Model.Tag.AllergenTag;
-using inzynierka.Products.Model.Tag.CategoryTag;
-using inzynierka.Products.Model.Tag.CountryTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 using inzynierka.Products.Repositories;
 
@@ -12,8 +8,8 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 {
     /// <summary>
     /// Odbiornik paczek dla potoku ETL: mapuje surowe rekordy OpenFoodFacts na encje
-    /// <see cref="Product"/>, zbiera tagi i wykonuje masowy zapis przez
-    /// <see cref="IProductBulkRepository"/> (PostgreSQL binary COPY + MERGE).
+    /// <see cref="Product"/>, zbiera linki tagów i oddaje całą paczkę do masowego zapisu
+    /// w jednej transakcji (<see cref="IProductBulkRepository.BulkImportBatchAsync"/>).
     ///
     /// Silnik woła <see cref="WriteBatchAsync"/> sekwencyjnie, więc liczniki nie wymagają synchronizacji.
     /// </summary>
@@ -29,8 +25,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
         public async ValueTask WriteBatchAsync(IReadOnlyList<OpenFoodFactsProduct> batch, CancellationToken cancellationToken)
         {
-            var products = new List<Product>(batch.Count);
-            var tags = new TagBuffers(batch.Count);
+            var payload = new ProductBatch(batch.Count);
 
             foreach (var src in batch)
             {
@@ -41,30 +36,30 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 var product = MapToProduct(src);
                 if (product is null) { SkippedNoNutrition++; continue; }
 
-                products.Add(product);
-                CollectTags(src, code, tags);
+                payload.Products.Add(product);
+                CollectTags(src, code, payload);
             }
 
-            if (products.Count == 0)
+            if (payload.Products.Count == 0)
                 return;
 
-            await FlushAsync(products, tags, cancellationToken);
-            Imported += products.Count;
+            await _bulkRepository.BulkImportBatchAsync(payload, cancellationToken);
+            Imported += payload.Products.Count;
         }
 
-        private async Task FlushAsync(List<Product> products, TagBuffers tags, CancellationToken ct)
+        private static void CollectTags(OpenFoodFactsProduct src, string code, ProductBatch batch)
         {
-            await _bulkRepository.BulkInsertProductsAsync(products, ct);
+            foreach (var t in src.CategoriesTags ?? Enumerable.Empty<string>())
+                batch.CategoryLinks.Add((code, t));
 
-            await _bulkRepository.BulkEnsureTagsAsync<IngredientTag>(tags.IngredientNames, ct);
-            await _bulkRepository.BulkEnsureTagsAsync<CountryTag>(tags.CountryNames, ct);
-            await _bulkRepository.BulkEnsureTagsAsync<CategoryTag>(tags.CategoryNames, ct);
-            await _bulkRepository.BulkEnsureTagsAsync<AllergenTag>(tags.AllergenNames, ct);
+            foreach (var t in src.CountriesTags ?? Enumerable.Empty<string>())
+                batch.CountryLinks.Add((code, t));
 
-            await _bulkRepository.BulkUpsertProductIngredientLinksAsync(tags.IngredientLinks, ct);
-            await _bulkRepository.BulkUpsertProductCountryLinksAsync(tags.CountryLinks, ct);
-            await _bulkRepository.BulkUpsertProductCategoryLinksAsync(tags.CategoryLinks, ct);
-            await _bulkRepository.BulkUpsertProductAllergenLinksAsync(tags.AllergenLinks, ct);
+            foreach (var t in src.AllergensTags ?? Enumerable.Empty<string>())
+                batch.AllergenLinks.Add((code, t));
+
+            foreach (var t in src.IngredientsTags ?? Enumerable.Empty<string>())
+                batch.IngredientLinks.Add((code, t));
         }
 
         private static Product? MapToProduct(OpenFoodFactsProduct src)
@@ -108,21 +103,6 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             };
         }
 
-        private static void CollectTags(OpenFoodFactsProduct src, string code, TagBuffers tags)
-        {
-            foreach (var t in src.CategoriesTags ?? Enumerable.Empty<string>())
-                tags.AddCategory(code, t);
-
-            foreach (var t in src.CountriesTags ?? Enumerable.Empty<string>())
-                tags.AddCountry(code, t);
-
-            foreach (var t in src.AllergensTags ?? Enumerable.Empty<string>())
-                tags.AddAllergen(code, t);
-
-            foreach (var t in src.IngredientsTags ?? Enumerable.Empty<string>())
-                tags.AddIngredient(code, t);
-        }
-
         private static string? Sanitizer(string? s)
         {
             if (string.IsNullOrEmpty(s)) return s;
@@ -154,37 +134,6 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             {
                 return null;
             }
-        }
-
-        private sealed class TagBuffers
-        {
-            public HashSet<string> IngredientNames { get; }
-            public HashSet<string> CountryNames { get; }
-            public HashSet<string> CategoryNames { get; }
-            public HashSet<string> AllergenNames { get; }
-
-            public List<(string Code, string TagName)> IngredientLinks { get; }
-            public List<(string Code, string TagName)> CountryLinks { get; }
-            public List<(string Code, string TagName)> CategoryLinks { get; }
-            public List<(string Code, string TagName)> AllergenLinks { get; }
-
-            public TagBuffers(int batchCapacity)
-            {
-                IngredientNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                CountryNames    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                CategoryNames   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                AllergenNames   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                IngredientLinks = new List<(string, string)>(batchCapacity * 3);
-                CountryLinks    = new List<(string, string)>(batchCapacity * 1);
-                CategoryLinks   = new List<(string, string)>(batchCapacity * 2);
-                AllergenLinks   = new List<(string, string)>(batchCapacity * 1);
-            }
-
-            public void AddIngredient(string code, string tag) { IngredientNames.Add(tag); IngredientLinks.Add((code, tag)); }
-            public void AddCountry(string code, string tag)    { CountryNames.Add(tag);    CountryLinks.Add((code, tag)); }
-            public void AddCategory(string code, string tag)   { CategoryNames.Add(tag);   CategoryLinks.Add((code, tag)); }
-            public void AddAllergen(string code, string tag)   { AllergenNames.Add(tag);   AllergenLinks.Add((code, tag)); }
         }
     }
 }
