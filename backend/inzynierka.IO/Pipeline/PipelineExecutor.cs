@@ -1,0 +1,333 @@
+using System.Buffers;
+using System.Diagnostics;
+using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Threading.Channels;
+using inzynierka.IO.Internal;
+
+namespace inzynierka.IO.Pipeline;
+
+/// <summary>
+/// Silnik potoku ETL. Trzy etapy spięte ograniczonymi kanałami (backpressure):
+///
+///   [producent]  PipeReader czyta plik → framing linii → kopia do bufora z ArrayPool
+///        │  (Channel&lt;LineSegment&gt;, bounded)
+///   [N workerów] równoległe parsowanie z bajtów → projekcja (parse+Where+Select)
+///        │  (Channel&lt;TOut&gt;, bounded)
+///   [konsument]  batchowanie i zapis do IBatchSink (sekwencyjnie)
+///
+/// Pojedynczy producent, wielu workerów, pojedynczy konsument batchujący.
+/// </summary>
+internal static class PipelineExecutor
+{
+    private readonly record struct LineSegment(byte[] Buffer, int Length);
+
+    private sealed class Counters
+    {
+        public long LinesRead;
+        public long Blank;
+        public long Dropped;
+        public long Failed;
+        public long Items;
+        public long Batches;
+
+        public PipelineProgress Snapshot() => new(
+            Interlocked.Read(ref LinesRead),
+            Interlocked.Read(ref Items),
+            Interlocked.Read(ref Failed));
+    }
+
+    // ---- Tryb PUSH: pełny przebieg do sinka, zwraca raport -------------------
+
+    public static async Task<IngestionReport> RunAsync<TOut>(
+        string filePath,
+        RecordProjection<TOut> projection,
+        IBatchSink<TOut> sink,
+        PipelineOptions options,
+        IProgress<PipelineProgress>? progress,
+        CancellationToken externalCt)
+    {
+        options.Validate();
+        var sw = Stopwatch.StartNew();
+        var counters = new Counters();
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+        var ct = cts.Token;
+        ExceptionDispatchInfo? fatal = null;
+        void OnFatal(Exception ex)
+        {
+            Interlocked.CompareExchange(ref fatal, ExceptionDispatchInfo.Capture(ex), null);
+            cts.Cancel();
+        }
+
+        var (output, completion, producer) = StartCore(filePath, projection, options, counters, OnFatal, ct);
+
+        // Konsument batchujący — sekwencyjny zapis do sinka.
+        try
+        {
+            var batch = new List<TOut>(options.BatchSize);
+            await foreach (var item in output.ReadAllAsync(ct))
+            {
+                batch.Add(item);
+                if (batch.Count >= options.BatchSize)
+                {
+                    await FlushAsync(sink, batch, counters, progress, ct);
+                    batch = new List<TOut>(options.BatchSize);
+                }
+            }
+            if (batch.Count > 0)
+                await FlushAsync(sink, batch, counters, progress, ct);
+        }
+        catch (OperationCanceledException) when (fatal is not null)
+        {
+            // Błąd krytyczny anulował potok — prawdziwy wyjątek rzucimy niżej.
+        }
+
+        await producer;
+        await completion;
+        fatal?.Throw();
+
+        sw.Stop();
+        return new IngestionReport
+        {
+            LinesRead = counters.LinesRead,
+            BlankLinesSkipped = counters.Blank,
+            Dropped = counters.Dropped,
+            Failed = counters.Failed,
+            ItemsWritten = counters.Items,
+            BatchesWritten = counters.Batches,
+            Elapsed = sw.Elapsed
+        };
+    }
+
+    private static async ValueTask FlushAsync<TOut>(
+        IBatchSink<TOut> sink, List<TOut> batch, Counters counters,
+        IProgress<PipelineProgress>? progress, CancellationToken ct)
+    {
+        await sink.WriteBatchAsync(batch, ct);
+        Interlocked.Add(ref counters.Items, batch.Count);
+        Interlocked.Increment(ref counters.Batches);
+        progress?.Report(counters.Snapshot());
+    }
+
+    // ---- Tryb PULL: strumień wyjściowy jako IAsyncEnumerable -----------------
+
+    public static async IAsyncEnumerable<TOut> StreamAsync<TOut>(
+        string filePath,
+        RecordProjection<TOut> projection,
+        PipelineOptions options,
+        [EnumeratorCancellation] CancellationToken externalCt = default)
+    {
+        options.Validate();
+        var counters = new Counters();
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+        var ct = cts.Token;
+        ExceptionDispatchInfo? fatal = null;
+        void OnFatal(Exception ex)
+        {
+            Interlocked.CompareExchange(ref fatal, ExceptionDispatchInfo.Capture(ex), null);
+            cts.Cancel();
+        }
+
+        var (output, completion, producer) = StartCore(filePath, projection, options, counters, OnFatal, ct);
+
+        await foreach (var item in output.ReadAllAsync(ct))
+        {
+            Interlocked.Increment(ref counters.Items);
+            yield return item;
+        }
+
+        await producer;
+        await completion;
+        fatal?.Throw();
+    }
+
+
+    private static (ChannelReader<TOut> Output, Task Completion, Task Producer) StartCore<TOut>(
+        string filePath,
+        RecordProjection<TOut> projection,
+        PipelineOptions options,
+        Counters counters,
+        Action<Exception> onFatal,
+        CancellationToken ct)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"File not found: {filePath}", filePath);
+
+        var lineChannel = Channel.CreateBounded<LineSegment>(new BoundedChannelOptions(options.ChannelCapacity)
+        {
+            SingleWriter = true,
+            SingleReader = false,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+
+        var outputChannel = Channel.CreateBounded<TOut>(new BoundedChannelOptions(options.ChannelCapacity)
+        {
+            SingleWriter = false,
+            SingleReader = true,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+
+        var producer = Task.Run(async () =>
+        {
+            try
+            {
+                await ProduceLinesAsync(filePath, options, lineChannel.Writer, counters, ct);
+                lineChannel.Writer.Complete();
+            }
+            catch (Exception ex)
+            {
+                lineChannel.Writer.Complete(ex);
+                if (ex is not OperationCanceledException) onFatal(ex);
+            }
+        }, ct);
+
+        var workers = new Task[options.Parallelism];
+        for (var i = 0; i < workers.Length; i++)
+            workers[i] = Task.Run(() => RunWorkerAsync(
+                lineChannel.Reader, outputChannel.Writer, projection, options.ErrorPolicy, counters, onFatal, ct), ct);
+
+        var completion = Task.Run(async () =>
+        {
+            Exception? error = null;
+            try { await Task.WhenAll(workers); }
+            catch (Exception ex) { error = ex; }
+            finally { outputChannel.Writer.Complete(error is OperationCanceledException ? null : error); }
+        });
+
+        return (outputChannel.Reader, completion, producer);
+    }
+
+    private static async Task ProduceLinesAsync(
+        string filePath, PipelineOptions options, ChannelWriter<LineSegment> writer, Counters counters, CancellationToken ct)
+    {
+        await using var stream = new FileStream(filePath, new FileStreamOptions
+        {
+            Mode = FileMode.Open,
+            Access = FileAccess.Read,
+            Share = FileShare.Read,
+            BufferSize = 0,
+            Options = FileOptions.Asynchronous | FileOptions.SequentialScan
+        });
+
+        var reader = PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: options.ReadBufferSize, leaveOpen: true));
+        var firstLine = true;
+
+        try
+        {
+            while (true)
+            {
+                var result = await reader.ReadAsync(ct);
+                var buffer = result.Buffer;
+
+                while (ByteLineFraming.TryReadLine(ref buffer, out var line))
+                    await EmitLineAsync(in line, writer, options, counters, ref firstLine, ct);
+
+                if (result.IsCompleted)
+                {
+                    if (!buffer.IsEmpty)
+                        await EmitLineAsync(in buffer, writer, options, counters, ref firstLine, ct);
+                    reader.AdvanceTo(buffer.End);
+                    break;
+                }
+
+                reader.AdvanceTo(buffer.Start, buffer.End);
+            }
+        }
+        finally
+        {
+            await reader.CompleteAsync();
+        }
+    }
+
+    private static ValueTask EmitLineAsync(
+        in ReadOnlySequence<byte> line, ChannelWriter<LineSegment> writer, PipelineOptions options,
+        Counters counters, ref bool firstLine, CancellationToken ct)
+    {
+        Interlocked.Increment(ref counters.LinesRead);
+
+        if (options.SkipBlankLines && ByteLineFraming.IsBlank(in line))
+        {
+            Interlocked.Increment(ref counters.Blank);
+            return ValueTask.CompletedTask;
+        }
+
+        var segment = CopyLine(in line, ref firstLine);
+        if (segment.Length == 0)
+        {
+            ArrayPool<byte>.Shared.Return(segment.Buffer);
+            Interlocked.Increment(ref counters.Blank);
+            return ValueTask.CompletedTask;
+        }
+
+        return writer.WriteAsync(segment, ct);
+    }
+
+    /// <summary>
+    /// Kopiuje linię do bufora z puli, zdejmując BOM (pierwsza linia) i usuwając bajty NUL.
+    /// </summary>
+    private static LineSegment CopyLine(in ReadOnlySequence<byte> line, ref bool firstLine)
+    {
+        var len = checked((int)line.Length);
+        var rented = ArrayPool<byte>.Shared.Rent(len);
+        line.CopyTo(rented);
+
+        var start = 0;
+        if (firstLine)
+        {
+            firstLine = false;
+            if (len >= 3 && rented[0] == 0xEF && rented[1] == 0xBB && rented[2] == 0xBF)
+                start = 3;
+        }
+
+        // Kompaktowanie: zdejmij BOM (start>0) i usuń bajty NUL.
+        var w = 0;
+        for (var i = start; i < len; i++)
+        {
+            var b = rented[i];
+            if (b == 0) continue;
+            rented[w++] = b;
+        }
+
+        return new LineSegment(rented, w);
+    }
+
+    private static async Task RunWorkerAsync<TOut>(
+        ChannelReader<LineSegment> reader, ChannelWriter<TOut> output, RecordProjection<TOut> projection,
+        ErrorPolicy policy, Counters counters, Action<Exception> onFatal, CancellationToken ct)
+    {
+        await foreach (var segment in reader.ReadAllAsync(ct))
+        {
+            TOut value;
+            bool ok;
+            try
+            {
+                try
+                {
+                    ok = projection(new ReadOnlyMemory<byte>(segment.Buffer, 0, segment.Length), out value);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(segment.Buffer);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                if (policy == ErrorPolicy.Throw)
+                {
+                    onFatal(ex);
+                    throw;
+                }
+                Interlocked.Increment(ref counters.Failed);
+                continue;
+            }
+
+            if (ok)
+                await output.WriteAsync(value!, ct);
+            else
+                Interlocked.Increment(ref counters.Dropped);
+        }
+    }
+}
