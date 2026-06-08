@@ -11,7 +11,6 @@ public static class OpenFoodFactsServiceExtensions
     public static IServiceCollection AddOpenFoodFactsServices(this IServiceCollection services)
     {
         services.AddScoped<OpenFoodFactsRepository>();
-        services.AddScoped<IOpenFoodFactsRepository>(sp => sp.GetRequiredService<OpenFoodFactsRepository>());
         services.AddScoped<IProductBulkRepository>(sp => sp.GetRequiredService<OpenFoodFactsRepository>());
         services.AddScoped<IProductImporter, ProductImporter>();
         services.AddScoped<IProductImportService, OpenFoodFactsImportServiceAdapter>();
