@@ -1,5 +1,7 @@
+using System.IO.Pipelines;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using inzynierka.IO.Internal;
 using inzynierka.IO.Parsing;
 
 namespace inzynierka.IO.Pipeline;
@@ -17,20 +19,34 @@ namespace inzynierka.IO.Pipeline;
 ///     .OnError(ErrorPolicy.Skip)
 ///     .WriteBatchesTo(sink, ct);
 /// </code>
+///
+/// Źródłem może być plik, dowolny <see cref="Stream"/> (także owinięty w
+/// <c>GZipStream</c>/strumień sieciowy) lub gotowy <see cref="PipeReader"/>.
 /// </summary>
 public static class DataPipeline
 {
-    public static FileSource FromJsonlFile(string filePath) => new(filePath);
+    /// <summary>Czytaj plik JSONL/line-delimited z systemu plików.</summary>
+    public static PipelineSource FromJsonlFile(string filePath) => new(new FilePipelineSource(filePath));
+
+    /// <summary>
+    /// Czytaj z dowolnego strumienia. Dla skompresowanych danych owiń źródło, np.
+    /// <c>FromStream(new GZipStream(File.OpenRead(path), CompressionMode.Decompress))</c>.
+    /// </summary>
+    public static PipelineSource FromStream(Stream stream, bool leaveOpen = false) =>
+        new(new StreamPipelineSource(stream, leaveOpen));
+
+    /// <summary>Czytaj z gotowego <see cref="PipeReader"/> (właścicielem pozostaje wołający).</summary>
+    public static PipelineSource FromPipeReader(PipeReader reader) => new(new PipeReaderPipelineSource(reader));
 }
 
-public sealed class FileSource
+public sealed class PipelineSource
 {
-    private readonly string _filePath;
+    private readonly PipelineDataSource _source;
     private readonly PipelineOptions _options = new();
 
-    internal FileSource(string filePath) => _filePath = filePath;
+    internal PipelineSource(PipelineDataSource source) => _source = source;
 
-    public FileSource Configure(Action<PipelineOptions> configure)
+    public PipelineSource Configure(Action<PipelineOptions> configure)
     {
         configure(_options);
         return this;
@@ -48,22 +64,22 @@ public sealed class FileSource
     public DataPipelineBuilder<T> Parse<T>(IRecordParser<T> parser)
     {
         RecordProjection<T> projection = (ReadOnlyMemory<byte> line, out T value) => parser.TryParse(line.Span, out value);
-        return new DataPipelineBuilder<T>(_filePath, _options, projection, progress: null);
+        return new DataPipelineBuilder<T>(_source, _options, projection, progress: null);
     }
 }
 
 /// <summary>Konfigurowalny, niemutowalny w łańcuchu builder potoku dla rekordu typu <typeparamref name="T"/>.</summary>
 public sealed class DataPipelineBuilder<T>
 {
-    private readonly string _filePath;
+    private readonly PipelineDataSource _source;
     private readonly PipelineOptions _options;
     private readonly RecordProjection<T> _projection;
     private IProgress<PipelineProgress>? _progress;
 
     internal DataPipelineBuilder(
-        string filePath, PipelineOptions options, RecordProjection<T> projection, IProgress<PipelineProgress>? progress)
+        PipelineDataSource source, PipelineOptions options, RecordProjection<T> projection, IProgress<PipelineProgress>? progress)
     {
-        _filePath = filePath;
+        _source = source;
         _options = options;
         _projection = projection;
         _progress = progress;
@@ -81,7 +97,7 @@ public sealed class DataPipelineBuilder<T>
     {
         var prev = _projection;
         RecordProjection<T> next = (ReadOnlyMemory<byte> line, out T value) => prev(line, out value) && predicate(value);
-        return new DataPipelineBuilder<T>(_filePath, _options, next, _progress);
+        return new DataPipelineBuilder<T>(_source, _options, next, _progress);
     }
 
     /// <summary>Zmapuj rekord na inny typ.</summary>
@@ -98,14 +114,14 @@ public sealed class DataPipelineBuilder<T>
             value = default!;
             return false;
         };
-        return new DataPipelineBuilder<TOut>(_filePath, _options, next, _progress);
+        return new DataPipelineBuilder<TOut>(_source, _options, next, _progress);
     }
 
     // ---- Terminale ----------------------------------------------------------
 
     /// <summary>Tryb PUSH: batchuj i zapisuj do sinka. Zwraca raport przebiegu.</summary>
     public Task<IngestionReport> WriteBatchesTo(IBatchSink<T> sink, CancellationToken cancellationToken = default) =>
-        PipelineExecutor.RunAsync(_filePath, _projection, sink, _options, _progress, cancellationToken);
+        PipelineExecutor.RunAsync(_source, _projection, sink, _options, _progress, cancellationToken);
 
     /// <summary>Tryb PUSH z sinkiem-delegatem.</summary>
     public Task<IngestionReport> WriteBatchesTo(
@@ -114,5 +130,5 @@ public sealed class DataPipelineBuilder<T>
 
     /// <summary>Tryb PULL: strumień rekordów jako <see cref="IAsyncEnumerable{T}"/>.</summary>
     public IAsyncEnumerable<T> StreamAsync(CancellationToken cancellationToken = default) =>
-        PipelineExecutor.StreamAsync(_filePath, _projection, _options, cancellationToken);
+        PipelineExecutor.StreamAsync(_source, _projection, _options, cancellationToken);
 }

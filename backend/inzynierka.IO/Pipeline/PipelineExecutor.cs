@@ -41,7 +41,7 @@ internal static class PipelineExecutor
     // ---- Tryb PUSH: pełny przebieg do sinka, zwraca raport -------------------
 
     public static async Task<IngestionReport> RunAsync<TOut>(
-        string filePath,
+        PipelineDataSource source,
         RecordProjection<TOut> projection,
         IBatchSink<TOut> sink,
         PipelineOptions options,
@@ -61,7 +61,7 @@ internal static class PipelineExecutor
             cts.Cancel();
         }
 
-        var (output, completion, producer) = StartCore(filePath, projection, options, counters, OnFatal, ct);
+        var (output, completion, producer) = StartCore(source, projection, options, counters, OnFatal, ct);
 
         // Konsument batchujący — sekwencyjny zapis do sinka.
         try
@@ -83,9 +83,15 @@ internal static class PipelineExecutor
         {
             // Błąd krytyczny anulował potok — prawdziwy wyjątek rzucimy niżej.
         }
+        finally
+        {
+            // Zatrzymaj producenta/workerów i poczekaj na nich, niezależnie od ścieżki
+            // wyjścia (sukces, anulowanie, wyjątek sinka) — bez wycieku zadań i uchwytów.
+            cts.Cancel();
+            try { await producer; } catch { /* zgłoszone przez fatal lub nieistotne przy sprzątaniu */ }
+            try { await completion; } catch { /* j.w. */ }
+        }
 
-        await producer;
-        await completion;
         fatal?.Throw();
 
         sw.Stop();
@@ -114,7 +120,7 @@ internal static class PipelineExecutor
     // ---- Tryb PULL: strumień wyjściowy jako IAsyncEnumerable -----------------
 
     public static async IAsyncEnumerable<TOut> StreamAsync<TOut>(
-        string filePath,
+        PipelineDataSource source,
         RecordProjection<TOut> projection,
         PipelineOptions options,
         [EnumeratorCancellation] CancellationToken externalCt = default)
@@ -131,30 +137,38 @@ internal static class PipelineExecutor
             cts.Cancel();
         }
 
-        var (output, completion, producer) = StartCore(filePath, projection, options, counters, OnFatal, ct);
+        var (output, completion, producer) = StartCore(source, projection, options, counters, OnFatal, ct);
 
-        await foreach (var item in output.ReadAllAsync(ct))
+        try
         {
-            Interlocked.Increment(ref counters.Items);
-            yield return item;
+            await foreach (var item in output.ReadAllAsync(ct))
+            {
+                Interlocked.Increment(ref counters.Items);
+                yield return item;
+            }
+        }
+        finally
+        {
+            // Także gdy konsument przerwie iterację (break/wyjątek): anuluj i domknij
+            // producenta/workerów, by nie zawisły na zapisie do kanału ani nie trzymały pliku.
+            cts.Cancel();
+            try { await producer; } catch { /* nieistotne przy sprzątaniu */ }
+            try { await completion; } catch { /* j.w. */ }
         }
 
-        await producer;
-        await completion;
         fatal?.Throw();
     }
 
 
     private static (ChannelReader<TOut> Output, Task Completion, Task Producer) StartCore<TOut>(
-        string filePath,
+        PipelineDataSource source,
         RecordProjection<TOut> projection,
         PipelineOptions options,
         Counters counters,
         Action<Exception> onFatal,
         CancellationToken ct)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"File not found: {filePath}", filePath);
+        source.Validate();
 
         var lineChannel = Channel.CreateBounded<LineSegment>(new BoundedChannelOptions(options.ChannelCapacity)
         {
@@ -174,7 +188,7 @@ internal static class PipelineExecutor
         {
             try
             {
-                await ProduceLinesAsync(filePath, options, lineChannel.Writer, counters, ct);
+                await ProduceLinesAsync(source, options, lineChannel.Writer, counters, ct);
                 lineChannel.Writer.Complete();
             }
             catch (Exception ex)
@@ -201,18 +215,9 @@ internal static class PipelineExecutor
     }
 
     private static async Task ProduceLinesAsync(
-        string filePath, PipelineOptions options, ChannelWriter<LineSegment> writer, Counters counters, CancellationToken ct)
+        PipelineDataSource source, PipelineOptions options, ChannelWriter<LineSegment> writer, Counters counters, CancellationToken ct)
     {
-        await using var stream = new FileStream(filePath, new FileStreamOptions
-        {
-            Mode = FileMode.Open,
-            Access = FileAccess.Read,
-            Share = FileShare.Read,
-            BufferSize = 0,
-            Options = FileOptions.Asynchronous | FileOptions.SequentialScan
-        });
-
-        var reader = PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: options.ReadBufferSize, leaveOpen: true));
+        var reader = source.OpenReader(options.ReadBufferSize, out var owned);
         var firstLine = true;
 
         try
@@ -239,6 +244,7 @@ internal static class PipelineExecutor
         finally
         {
             await reader.CompleteAsync();
+            if (owned is not null) await owned.DisposeAsync();
         }
     }
 
@@ -254,7 +260,7 @@ internal static class PipelineExecutor
             return ValueTask.CompletedTask;
         }
 
-        var segment = CopyLine(in line, ref firstLine);
+        var segment = CopyLine(in line, ref firstLine, options.StripByteOrderMark, options.StripNullBytes);
         if (segment.Length == 0)
         {
             ArrayPool<byte>.Shared.Return(segment.Buffer);
@@ -266,9 +272,9 @@ internal static class PipelineExecutor
     }
 
     /// <summary>
-    /// Kopiuje linię do bufora z puli, zdejmując BOM (pierwsza linia) i usuwając bajty NUL.
+    /// Kopiuje linię do bufora z puli, opcjonalnie zdejmując BOM (pierwsza linia) i bajty NUL.
     /// </summary>
-    private static LineSegment CopyLine(in ReadOnlySequence<byte> line, ref bool firstLine)
+    private static LineSegment CopyLine(in ReadOnlySequence<byte> line, ref bool firstLine, bool stripBom, bool stripNul)
     {
         var len = checked((int)line.Length);
         var rented = ArrayPool<byte>.Shared.Rent(len);
@@ -278,16 +284,20 @@ internal static class PipelineExecutor
         if (firstLine)
         {
             firstLine = false;
-            if (len >= 3 && rented[0] == 0xEF && rented[1] == 0xBB && rented[2] == 0xBF)
+            if (stripBom && len >= 3 && rented[0] == 0xEF && rented[1] == 0xBB && rented[2] == 0xBF)
                 start = 3;
         }
 
-        // Kompaktowanie: zdejmij BOM (start>0) i usuń bajty NUL.
+        // Nic do zdjęcia — oddaj linię bez kompaktowania.
+        if (start == 0 && !stripNul)
+            return new LineSegment(rented, len);
+
+        // Kompaktowanie: zdejmij BOM (start>0) i — gdy włączone — usuń bajty NUL.
         var w = 0;
         for (var i = start; i < len; i++)
         {
             var b = rented[i];
-            if (b == 0) continue;
+            if (stripNul && b == 0) continue;
             rented[w++] = b;
         }
 

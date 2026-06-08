@@ -29,9 +29,9 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 
             foreach (var src in batch)
             {
+                // Sanitizer już przycina białe znaki na brzegach — bez dodatkowego Trim().
                 var code = Sanitizer(src.Code);
                 if (string.IsNullOrWhiteSpace(code)) { SkippedNoCode++; continue; }
-                code = code.Trim();
 
                 var product = MapToProduct(src);
                 if (product is null) { SkippedNoNutrition++; continue; }
@@ -43,8 +43,8 @@ namespace inzynierka.Products.OpenFoodFacts.Import
             if (payload.Products.Count == 0)
                 return;
 
-            await _bulkRepository.BulkImportBatchAsync(payload, cancellationToken);
-            Imported += payload.Products.Count;
+            // Licz faktycznie zapisane wiersze (po deduplikacji i ON CONFLICT), nie liczbę wysłanych.
+            Imported += await _bulkRepository.BulkImportBatchAsync(payload, cancellationToken);
         }
 
         private static void CollectTags(OpenFoodFactsProduct src, string code, ProductBatch batch)

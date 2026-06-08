@@ -24,6 +24,16 @@ public sealed class PipelineOptions
     /// <summary>Pomijaj puste/białe linie bez liczenia ich jako błąd. Domyślnie tak.</summary>
     public bool SkipBlankLines { get; set; } = true;
 
+    /// <summary>Zdejmij UTF-8 BOM z pierwszej linii. Domyślnie tak.</summary>
+    public bool StripByteOrderMark { get; set; } = true;
+
+    /// <summary>
+    /// Usuwaj bajty NUL (0x00) z każdej linii przed parsowaniem. Domyślnie tak —
+    /// dumpy bywają zanieczyszczone NUL-ami, które wywracają parsery. Ustaw na
+    /// <c>false</c>, gdy potrzebujesz bajt-w-bajt wiernego wejścia.
+    /// </summary>
+    public bool StripNullBytes { get; set; } = true;
+
     internal void Validate()
     {
         if (Parallelism < 1) throw new ArgumentOutOfRangeException(nameof(Parallelism));

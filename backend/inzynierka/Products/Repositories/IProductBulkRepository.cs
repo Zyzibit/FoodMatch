@@ -10,5 +10,6 @@ public interface IProductBulkRepository
     /// binary COPY do tabel tymczasowych, upsert produktów (ON CONFLICT),
     /// dosianie brakujących tagów i MERGE linków.
     /// </summary>
-    Task BulkImportBatchAsync(ProductBatch batch, CancellationToken ct = default);
+    /// <returns>Liczba faktycznie zapisanych wierszy produktów (wstawione + zaktualizowane).</returns>
+    Task<int> BulkImportBatchAsync(ProductBatch batch, CancellationToken ct = default);
 }

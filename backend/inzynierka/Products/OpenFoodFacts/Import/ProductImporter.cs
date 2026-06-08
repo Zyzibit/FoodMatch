@@ -58,7 +58,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
                 _logger.LogWarning(
                     "Import cancelled by user (or client). DB imported until cancellation: {Ok}, Skipped NoNutrition: {Nutrition}, Skipped NoCode: {Code}",
                     sink.Imported, sink.SkippedNoNutrition, sink.SkippedNoCode);
-                throw; // rethrow is fine, or just swallow if we want normal execution flow
+                throw;
             }
             finally
             {

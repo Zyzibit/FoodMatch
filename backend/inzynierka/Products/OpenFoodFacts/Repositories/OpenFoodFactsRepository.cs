@@ -38,15 +38,17 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
         #endregion
 
-        public async Task BulkImportBatchAsync(ProductBatch batch, CancellationToken ct = default)
+        public async Task<int> BulkImportBatchAsync(ProductBatch batch, CancellationToken ct = default)
         {
-            if (batch.IsEmpty) return;
+            if (batch.IsEmpty) return 0;
 
             // Deduplikacja produktów w obrębie paczki (po Code, case-insensitive).
+            // Przy duplikatach kodu wybieramy najnowszy rekord (po LastUpdated), spójnie
+            // z regułą rozstrzygania konfliktów w INSERT ... ON CONFLICT poniżej.
             var products = batch.Products
                 .Where(p => !string.IsNullOrWhiteSpace(p.Code))
                 .GroupBy(p => p.Code!.Trim(), StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
+                .Select(g => g.OrderByDescending(p => p.LastUpdated ?? DateTime.MinValue).First())
                 .ToList();
 
             var conn      = (NpgsqlConnection)_context.Database.GetDbConnection();
@@ -60,13 +62,16 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             await using var tx = await conn.BeginTransactionAsync(ct);
             try
             {
+                // synchronous_commit=off rezygnuje z fsync na commit dla przepustowości.
+                // Bezpieczne, bo import jest idempotentny i wznawialny (ON CONFLICT/MERGE):
+                // utratę paczki przy awarii serwera naprawia ponowne uruchomienie importu.
                 await ExecAsync(conn, tx, @"
                     SET LOCAL statement_timeout = 0;
                     SET LOCAL lock_timeout = 0;
                     SET LOCAL idle_in_transaction_session_timeout = 0;
                     SET LOCAL synchronous_commit = off;", ct);
 
-                await UpsertProductsAsync(conn, tx, products, ct);
+                var imported = await UpsertProductsAsync(conn, tx, products, ct);
 
                 await UpsertLinksAsync(conn, tx, "stage_prod_ingredient", "ProductIngredientTag", "ProductId", "IngredientTagId", "IngredientTags", batch.IngredientLinks, ct);
                 await UpsertLinksAsync(conn, tx, "stage_prod_country",    "ProductCountryTag",    "ProductId", "CountryTagId",    "CountryTags",    batch.CountryLinks,    ct);
@@ -74,6 +79,7 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
                 await UpsertLinksAsync(conn, tx, "stage_prod_allergen",   "ProductAllergenTag",   "ProductId", "AllergenTagId",   "AllergenTags",   batch.AllergenLinks,   ct);
 
                 await tx.CommitAsync(ct);
+                return imported;
             }
             catch (Exception ex)
             {
@@ -89,10 +95,10 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
         #region Products (staging + binary COPY + INSERT ON CONFLICT)
 
-        private static async Task UpsertProductsAsync(
+        private static async Task<int> UpsertProductsAsync(
             NpgsqlConnection conn, NpgsqlTransaction tx, List<Product> products, CancellationToken ct)
         {
-            if (products.Count == 0) return;
+            if (products.Count == 0) return 0;
 
             await ExecAsync(conn, tx, @"
                 CREATE TEMP TABLE IF NOT EXISTS products_stage
@@ -176,7 +182,9 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
             }
 
             // Bez ANALYZE: upsert to seq-scan stage'a + INSERT ON CONFLICT, brak JOIN-a do strojenia.
-            await ExecAsync(conn, tx, @"
+            // Zwracana liczba = wiersze faktycznie wstawione lub zaktualizowane (pominięte przez
+            // WHERE w DO UPDATE nie są liczone), czyli rzeczywista liczba zapisów do "Products".
+            return await ExecAsync(conn, tx, @"
                 INSERT INTO ""Products""
                 (
                     ""Code"", ""Language"", ""BrandOwner"", ""LanguageCode"", ""ProductName"",
@@ -299,10 +307,10 @@ namespace inzynierka.Products.OpenFoodFacts.Repositories
 
         #region Low-level helpers
 
-        private static async Task ExecAsync(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, CancellationToken ct)
+        private static async Task<int> ExecAsync(NpgsqlConnection conn, NpgsqlTransaction tx, string sql, CancellationToken ct)
         {
             await using var cmd = new NpgsqlCommand(sql, conn, tx) { CommandTimeout = 0 };
-            await cmd.ExecuteNonQueryAsync(ct);
+            return await cmd.ExecuteNonQueryAsync(ct);
         }
 
         private static Task Text(NpgsqlBinaryImporter w, string? v, CancellationToken ct) =>
