@@ -16,7 +16,7 @@ namespace inzynierka.Benchmarks;
 /// by odwzorować duże, rzadkie dokumenty z prawdziwego dumpu (~60 GB).
 /// </summary>
 [MemoryDiagnoser]
-[ShortRunJob]
+// Usunięte [ShortRunJob] na rzecz domyślnego, dłuższego runu (standard)
 public class JsonParsingBenchmark
 {
     private byte[] _utf8 = null!;
