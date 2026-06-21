@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace FastPipe.Parsing;
+namespace inzynierka.ETL.Parsing;
 
 /// <summary>
 /// JSONL parser based on <see cref="JsonSerializer"/> working directly on a
@@ -59,13 +59,18 @@ public sealed class JsonRecordParser<T> : IRecordParser<T> where T : class
     {
         try
         {
-            value = Parse(utf8Line)!;
-            return value is not null;
+            if (Parse(utf8Line) is { } parsed)
+            {
+                value = parsed;
+                return true;
+            }
         }
         catch (JsonException)
         {
-            value = null;
-            return false;
+            // Malformed input — fall through to the dropped result below.
         }
+
+        value = null;
+        return false;
     }
 }

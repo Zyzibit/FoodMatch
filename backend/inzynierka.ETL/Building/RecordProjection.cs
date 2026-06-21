@@ -1,4 +1,4 @@
-namespace FastPipe.Pipeline;
+namespace inzynierka.ETL.Building;
 
 /// <summary>
 /// Result of projecting a single line: whether a record was produced and, if so, its value.

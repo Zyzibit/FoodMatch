@@ -1,6 +1,13 @@
 using System.Collections.Concurrent;
+using System.IO.Pipelines;
+using System.Text;
 using System.Text.Json;
-using FastPipe.Pipeline;
+using inzynierka.ETL;
+using inzynierka.ETL.Framing;
+using inzynierka.ETL.Parsing;
+using inzynierka.ETL.Resilience;
+using inzynierka.ETL.Sinks;
+using inzynierka.ETL.Sources;
 
 namespace inzynierka.Tests.DataPipelineTests
 {
@@ -28,7 +35,7 @@ namespace inzynierka.Tests.DataPipelineTests
             return (sink, sink.WriteBatchAsync);
         }
 
-        private sealed class CollectingSink<T>
+        private sealed class CollectingSink<T> : IBatchSink<T>
         {
             public ConcurrentBag<T> Items { get; } = new();
             public List<int> BatchSizes { get; } = new();
@@ -278,6 +285,154 @@ namespace inzynierka.Tests.DataPipelineTests
                 .WriteBatchesTo(write2);
             Assert.Equal(0, second.ItemsWritten);
             Assert.Empty(sink2.Items);
+        }
+
+        // ---- Framing seams ------------------------------------------------------
+
+        private sealed record Row(string Id, string Name);
+
+        [Fact]
+        public async Task Csv_Framing_HandlesQuotedMultilineField()
+        {
+            // Row 1's name spans two physical lines inside quotes; the header is dropped by the mapper.
+            var csv = "id,name\n1,\"hello\nworld\"\n2,plain\n";
+            var path = Path.GetTempFileName();
+            _tempFiles.Add(path);
+            File.WriteAllText(path, csv);
+            var (sink, write) = Collector<Row>();
+
+            var report = await DataPipeline.FromJsonlFile(path)
+                .Frame(new CsvFraming())
+                .Parse(new CsvRecordParser<Row>(f => f[0] == "id" ? null : new Row(f[0], f[1])))
+                .WriteBatchesTo(write);
+
+            Assert.Equal(2, report.ItemsWritten);
+            Assert.Contains(sink.Items, r => r.Id == "1" && r.Name == "hello\nworld");
+            Assert.Contains(sink.Items, r => r.Id == "2" && r.Name == "plain");
+        }
+
+        [Fact]
+        public async Task Delimiter_Framing_SplitsOnCustomSeparator()
+        {
+            // Three JSON records on a single physical line separated by "||".
+            var content = string.Join("||", Enumerable.Range(1, 3).Select(i => Json(i, $"n{i}")));
+            var path = Path.GetTempFileName();
+            _tempFiles.Add(path);
+            File.WriteAllText(path, content);
+            var (sink, write) = Collector<Item>();
+
+            var report = await DataPipeline.FromJsonlFile(path)
+                .Frame(new DelimiterFraming("||"))
+                .DeserializeJson<Item>()
+                .WriteBatchesTo(write);
+
+            Assert.Equal(3, report.ItemsWritten);
+            Assert.Equal(new[] { 1, 2, 3 }.ToHashSet(), sink.Items.Select(i => i.Id).ToHashSet());
+        }
+
+        // ---- Dead-letter --------------------------------------------------------
+
+        private sealed class CollectingDeadLetter : IDeadLetterSink
+        {
+            public ConcurrentBag<string> Records { get; } = new();
+
+            public ValueTask WriteAsync(ReadOnlyMemory<byte> rawRecord, Exception error, CancellationToken ct)
+            {
+                Records.Add(Encoding.UTF8.GetString(rawRecord.Span));
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        [Fact]
+        public async Task DeadLetter_RoutesMalformedRecordsAndCountsFailed()
+        {
+            var path = WriteJsonl(new[] { Json(1, "a"), "{ not json", Json(2, "b") });
+            var (sink, write) = Collector<Item>();
+            var dead = new CollectingDeadLetter();
+
+            var report = await DataPipeline.FromJsonlFile(path)
+                .DeserializeJson<Item>()
+                .OnErrorDeadLetter(dead)
+                .WriteBatchesTo(write);
+
+            Assert.Equal(2, report.ItemsWritten);
+            Assert.Equal(1, report.Failed);
+            Assert.Single(dead.Records);
+            Assert.Contains("not json", dead.Records.Single());
+        }
+
+        // ---- Sink decorators ----------------------------------------------------
+
+        private sealed class FlakyBatchSink<T> : IBatchSink<T>
+        {
+            private readonly IBatchSink<T> _inner;
+            private int _failuresLeft;
+            public FlakyBatchSink(IBatchSink<T> inner, int failures) { _inner = inner; _failuresLeft = failures; }
+
+            public ValueTask WriteBatchAsync(IReadOnlyList<T> batch, CancellationToken ct)
+            {
+                if (_failuresLeft-- > 0) throw new InvalidOperationException("transient");
+                return _inner.WriteBatchAsync(batch, ct);
+            }
+        }
+
+        [Fact]
+        public async Task RetryBatchSink_RetriesTransientFailures()
+        {
+            var path = WriteJsonl(Enumerable.Range(1, 20).Select(i => Json(i, $"n{i}")));
+            var collecting = new CollectingSink<Item>();
+            var flaky = new FlakyBatchSink<Item>(collecting, failures: 2);
+            var sink = new RetryBatchSink<Item>(flaky, maxRetries: 3, backoff: TimeSpan.FromMilliseconds(1));
+
+            var report = await DataPipeline.FromJsonlFile(path)
+                .DeserializeJson<Item>()
+                .WithBatchSize(20)
+                .WithParallelism(1)
+                .WriteBatchesTo(sink);
+
+            Assert.Equal(20, report.ItemsWritten);
+            Assert.Equal(20, collecting.Items.Count);
+        }
+
+        [Fact]
+        public async Task TeeBatchSink_FansOutToAllSinks()
+        {
+            var path = WriteJsonl(Enumerable.Range(1, 30).Select(i => Json(i, $"n{i}")));
+            var a = new CollectingSink<Item>();
+            var b = new CollectingSink<Item>();
+            var sink = new TeeBatchSink<Item>(a, b);
+
+            await DataPipeline.FromJsonlFile(path).DeserializeJson<Item>().WriteBatchesTo(sink);
+
+            Assert.Equal(30, a.Items.Count);
+            Assert.Equal(30, b.Items.Count);
+        }
+
+        // ---- Custom source ------------------------------------------------------
+
+        private sealed class MemoryDataSource : IDataSource
+        {
+            private readonly byte[] _bytes;
+            public MemoryDataSource(string content) => _bytes = Encoding.UTF8.GetBytes(content);
+
+            public PipeReader OpenReader(int readBufferSize, out IAsyncDisposable? owned)
+            {
+                var stream = new MemoryStream(_bytes, writable: false);
+                owned = stream;
+                return PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: readBufferSize, leaveOpen: true));
+            }
+        }
+
+        [Fact]
+        public async Task From_CustomDataSource_ReadsAllRecords()
+        {
+            var content = string.Join('\n', Enumerable.Range(1, 40).Select(i => Json(i, $"n{i}")));
+            var (sink, write) = Collector<Item>();
+
+            var report = await DataPipeline.From(new MemoryDataSource(content)).DeserializeJson<Item>().WriteBatchesTo(write);
+
+            Assert.Equal(40, report.ItemsWritten);
+            Assert.Equal(Enumerable.Range(1, 40).ToHashSet(), sink.Items.Select(i => i.Id).ToHashSet());
         }
 
         private string NewTempDir()

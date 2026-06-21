@@ -83,9 +83,9 @@
       <Folder Include="UserPreferences\" />
       <Folder Include="UserPreferences\API\" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\FastPipe\FastPipe.csproj" />
+      <ProjectReference Include="..\inzynierka.ETL\inzynierka.ETL.csproj" />
     </ItemGroup>
-    
+
 </Project>

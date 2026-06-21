@@ -1,4 +1,6 @@
-using FastPipe.Pipeline;
+using inzynierka.ETL;
+using inzynierka.ETL.Diagnostics;
+using inzynierka.ETL.Resilience;
 using inzynierka.Products.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -6,7 +8,7 @@ namespace inzynierka.Products.OpenFoodFacts.Import
 {
     /// <summary>
     /// Imports an OpenFoodFacts JSONL dump. Reading, parsing, parallelism and backpressure are
-    /// handled by the reusable pipeline from the <c>FastPipe</c> library; what remains here is
+    /// handled by the reusable pipeline from the <c>inzynierka.ETL</c> library; what remains here is
     /// just pipeline composition, the bulk-import lifecycle and logging.
     /// </summary>
     public sealed class ProductImporter : IProductImporter

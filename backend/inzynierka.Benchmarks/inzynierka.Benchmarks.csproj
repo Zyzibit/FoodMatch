@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\FastPipe\FastPipe.csproj" />
+        <ProjectReference Include="..\inzynierka.ETL\inzynierka.ETL.csproj" />
         <ProjectReference Include="..\inzynierka\inzynierka.csproj" />
     </ItemGroup>
 

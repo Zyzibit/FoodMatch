@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace FastPipe.Parsing;
+namespace inzynierka.ETL.Parsing;
 
 /// <summary>
 /// Parses a single UTF-8 line into a record of type <typeparamref name="T"/>.

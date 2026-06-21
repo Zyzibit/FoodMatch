@@ -1,4 +1,4 @@
-namespace FastPipe.Pipeline;
+namespace inzynierka.ETL.Sinks;
 
 /// <summary>
 /// Receiver of record batches — the pipeline's destination (e.g. a bulk write to a database

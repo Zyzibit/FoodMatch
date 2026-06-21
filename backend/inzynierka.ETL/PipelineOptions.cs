@@ -1,4 +1,8 @@
-namespace FastPipe.Pipeline;
+using inzynierka.ETL.Framing;
+using inzynierka.ETL.Resilience;
+using inzynierka.ETL.Sinks;
+
+namespace inzynierka.ETL;
 
 /// <summary>
 /// Engine tuning. Sensible defaults — simple usage needs nothing set.
@@ -20,6 +24,12 @@ public sealed class PipelineOptions
     /// <summary>Reaction to a record parse error.</summary>
     public ErrorPolicy ErrorPolicy { get; set; } = ErrorPolicy.Skip;
 
+    /// <summary>Splits the byte stream into records. Defaults to one record per line (<see cref="LineFraming"/>).</summary>
+    public IRecordFraming Framing { get; set; } = LineFraming.Instance;
+
+    /// <summary>Destination for malformed records when <see cref="ErrorPolicy"/> is <see cref="ErrorPolicy.DeadLetter"/>.</summary>
+    public IDeadLetterSink? DeadLetterSink { get; set; }
+
     /// <summary>Skip empty/whitespace lines without counting them as errors. Defaults to true.</summary>
     public bool SkipBlankLines { get; set; } = true;
 
@@ -35,9 +45,12 @@ public sealed class PipelineOptions
 
     internal void Validate()
     {
-        if (Parallelism < 1) throw new ArgumentOutOfRangeException(nameof(Parallelism));
-        if (ChannelCapacity < 1) throw new ArgumentOutOfRangeException(nameof(ChannelCapacity));
-        if (BatchSize < 1) throw new ArgumentOutOfRangeException(nameof(BatchSize));
-        if (ReadBufferSize < 4096) throw new ArgumentOutOfRangeException(nameof(ReadBufferSize));
+        ArgumentOutOfRangeException.ThrowIfLessThan(Parallelism, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(ChannelCapacity, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(BatchSize, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(ReadBufferSize, 4096);
+        if (ErrorPolicy == ErrorPolicy.DeadLetter && DeadLetterSink is null)
+            throw new InvalidOperationException("ErrorPolicy.DeadLetter requires a DeadLetterSink.");
+        ArgumentNullException.ThrowIfNull(Framing);
     }
 }

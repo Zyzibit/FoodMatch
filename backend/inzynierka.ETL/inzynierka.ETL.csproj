@@ -4,14 +4,14 @@
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>FastPipe</RootNamespace>
-        <AssemblyName>FastPipe</AssemblyName>
+        <RootNamespace>inzynierka.ETL</RootNamespace>
+        <AssemblyName>inzynierka.ETL</AssemblyName>
     </PropertyGroup>
 
     <!-- Package metadata — the library is self-contained (zero project dependencies)
          and ready to be extracted as a NuGet package / separate repo. -->
     <PropertyGroup>
-        <PackageId>FastPipe</PackageId>
+        <PackageId>inzynierka.ETL</PackageId>
         <Version>0.1.0</Version>
         <Authors>FoodMatch</Authors>
         <Description>High-performance streaming ETL pipeline for line-delimited files (JSONL): PipeReader -&gt; parallel parsing with backpressure -&gt; batching sink. Sources: a file, any Stream (gzip/network), a PipeReader, or many files with a checkpoint.</Description>

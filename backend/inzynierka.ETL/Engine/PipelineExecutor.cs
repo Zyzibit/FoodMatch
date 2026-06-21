@@ -3,14 +3,18 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
-using FastPipe.Internal;
+using inzynierka.ETL.Building;
+using inzynierka.ETL.Diagnostics;
+using inzynierka.ETL.Resilience;
+using inzynierka.ETL.Sinks;
+using inzynierka.ETL.Sources;
 
-namespace FastPipe.Pipeline;
+namespace inzynierka.ETL.Engine;
 
 /// <summary>
 /// ETL pipeline engine. Three stages connected by bounded channels (backpressure):
 ///
-///   [producer]   PipeReader reads the source → line framing → copy into a pooled buffer
+///   [producer]   PipeReader reads the source → record framing → copy into a pooled buffer
 ///        │  (Channel&lt;LineSegment&gt;, bounded)
 ///   [N workers]  parallel parse from bytes → projection (parse + Where + Select)
 ///        │  (Channel&lt;TOut&gt;, bounded)
@@ -40,7 +44,7 @@ internal static class PipelineExecutor
     // ---- PUSH mode: full run into the sink, returns a report ------------------
 
     public static async Task<IngestionReport> RunAsync<TOut>(
-        PipelineDataSource source,
+        IDataSource source,
         RecordProjection<TOut> projection,
         IBatchSink<TOut> sink,
         PipelineOptions options,
@@ -72,7 +76,7 @@ internal static class PipelineExecutor
                 if (batch.Count >= options.BatchSize)
                 {
                     await FlushAsync(sink, batch, counters, progress, ct);
-                    batch = new List<TOut>(options.BatchSize);
+                    batch.Clear();
                 }
             }
             if (batch.Count > 0)
@@ -119,7 +123,7 @@ internal static class PipelineExecutor
     // ---- PULL mode: output stream as IAsyncEnumerable ------------------------
 
     public static async IAsyncEnumerable<TOut> StreamAsync<TOut>(
-        PipelineDataSource source,
+        IDataSource source,
         RecordProjection<TOut> projection,
         PipelineOptions options,
         [EnumeratorCancellation] CancellationToken externalCt = default)
@@ -141,10 +145,7 @@ internal static class PipelineExecutor
         try
         {
             await foreach (var item in output.ReadAllAsync(ct))
-            {
-                Interlocked.Increment(ref counters.Items);
                 yield return item;
-            }
         }
         finally
         {
@@ -160,7 +161,7 @@ internal static class PipelineExecutor
 
 
     private static (ChannelReader<TOut> Output, Task Completion, Task Producer) StartCore<TOut>(
-        PipelineDataSource source,
+        IDataSource source,
         RecordProjection<TOut> projection,
         PipelineOptions options,
         Counters counters,
@@ -200,7 +201,7 @@ internal static class PipelineExecutor
         var workers = new Task[options.Parallelism];
         for (var i = 0; i < workers.Length; i++)
             workers[i] = Task.Run(() => RunWorkerAsync(
-                lineChannel.Reader, outputChannel.Writer, projection, options.ErrorPolicy, counters, onFatal, ct), ct);
+                lineChannel.Reader, outputChannel.Writer, projection, options, counters, onFatal, ct), ct);
 
         // No token: this task must always run to completion to close the output channel.
         var completion = Task.Run(async () =>
@@ -215,8 +216,9 @@ internal static class PipelineExecutor
     }
 
     private static async Task ProduceLinesAsync(
-        PipelineDataSource source, PipelineOptions options, ChannelWriter<LineSegment> writer, Counters counters, CancellationToken ct)
+        IDataSource source, PipelineOptions options, ChannelWriter<LineSegment> writer, Counters counters, CancellationToken ct)
     {
+        var framing = options.Framing;
         var reader = source.OpenReader(options.ReadBufferSize, out var owned);
         var firstLine = true;
 
@@ -227,13 +229,13 @@ internal static class PipelineExecutor
                 var result = await reader.ReadAsync(ct);
                 var buffer = result.Buffer;
 
-                while (ByteLineFraming.TryReadLine(ref buffer, out var line))
-                    await EmitLineAsync(in line, writer, options, counters, ref firstLine, ct);
+                while (framing.TryReadRecord(ref buffer, out var record))
+                    await EmitLineAsync(in record, writer, options, counters, ref firstLine, ct);
 
                 if (result.IsCompleted)
                 {
-                    if (!buffer.IsEmpty)
-                        await EmitLineAsync(in buffer, writer, options, counters, ref firstLine, ct);
+                    if (framing.TryReadTrailing(in buffer, out var trailing))
+                        await EmitLineAsync(in trailing, writer, options, counters, ref firstLine, ct);
                     reader.AdvanceTo(buffer.End);
                     break;
                 }
@@ -254,7 +256,7 @@ internal static class PipelineExecutor
     {
         Interlocked.Increment(ref counters.LinesRead);
 
-        if (options.SkipBlankLines && ByteLineFraming.IsBlank(in line))
+        if (options.SkipBlankLines && options.Framing.IsBlank(in line))
         {
             Interlocked.Increment(ref counters.Blank);
             return ValueTask.CompletedTask;
@@ -306,8 +308,11 @@ internal static class PipelineExecutor
 
     private static async Task RunWorkerAsync<TOut>(
         ChannelReader<LineSegment> reader, ChannelWriter<TOut> output, RecordProjection<TOut> projection,
-        ErrorPolicy policy, Counters counters, Action<Exception> onFatal, CancellationToken ct)
+        PipelineOptions options, Counters counters, Action<Exception> onFatal, CancellationToken ct)
     {
+        var policy = options.ErrorPolicy;
+        var deadLetter = options.DeadLetterSink;
+
         await foreach (var segment in reader.ReadAllAsync(ct))
         {
             ProjectionOutcome<TOut> outcome;
@@ -318,22 +323,28 @@ internal static class PipelineExecutor
                     // The projection parses synchronously and may then run an async transform.
                     // The pooled buffer is only touched during parsing; returning it after the
                     // projection completes is safe (the async map operates on the parsed value).
-                    outcome = await projection(new ReadOnlyMemory<byte>(segment.Buffer, 0, segment.Length));
+                    outcome = await projection(segment.Buffer.AsMemory(0, segment.Length));
                 }
-                finally
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    ArrayPool<byte>.Shared.Return(segment.Buffer);
+                    if (policy == ErrorPolicy.Throw)
+                    {
+                        onFatal(ex);
+                        throw;
+                    }
+                    if (policy == ErrorPolicy.DeadLetter && deadLetter is not null)
+                    {
+                        // Copy the raw bytes before the buffer returns to the pool (in finally).
+                        var raw = segment.Buffer.AsSpan(0, segment.Length).ToArray();
+                        await deadLetter.WriteAsync(raw, ex, ct);
+                    }
+                    Interlocked.Increment(ref counters.Failed);
+                    continue;
                 }
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            finally
             {
-                if (policy == ErrorPolicy.Throw)
-                {
-                    onFatal(ex);
-                    throw;
-                }
-                Interlocked.Increment(ref counters.Failed);
-                continue;
+                ArrayPool<byte>.Shared.Return(segment.Buffer);
             }
 
             if (outcome.Produced)

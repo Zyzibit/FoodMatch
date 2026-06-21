@@ -1,5 +1,5 @@
 using System.Text;
-using FastPipe.Pipeline;
+using inzynierka.ETL.Sinks;
 using inzynierka.Products.Model;
 using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
 using inzynierka.Products.Repositories;

@@ -1,4 +1,4 @@
-namespace FastPipe.Pipeline;
+namespace inzynierka.ETL.Diagnostics;
 
 /// <summary>
 /// Summary of a pipeline run — hard numbers for logs, metrics and benchmarks.
@@ -28,6 +28,17 @@ public sealed record IngestionReport
 
     /// <summary>Throughput in lines per second.</summary>
     public double LinesPerSecond => Elapsed.TotalSeconds > 0 ? LinesRead / Elapsed.TotalSeconds : 0;
+
+    public static IngestionReport operator +(IngestionReport a, IngestionReport b) => new()
+    {
+        LinesRead = a.LinesRead + b.LinesRead,
+        BlankLinesSkipped = a.BlankLinesSkipped + b.BlankLinesSkipped,
+        Dropped = a.Dropped + b.Dropped,
+        Failed = a.Failed + b.Failed,
+        ItemsWritten = a.ItemsWritten + b.ItemsWritten,
+        BatchesWritten = a.BatchesWritten + b.BatchesWritten,
+        Elapsed = a.Elapsed + b.Elapsed,
+    };
 
     public override string ToString() =>
         $"read={LinesRead}, written={ItemsWritten}, dropped={Dropped}, failed={Failed}, " +
