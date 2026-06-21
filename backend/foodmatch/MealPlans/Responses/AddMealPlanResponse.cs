@@ -1,4 +1,4 @@
-namespace inzynierka.MealPlans.Responses;
+namespace foodmatch.MealPlans.Responses;
 
 public class AddMealPlanResponse
 {

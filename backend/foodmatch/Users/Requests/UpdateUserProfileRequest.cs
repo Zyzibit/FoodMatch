@@ -1,4 +1,4 @@
-namespace inzynierka.Users.Requests;
+namespace foodmatch.Users.Requests;
 
 public class UpdateUserProfileRequest
 {

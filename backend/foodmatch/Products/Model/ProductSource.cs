@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Model;
+namespace foodmatch.Products.Model;
 
 public enum ProductSource
 {

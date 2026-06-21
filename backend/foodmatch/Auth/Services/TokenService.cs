@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public class TokenService : ITokenService {
     private readonly IConfiguration _configuration;

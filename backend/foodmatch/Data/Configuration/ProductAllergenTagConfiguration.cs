@@ -1,9 +1,9 @@
 ﻿
-using inzynierka.Products.Model.Tag.AllergenTag;
+using foodmatch.Products.Model.Tag.AllergenTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class ProductAllergenTagConfiguration: IEntityTypeConfiguration<ProductAllergenTag> {
     public void Configure(EntityTypeBuilder<ProductAllergenTag> builder) {

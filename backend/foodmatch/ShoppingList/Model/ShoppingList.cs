@@ -1,6 +1,6 @@
-using inzynierka.Users.Model;
+using foodmatch.Users.Model;
 
-namespace inzynierka.ShoppingList.Model;
+namespace foodmatch.ShoppingList.Model;
 
 public class ShoppingList
 {

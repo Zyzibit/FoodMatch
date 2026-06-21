@@ -1,8 +1,8 @@
-﻿using inzynierka.Data;
-using inzynierka.Recipes.Model;
+﻿using foodmatch.Data;
+using foodmatch.Recipes.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Recipes.Repositories;
+namespace foodmatch.Recipes.Repositories;
 
 public class RecipeRepository : IRecipeRepository
 {

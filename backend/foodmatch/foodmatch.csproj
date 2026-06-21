@@ -85,7 +85,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\inzynierka.ETL\inzynierka.ETL.csproj" />
+      <ProjectReference Include="..\foodmatch.ETL\foodmatch.ETL.csproj" />
     </ItemGroup>
 
 </Project>

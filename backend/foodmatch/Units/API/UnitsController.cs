@@ -1,9 +1,9 @@
-using inzynierka.Units.Requests;
-using inzynierka.Units.Services;
+using foodmatch.Units.Requests;
+using foodmatch.Units.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace inzynierka.Units.API;
+namespace foodmatch.Units.API;
 
 [ApiController]
 [Route("api/v1/units")]

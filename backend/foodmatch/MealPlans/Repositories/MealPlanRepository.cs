@@ -1,8 +1,8 @@
-using inzynierka.Data;
-using inzynierka.MealPlans.Model;
+using foodmatch.Data;
+using foodmatch.MealPlans.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.MealPlans.Repositories;
+namespace foodmatch.MealPlans.Repositories;
 
 public class MealPlanRepository : IMealPlanRepository
 {

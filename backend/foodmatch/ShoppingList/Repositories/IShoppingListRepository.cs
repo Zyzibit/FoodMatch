@@ -1,6 +1,6 @@
-using inzynierka.ShoppingList.Model;
+using foodmatch.ShoppingList.Model;
 
-namespace inzynierka.ShoppingList.Repositories;
+namespace foodmatch.ShoppingList.Repositories;
 
 public interface IShoppingListRepository
 {

@@ -1,7 +1,7 @@
-using inzynierka.Recipes.Model.RecipeModel;
-using inzynierka.Recipes.Responses;
+using foodmatch.Recipes.Model.RecipeModel;
+using foodmatch.Recipes.Responses;
 
-namespace inzynierka.Recipes.Extensions;
+namespace foodmatch.Recipes.Extensions;
 
 public static class GeneratedRecipeExtensions
 {

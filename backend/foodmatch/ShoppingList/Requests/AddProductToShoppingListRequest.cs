@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-namespace inzynierka.ShoppingList.Requests;
+namespace foodmatch.ShoppingList.Requests;
 
 public class AddProductToShoppingListRequest
 {

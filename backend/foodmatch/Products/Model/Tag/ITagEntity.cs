@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Model.Tag;
+﻿namespace foodmatch.Products.Model.Tag;
 
 public interface ITagEntity 
 { 

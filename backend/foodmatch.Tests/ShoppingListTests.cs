@@ -1,16 +1,16 @@
-using inzynierka.ShoppingList.Services;
-using inzynierka.ShoppingList.Repositories;
-using inzynierka.ShoppingList.Model;
-using inzynierka.ShoppingList.Requests;
-using inzynierka.ShoppingList.Responses;
-using inzynierka.Products.Services;
-using inzynierka.Units.Services;
-using inzynierka.Units.Models;
-using inzynierka.Products.Responses;
+using foodmatch.ShoppingList.Services;
+using foodmatch.ShoppingList.Repositories;
+using foodmatch.ShoppingList.Model;
+using foodmatch.ShoppingList.Requests;
+using foodmatch.ShoppingList.Responses;
+using foodmatch.Products.Services;
+using foodmatch.Units.Services;
+using foodmatch.Units.Model;
+using foodmatch.Products.Responses;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace inzynierka.Tests.ShoppingListTests
+namespace foodmatch.Tests.ShoppingListTests
 {
     public class ShoppingListServiceTests
     {

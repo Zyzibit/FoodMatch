@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using inzynierka.Auth.Services;
-using inzynierka.Auth.Utilities;
+using foodmatch.Auth.Services;
+using foodmatch.Auth.Utilities;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using inzynierka.Auth.Requests;
-using inzynierka.Auth.Responses;
-using inzynierka.Users.Model;
+using foodmatch.Auth.Requests;
+using foodmatch.Auth.Responses;
+using foodmatch.Users.Model;
 
-namespace inzynierka.Auth.API;
+namespace foodmatch.Auth.API;
 
 [ApiController]
 [Route("api/v1/auth")]

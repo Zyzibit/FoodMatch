@@ -1,6 +1,6 @@
 using System.IO.Pipelines;
 
-namespace inzynierka.ETL.Sources;
+namespace foodmatch.ETL.Sources;
 
 /// <summary>
 /// Reads from any <see cref="Stream"/>. Wrap the stream to decompress, e.g.

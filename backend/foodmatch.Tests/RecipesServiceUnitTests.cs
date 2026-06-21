@@ -1,16 +1,16 @@
-﻿using inzynierka.Recipes.Services;
-using inzynierka.Recipes.Repositories;
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Requests;
-using inzynierka.Recipes.Responses;
-using inzynierka.Products.Services;
-using inzynierka.Units.Services;
-using inzynierka.Users.Services;
-using inzynierka.UserPreferences.Services;
+﻿using foodmatch.Recipes.Services;
+using foodmatch.Recipes.Repositories;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Requests;
+using foodmatch.Recipes.Responses;
+using foodmatch.Products.Services;
+using foodmatch.Units.Services;
+using foodmatch.Users.Services;
+using foodmatch.UserPreferences.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace inzynierka.Tests.RecipesTests
+namespace foodmatch.Tests.RecipesTests
 {
     public class RecipeServiceTests
     {

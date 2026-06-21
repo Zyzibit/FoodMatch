@@ -1,4 +1,4 @@
-namespace inzynierka.UserPreferences.Responses;
+namespace foodmatch.UserPreferences.Responses;
 
 public class MealNutritionDto
 {

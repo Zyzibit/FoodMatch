@@ -1,7 +1,7 @@
-using inzynierka.MealPlans.Requests;
-using inzynierka.MealPlans.Responses;
+using foodmatch.MealPlans.Requests;
+using foodmatch.MealPlans.Responses;
 
-namespace inzynierka.MealPlans.Services;
+namespace foodmatch.MealPlans.Services;
 
 public interface IMealPlanService
 {

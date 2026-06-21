@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Diagnostics;
+namespace foodmatch.ETL.Diagnostics;
 
 /// <summary>
 /// Summary of a pipeline run — hard numbers for logs, metrics and benchmarks.

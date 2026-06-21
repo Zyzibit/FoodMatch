@@ -1,6 +1,6 @@
-using inzynierka.Products.Model;
+using foodmatch.Products.Model;
 
-namespace inzynierka.Recipes.Responses;
+namespace foodmatch.Recipes.Responses;
 
 public class GeneratedRecipePreviewDto
 {

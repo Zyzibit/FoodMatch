@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Model.Tag.AllergenTag;
+﻿namespace foodmatch.Products.Model.Tag.AllergenTag;
 
 public class ProductAllergenTag
 {

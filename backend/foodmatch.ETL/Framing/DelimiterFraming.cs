@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text;
 
-namespace inzynierka.ETL.Framing;
+namespace foodmatch.ETL.Framing;
 
 /// <summary>
 /// Splits on an arbitrary byte delimiter (single or multi-byte), excluded from the record.

@@ -1,8 +1,8 @@
-﻿using inzynierka.Users.Model;
+﻿using foodmatch.Users.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Users.Services;
+namespace foodmatch.Users.Services;
 
 public class RoleService : IRoleService
 {

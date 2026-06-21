@@ -1,8 +1,8 @@
-﻿using inzynierka.Products.Model.Tag.CategoryTag;
+﻿using foodmatch.Products.Model.Tag.CategoryTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class ProductCategoryTagConfiguration: IEntityTypeConfiguration<ProductCategoryTag> {
     public void Configure(EntityTypeBuilder<ProductCategoryTag> builder) {

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using inzynierka.MealPlans.Model;
+using foodmatch.MealPlans.Model;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class MealPlanConfiguration : IEntityTypeConfiguration<MealPlan>
 {

@@ -1,12 +1,12 @@
-﻿using inzynierka.Products.Model;
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Repositories;
-using inzynierka.Units.Models;
-using inzynierka.Users.Model;
+﻿using foodmatch.Products.Model;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Repositories;
+using foodmatch.Units.Model;
+using foodmatch.Users.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace inzynierka.IntegrationTests;
+namespace foodmatch.IntegrationTests;
 
 public class RecipesRepositoryIntegrationTests : DatabaseIntegrationTest
 {

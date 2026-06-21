@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Requests;
+namespace foodmatch.Auth.Requests;
 
 public class RegisterRequest
 {

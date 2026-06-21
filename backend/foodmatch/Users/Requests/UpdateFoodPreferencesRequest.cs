@@ -1,5 +1,5 @@
 ﻿
-namespace inzynierka.Users.Requests;
+namespace foodmatch.Users.Requests;
 
 public class UpdateFoodPreferencesRequest {
     public bool? IsVegan { get; set; }

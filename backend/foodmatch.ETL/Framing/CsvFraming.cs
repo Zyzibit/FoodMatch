@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace inzynierka.ETL.Framing;
+namespace foodmatch.ETL.Framing;
 
 /// <summary>
 /// RFC-4180 record framing: one record per line, but a newline inside a double-quoted field is

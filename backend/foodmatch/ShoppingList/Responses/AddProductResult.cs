@@ -1,4 +1,4 @@
-namespace inzynierka.ShoppingList.Responses;
+namespace foodmatch.ShoppingList.Responses;
 
 public class AddProductResult
 {

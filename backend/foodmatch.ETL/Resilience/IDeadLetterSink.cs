@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Resilience;
+namespace foodmatch.ETL.Resilience;
 
 /// <summary>
 /// Destination for records that failed to parse. With <see cref="ErrorPolicy.DeadLetter"/> the

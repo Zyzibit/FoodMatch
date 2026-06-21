@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Responses;
+﻿namespace foodmatch.Products.Responses;
 
 public class ProductCategory
 {

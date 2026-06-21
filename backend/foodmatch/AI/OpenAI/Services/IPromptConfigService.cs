@@ -1,6 +1,6 @@
-using inzynierka.AI.OpenAI.Config;
+using foodmatch.AI.OpenAI.Config;
 
-namespace inzynierka.AI.OpenAI.Services;
+namespace foodmatch.AI.OpenAI.Services;
 
 public interface IPromptConfigService
 {

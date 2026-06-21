@@ -1,6 +1,6 @@
-﻿using inzynierka.Recipes.Model;
+﻿using foodmatch.Recipes.Model;
 
-namespace inzynierka.Recipes.Repositories;
+namespace foodmatch.Recipes.Repositories;
 
 public interface IRecipeRepository
 {

@@ -1,11 +1,11 @@
-using inzynierka.Products.Dto;
-using inzynierka.Products.Responses;
-using inzynierka.Products.Repositories;
-using inzynierka.Products.Model;
-using inzynierka.Products.Extensions;
-using inzynierka.Recipes.Model.RecipeModel;
+using foodmatch.Products.Requests;
+using foodmatch.Products.Responses;
+using foodmatch.Products.Repositories;
+using foodmatch.Products.Model;
+using foodmatch.Products.Extensions;
+using foodmatch.Recipes.Model.RecipeModel;
 
-namespace inzynierka.Products.Services;
+namespace foodmatch.Products.Services;
 
 public class ProductService : IProductService
 {

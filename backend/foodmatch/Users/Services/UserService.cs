@@ -1,11 +1,11 @@
-using inzynierka.Users.Model;
-using inzynierka.Users.Responses;
-using inzynierka.Users.Requests;
-using inzynierka.Users.Extensions;
+using foodmatch.Users.Model;
+using foodmatch.Users.Responses;
+using foodmatch.Users.Requests;
+using foodmatch.Users.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 
-namespace inzynierka.Users.Services;
+namespace foodmatch.Users.Services;
 
 public class UserService : IUserService
 {

@@ -1,15 +1,15 @@
 using System.Text.Json;
-using inzynierka.AI.OpenAI;
-using inzynierka.AI.OpenAI.Services;
-using inzynierka.Products.Model;
-using inzynierka.Products.Repositories;
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Model.RecipeModel;
-using inzynierka.Recipes.Requests;
-using inzynierka.Recipes.Responses;
-using inzynierka.Units.Services;
+using foodmatch.AI.OpenAI;
+using foodmatch.AI.OpenAI.Services;
+using foodmatch.Products.Model;
+using foodmatch.Products.Repositories;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Model.RecipeModel;
+using foodmatch.Recipes.Requests;
+using foodmatch.Recipes.Responses;
+using foodmatch.Units.Services;
 
-namespace inzynierka.Recipes.Services;
+namespace foodmatch.Recipes.Services;
 
     public class RecipeGeneratorService(
         IAiClient aiClient,

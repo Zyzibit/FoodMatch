@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Utilities;
+namespace foodmatch.Auth.Utilities;
 
 /// <summary>
 /// Helper class for extracting device information from HTTP requests

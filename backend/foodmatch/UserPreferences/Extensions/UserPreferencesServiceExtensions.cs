@@ -1,7 +1,7 @@
-using inzynierka.UserPreferences.Services;
+using foodmatch.UserPreferences.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace inzynierka.UserPreferences.Extensions;
+namespace foodmatch.UserPreferences.Extensions;
 
 public static class UserPreferencesServiceExtensions
 {

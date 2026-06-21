@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Sinks;
+namespace foodmatch.ETL.Sinks;
 
 /// <summary>
 /// Receiver of record batches — the pipeline's destination (e.g. a bulk write to a database

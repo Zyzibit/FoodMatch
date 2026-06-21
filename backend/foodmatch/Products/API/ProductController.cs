@@ -1,11 +1,11 @@
-using inzynierka.Products.Dto;
+using foodmatch.Products.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using inzynierka.Products.Services;
-using inzynierka.Products.Requests;
-using inzynierka.Products.Responses;
+using foodmatch.Products.Services;
+using foodmatch.Products.Requests;
+using foodmatch.Products.Responses;
 
-namespace inzynierka.Products.API;
+namespace foodmatch.Products.API;
 
 [ApiController]
 [Route("api/v1/products")]

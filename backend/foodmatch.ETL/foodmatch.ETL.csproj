@@ -4,14 +4,14 @@
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>inzynierka.ETL</RootNamespace>
-        <AssemblyName>inzynierka.ETL</AssemblyName>
+        <RootNamespace>foodmatch.ETL</RootNamespace>
+        <AssemblyName>foodmatch.ETL</AssemblyName>
     </PropertyGroup>
 
     <!-- Package metadata — the library is self-contained (zero project dependencies)
          and ready to be extracted as a NuGet package / separate repo. -->
     <PropertyGroup>
-        <PackageId>inzynierka.ETL</PackageId>
+        <PackageId>foodmatch.ETL</PackageId>
         <Version>0.1.0</Version>
         <Authors>FoodMatch</Authors>
         <Description>High-performance streaming ETL pipeline for line-delimited files (JSONL): PipeReader -&gt; parallel parsing with backpressure -&gt; batching sink. Sources: a file, any Stream (gzip/network), a PipeReader, or many files with a checkpoint.</Description>

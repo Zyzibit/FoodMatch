@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace inzynierka.Users.Services;
+namespace foodmatch.Users.Services;
 
 public interface IRoleService
 {

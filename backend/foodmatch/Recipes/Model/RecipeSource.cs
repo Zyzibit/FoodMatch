@@ -1,4 +1,4 @@
-namespace inzynierka.Recipes.Model;
+namespace foodmatch.Recipes.Model;
 
 public enum RecipeSource
 {

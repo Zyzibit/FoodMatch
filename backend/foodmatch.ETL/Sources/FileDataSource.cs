@@ -1,6 +1,6 @@
 using System.IO.Pipelines;
 
-namespace inzynierka.ETL.Sources;
+namespace foodmatch.ETL.Sources;
 
 /// <summary>Reads a file from the file system with sequential-scan, async I/O.</summary>
 public sealed class FileDataSource(string path) : IDataSource

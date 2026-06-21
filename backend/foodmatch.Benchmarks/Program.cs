@@ -1,4 +1,4 @@
 using BenchmarkDotNet.Running;
-using inzynierka.Benchmarks;
+using foodmatch.Benchmarks;
 
 BenchmarkRunner.Run<JsonParsingBenchmark>();

@@ -1,8 +1,9 @@
-using inzynierka.Products.OpenFoodFacts.Import;
+using foodmatch.Products.OpenFoodFacts.Services;
+using foodmatch.Products.Services;
 
-namespace inzynierka.Products.OpenFoodFacts.Adapters;
+namespace foodmatch.Products.OpenFoodFacts.Adapters;
 
-public class OpenFoodFactsImportServiceAdapter : Services.IProductImportService
+public class OpenFoodFactsImportServiceAdapter : IProductImportService
 {
     private readonly IProductImporter _openFoodFactsImporter;
 

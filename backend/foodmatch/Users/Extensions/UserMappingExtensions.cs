@@ -1,7 +1,7 @@
-using inzynierka.Users.Model;
-using inzynierka.Users.Responses;
+using foodmatch.Users.Model;
+using foodmatch.Users.Responses;
 
-namespace inzynierka.Users.Extensions;
+namespace foodmatch.Users.Extensions;
 
 public static class UserMappingExtensions
 {

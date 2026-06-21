@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Sinks;
+namespace foodmatch.ETL.Sinks;
 
 /// <summary>
 /// Decorator that retries <see cref="IBatchSink{T}.WriteBatchAsync"/> on failure with a fixed

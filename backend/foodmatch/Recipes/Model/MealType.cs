@@ -1,6 +1,6 @@
-using inzynierka.UserPreferences.Responses;
+using foodmatch.UserPreferences.Responses;
 
-namespace inzynierka.Recipes.Model;
+namespace foodmatch.Recipes.Model;
 
 public enum MealType
 {

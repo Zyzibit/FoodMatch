@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace inzynierka.ETL.Framing;
+namespace foodmatch.ETL.Framing;
 
 /// <summary>
 /// Default framing: one record per line, split on '\n' (the delimiter is excluded; a trailing

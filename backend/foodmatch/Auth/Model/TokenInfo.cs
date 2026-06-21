@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace inzynierka.Auth.Model;
+namespace foodmatch.Auth.Model;
 
 public class TokenInfo
 {

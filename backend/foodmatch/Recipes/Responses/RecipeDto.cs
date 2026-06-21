@@ -1,6 +1,6 @@
-﻿using inzynierka.Products.Extensions;
+﻿using foodmatch.Products.Extensions;
 
-namespace inzynierka.Recipes.Responses;
+namespace foodmatch.Recipes.Responses;
 
 public class RecipeDto
 {

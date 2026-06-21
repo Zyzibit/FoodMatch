@@ -1,11 +1,11 @@
-﻿using inzynierka.Users.Model;
+﻿using foodmatch.Users.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using inzynierka.Recipes.Model;
-using inzynierka.Units.Models;
-using inzynierka.Products.Model;
+using foodmatch.Recipes.Model;
+using foodmatch.Units.Model;
+using foodmatch.Products.Model;
 
-namespace inzynierka.Data;
+namespace foodmatch.Data;
 
 public class DbSeeder
 {

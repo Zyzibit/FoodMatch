@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Users.Services;
+﻿namespace foodmatch.Users.Services;
 
 public interface IRoleInitializationService
 {

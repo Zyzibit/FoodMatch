@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
-using inzynierka.ETL.Building;
-using inzynierka.ETL.Diagnostics;
-using inzynierka.ETL.Resilience;
-using inzynierka.ETL.Sinks;
-using inzynierka.ETL.Sources;
+using foodmatch.ETL.Building;
+using foodmatch.ETL.Diagnostics;
+using foodmatch.ETL.Resilience;
+using foodmatch.ETL.Sinks;
+using foodmatch.ETL.Sources;
 
-namespace inzynierka.ETL.Engine;
+namespace foodmatch.ETL.Engine;
 
 /// <summary>
 /// ETL pipeline engine. Three stages connected by bounded channels (backpressure):

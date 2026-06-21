@@ -1,16 +1,16 @@
 using System.Text;
-using inzynierka.Data;
-using inzynierka.Products.Model.Tag.AllergenTag;
-using inzynierka.Products.Model.Tag.CategoryTag;
-using inzynierka.Products.Model.Tag.CountryTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
-using inzynierka.Products.OpenFoodFacts.Import;
-using inzynierka.Products.OpenFoodFacts.Repositories;
+using foodmatch.Data;
+using foodmatch.Products.Model.Tag.AllergenTag;
+using foodmatch.Products.Model.Tag.CategoryTag;
+using foodmatch.Products.Model.Tag.CountryTag;
+using foodmatch.Products.Model.Tag.IngredientTag;
+using foodmatch.Products.OpenFoodFacts.Services;
+using foodmatch.Products.OpenFoodFacts.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Testcontainers.PostgreSql;
 
-namespace inzynierka.IntegrationTests;
+namespace foodmatch.IntegrationTests;
 
 /// <summary>
 /// Test ścieżki masowego importu na PRAWDZIWYM PostgreSQL (Testcontainers).

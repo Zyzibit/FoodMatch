@@ -1,8 +1,8 @@
 using System.IO.Pipelines;
-using inzynierka.ETL.Building;
-using inzynierka.ETL.Sources;
+using foodmatch.ETL.Building;
+using foodmatch.ETL.Sources;
 
-namespace inzynierka.ETL;
+namespace foodmatch.ETL;
 
 /// <summary>
 /// Entry point of the fluent API.

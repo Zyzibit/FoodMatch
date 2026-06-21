@@ -1,9 +1,9 @@
-using inzynierka.MealPlans.Model;
-using inzynierka.Users.Model;
-using inzynierka.UserPreferences.Responses;
+using foodmatch.MealPlans.Model;
+using foodmatch.Users.Model;
+using foodmatch.UserPreferences.Responses;
 using Microsoft.Extensions.Logging;
 
-namespace inzynierka.UserPreferences.Extensions;
+namespace foodmatch.UserPreferences.Extensions;
 
 public static class FoodPreferencesMappingExtensions
 {

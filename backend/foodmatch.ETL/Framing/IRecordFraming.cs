@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace inzynierka.ETL.Framing;
+namespace foodmatch.ETL.Framing;
 
 /// <summary>
 /// Splits a byte stream into record slices. This is the seam that makes the engine

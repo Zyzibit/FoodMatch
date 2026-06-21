@@ -2,7 +2,7 @@
 using System.Text.Json;
 using OpenAI.Chat;
 
-namespace inzynierka.AI.OpenAI;
+namespace foodmatch.AI.OpenAI;
 
 public class AiClient : IAiClient
 {

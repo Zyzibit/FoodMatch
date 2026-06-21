@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 public interface IEmailService
 {
     Task<bool> SendEmailAsync(string to, string subject, string body);

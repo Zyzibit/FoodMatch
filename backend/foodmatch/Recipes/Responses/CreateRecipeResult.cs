@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Recipes.Responses;
+﻿namespace foodmatch.Recipes.Responses;
 
 public class CreateRecipeResult
 {

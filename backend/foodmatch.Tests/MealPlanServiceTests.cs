@@ -1,14 +1,14 @@
-using inzynierka.MealPlans.Services;
-using inzynierka.MealPlans.Repositories;
-using inzynierka.MealPlans.Model;
-using inzynierka.MealPlans.Requests;
-using inzynierka.MealPlans.Responses;
-using inzynierka.Recipes.Services;
-using inzynierka.Recipes.Model;
+using foodmatch.MealPlans.Services;
+using foodmatch.MealPlans.Repositories;
+using foodmatch.MealPlans.Model;
+using foodmatch.MealPlans.Requests;
+using foodmatch.MealPlans.Responses;
+using foodmatch.Recipes.Services;
+using foodmatch.Recipes.Model;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace inzynierka.Tests.MealPlanTests
+namespace foodmatch.Tests.MealPlanTests
 {
     public class MealPlanServiceTests
     {

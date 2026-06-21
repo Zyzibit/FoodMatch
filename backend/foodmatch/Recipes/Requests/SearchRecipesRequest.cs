@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace inzynierka.Recipes.Requests;
+namespace foodmatch.Recipes.Requests;
 
 public class SearchRecipesRequest
 {

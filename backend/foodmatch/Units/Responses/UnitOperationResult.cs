@@ -1,6 +1,6 @@
-﻿using inzynierka.Units.Dto;
+﻿using foodmatch.Units.Responses;
 
-namespace inzynierka.Units.Responses;
+namespace foodmatch.Units.Responses;
 
 public class UnitOperationResult
 {

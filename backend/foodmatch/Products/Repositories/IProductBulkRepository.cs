@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Repositories;
+namespace foodmatch.Products.Repositories;
 
 public interface IProductBulkRepository
 {

@@ -1,11 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using inzynierka.ETL.Framing;
-using inzynierka.ETL.Parsing;
-using inzynierka.ETL.Resilience;
-using inzynierka.ETL.Sources;
+using foodmatch.ETL.Framing;
+using foodmatch.ETL.Parsing;
+using foodmatch.ETL.Resilience;
+using foodmatch.ETL.Sources;
 
-namespace inzynierka.ETL.Building;
+namespace foodmatch.ETL.Building;
 
 /// <summary>Configured source(s) and options before a parser is chosen.</summary>
 public sealed class PipelineSource

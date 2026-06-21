@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Requests;
+﻿namespace foodmatch.Products.Requests;
 
 public class ProductSearchRequest
 {

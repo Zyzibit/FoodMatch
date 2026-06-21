@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Recipes.Requests;
+﻿namespace foodmatch.Recipes.Requests;
 
 public class CreateRecipeRequest
 {

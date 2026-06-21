@@ -1,8 +1,8 @@
-using inzynierka.Units.Dto;
-using inzynierka.Units.Requests;
-using inzynierka.Units.Responses;
+using foodmatch.Units.Responses;
+using foodmatch.Units.Requests;
+using foodmatch.Units.Responses;
 
-namespace inzynierka.Units.Services;
+namespace foodmatch.Units.Services;
 
 public interface IUnitService
 {

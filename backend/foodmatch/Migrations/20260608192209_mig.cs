@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace inzynierka.Migrations
+namespace foodmatch.Migrations
 {
     /// <inheritdoc />
     public partial class mig : Migration

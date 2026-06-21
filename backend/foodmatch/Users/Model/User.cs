@@ -1,8 +1,8 @@
-﻿using inzynierka.MealPlans.Model;
-using inzynierka.Recipes.Model;
+﻿using foodmatch.MealPlans.Model;
+using foodmatch.Recipes.Model;
 using Microsoft.AspNetCore.Identity;
 
-namespace inzynierka.Users.Model;
+namespace foodmatch.Users.Model;
 
 public class User : IdentityUser {
 

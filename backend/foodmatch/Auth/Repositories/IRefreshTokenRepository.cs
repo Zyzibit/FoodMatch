@@ -1,6 +1,6 @@
-using inzynierka.Auth.Model;
+using foodmatch.Auth.Model;
 
-namespace inzynierka.Auth.Repositories;
+namespace foodmatch.Auth.Repositories;
 
 public interface IRefreshTokenRepository
 {

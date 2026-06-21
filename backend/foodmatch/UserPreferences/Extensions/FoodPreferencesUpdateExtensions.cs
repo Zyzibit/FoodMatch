@@ -1,8 +1,8 @@
-using inzynierka.MealPlans.Model;
-using inzynierka.Users.Model;
-using inzynierka.UserPreferences.Requests;
+using foodmatch.MealPlans.Model;
+using foodmatch.Users.Model;
+using foodmatch.UserPreferences.Requests;
 
-namespace inzynierka.UserPreferences.Extensions;
+namespace foodmatch.UserPreferences.Extensions;
 
 public static class FoodPreferencesUpdateExtensions
 {

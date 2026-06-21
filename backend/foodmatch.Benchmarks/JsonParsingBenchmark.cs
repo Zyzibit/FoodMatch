@@ -1,10 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
-using inzynierka.ETL.Parsing;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
+using foodmatch.ETL.Parsing;
+using foodmatch.Products.OpenFoodFacts.Models;
 
-namespace inzynierka.Benchmarks;
+namespace foodmatch.Benchmarks;
 
 /// <summary>
 /// Porównuje trzy ścieżki parsowania jednej linii JSONL OpenFoodFacts:

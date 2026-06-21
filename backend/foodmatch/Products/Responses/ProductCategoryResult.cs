@@ -1,6 +1,6 @@
-﻿using inzynierka.Products.Dto;
+﻿using foodmatch.Products.Responses;
 
-namespace inzynierka.Products.Responses;
+namespace foodmatch.Products.Responses;
 
 public class ProductCategoryResult
 {

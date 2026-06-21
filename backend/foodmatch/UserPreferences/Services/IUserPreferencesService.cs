@@ -1,7 +1,7 @@
-using inzynierka.UserPreferences.Responses;
-using inzynierka.UserPreferences.Requests;
+using foodmatch.UserPreferences.Responses;
+using foodmatch.UserPreferences.Requests;
 
-namespace inzynierka.UserPreferences.Services;
+namespace foodmatch.UserPreferences.Services;
 
 public interface IUserPreferencesService
 {

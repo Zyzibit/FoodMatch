@@ -1,12 +1,12 @@
-using inzynierka.MealPlans.Constants;
-using inzynierka.MealPlans.Extensions;
-using inzynierka.MealPlans.Model;
-using inzynierka.MealPlans.Repositories;
-using inzynierka.MealPlans.Requests;
-using inzynierka.MealPlans.Responses;
-using inzynierka.Recipes.Services;
+using foodmatch.MealPlans.Constants;
+using foodmatch.MealPlans.Extensions;
+using foodmatch.MealPlans.Model;
+using foodmatch.MealPlans.Repositories;
+using foodmatch.MealPlans.Requests;
+using foodmatch.MealPlans.Responses;
+using foodmatch.Recipes.Services;
 
-namespace inzynierka.MealPlans.Services;
+namespace foodmatch.MealPlans.Services;
 
 public class MealPlanService: IMealPlanService
 {

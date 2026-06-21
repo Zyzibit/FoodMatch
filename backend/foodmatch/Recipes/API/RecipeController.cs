@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.Recipes.Requests;
-using inzynierka.Recipes.Services;
+using foodmatch.Recipes.Requests;
+using foodmatch.Recipes.Services;
 
-namespace inzynierka.Recipes.API;
+namespace foodmatch.Recipes.API;
 
 [ApiController]
 [Route("api/v1/recipes")]

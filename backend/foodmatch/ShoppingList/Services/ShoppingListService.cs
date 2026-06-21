@@ -1,12 +1,12 @@
-using inzynierka.Products.Services;
-using inzynierka.ShoppingList.Extensions;
-using inzynierka.ShoppingList.Model;
-using inzynierka.ShoppingList.Repositories;
-using inzynierka.ShoppingList.Requests;
-using inzynierka.ShoppingList.Responses;
-using inzynierka.Units.Services;
+using foodmatch.Products.Services;
+using foodmatch.ShoppingList.Extensions;
+using foodmatch.ShoppingList.Model;
+using foodmatch.ShoppingList.Repositories;
+using foodmatch.ShoppingList.Requests;
+using foodmatch.ShoppingList.Responses;
+using foodmatch.Units.Services;
 
-namespace inzynierka.ShoppingList.Services;
+namespace foodmatch.ShoppingList.Services;
 
 public class ShoppingListService(
     IShoppingListRepository repository, 

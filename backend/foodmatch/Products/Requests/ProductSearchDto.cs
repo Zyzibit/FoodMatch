@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Dto;
+﻿namespace foodmatch.Products.Responses;
 
 public class ProductSearchDto
 {

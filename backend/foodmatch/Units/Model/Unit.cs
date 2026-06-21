@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace inzynierka.Units.Models;
+namespace foodmatch.Units.Model;
 
 public class Unit
 {

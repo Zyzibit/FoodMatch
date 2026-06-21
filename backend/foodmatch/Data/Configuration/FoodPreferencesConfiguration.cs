@@ -1,8 +1,8 @@
-using inzynierka.Users.Model;
+using foodmatch.Users.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class FoodPreferencesConfiguration : IEntityTypeConfiguration<User>
 {

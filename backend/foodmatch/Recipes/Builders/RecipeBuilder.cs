@@ -1,6 +1,6 @@
-using inzynierka.Recipes.Model;
+using foodmatch.Recipes.Model;
 
-namespace inzynierka.Recipes.Builders;
+namespace foodmatch.Recipes.Builders;
 
 public class RecipeBuilder
 {

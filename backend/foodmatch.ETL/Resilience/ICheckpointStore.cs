@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Resilience;
+namespace foodmatch.ETL.Resilience;
 
 /// <summary>
 /// File-granularity checkpoint for multi-source runs. Records which source keys (e.g. absolute

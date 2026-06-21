@@ -1,10 +1,10 @@
-using inzynierka.Users.Model;
-using inzynierka.UserPreferences.Responses;
-using inzynierka.UserPreferences.Requests;
-using inzynierka.UserPreferences.Extensions;
+using foodmatch.Users.Model;
+using foodmatch.UserPreferences.Responses;
+using foodmatch.UserPreferences.Requests;
+using foodmatch.UserPreferences.Extensions;
 using Microsoft.AspNetCore.Identity;
 
-namespace inzynierka.UserPreferences.Services;
+namespace foodmatch.UserPreferences.Services;
 
 public class UserPreferencesService : IUserPreferencesService
 {

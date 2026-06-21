@@ -1,4 +1,4 @@
-namespace inzynierka.MealPlans.Model;
+namespace foodmatch.MealPlans.Model;
 
 public class MealNutritionDistribution
 {

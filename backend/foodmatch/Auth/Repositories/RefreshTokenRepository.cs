@@ -1,8 +1,8 @@
-using inzynierka.Auth.Model;
-using inzynierka.Data;
+using foodmatch.Auth.Model;
+using foodmatch.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Auth.Repositories;
+namespace foodmatch.Auth.Repositories;
 
 public class RefreshTokenRepository : IRefreshTokenRepository
 {

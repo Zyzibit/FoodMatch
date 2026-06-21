@@ -1,7 +1,7 @@
-using inzynierka.Units.Dto;
-using inzynierka.Units.Models;
+using foodmatch.Units.Responses;
+using foodmatch.Units.Model;
 
-namespace inzynierka.Units.Extensions;
+namespace foodmatch.Units.Extensions;
 
 public static class UnitExtensions
 {

@@ -1,20 +1,20 @@
-﻿using inzynierka.Users.Model;
-using inzynierka.Data.Configuration;
-using inzynierka.Products.Model;
-using inzynierka.Products.Model.Tag.AllergenTag;
-using inzynierka.Products.Model.Tag.CategoryTag;
-using inzynierka.Products.Model.Tag.CountryTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
-using inzynierka.Auth.Model;
-using inzynierka.MealPlans.Model;
-using inzynierka.Recipes.Model;
-using inzynierka.ShoppingList;
-using inzynierka.ShoppingList.Model;
-using inzynierka.Units.Models;
+﻿using foodmatch.Users.Model;
+using foodmatch.Data.Configuration;
+using foodmatch.Products.Model;
+using foodmatch.Products.Model.Tag.AllergenTag;
+using foodmatch.Products.Model.Tag.CategoryTag;
+using foodmatch.Products.Model.Tag.CountryTag;
+using foodmatch.Products.Model.Tag.IngredientTag;
+using foodmatch.Auth.Model;
+using foodmatch.MealPlans.Model;
+using foodmatch.Recipes.Model;
+using foodmatch.ShoppingList;
+using foodmatch.ShoppingList.Model;
+using foodmatch.Units.Model;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Data;
+namespace foodmatch.Data;
 
 public class AppDbContext : IdentityDbContext<User> {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {

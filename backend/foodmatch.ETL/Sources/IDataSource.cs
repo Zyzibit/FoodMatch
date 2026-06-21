@@ -1,6 +1,6 @@
 using System.IO.Pipelines;
 
-namespace inzynierka.ETL.Sources;
+namespace foodmatch.ETL.Sources;
 
 /// <summary>
 /// Byte source for the pipeline. Abstracts over the concrete medium (a file, any

@@ -1,8 +1,8 @@
-using inzynierka.Users.Model;
-using inzynierka.Users.Responses;
-using inzynierka.Users.Requests;
+using foodmatch.Users.Model;
+using foodmatch.Users.Responses;
+using foodmatch.Users.Requests;
 
-namespace inzynierka.Users.Services;
+namespace foodmatch.Users.Services;
 
 public interface IUserService
 {

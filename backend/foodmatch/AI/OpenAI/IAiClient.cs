@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace inzynierka.AI.OpenAI;
+namespace foodmatch.AI.OpenAI;
 
 public interface IAiClient
 {

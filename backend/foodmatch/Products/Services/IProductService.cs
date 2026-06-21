@@ -1,9 +1,9 @@
-using inzynierka.Products.Dto;
-using inzynierka.Products.Model;
-using inzynierka.Products.Responses;
-using inzynierka.Recipes.Model.RecipeModel;
+using foodmatch.Products.Requests;
+using foodmatch.Products.Responses;
+using foodmatch.Products.Model;
+using foodmatch.Recipes.Model.RecipeModel;
 
-namespace inzynierka.Products.Services;
+namespace foodmatch.Products.Services;
 
 public interface IProductService
 {

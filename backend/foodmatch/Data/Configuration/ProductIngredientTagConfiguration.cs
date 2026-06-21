@@ -1,8 +1,8 @@
-﻿using inzynierka.Products.Model.Tag.IngredientTag;
+﻿using foodmatch.Products.Model.Tag.IngredientTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class ProductIngredientTagConfiguration : IEntityTypeConfiguration<ProductIngredientTag>
 {

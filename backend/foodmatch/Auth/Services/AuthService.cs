@@ -1,13 +1,13 @@
-using inzynierka.Auth.Responses;
-using inzynierka.Auth.Model;
-using inzynierka.Auth.Repositories;
+using foodmatch.Auth.Responses;
+using foodmatch.Auth.Model;
+using foodmatch.Auth.Repositories;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
-using inzynierka.Users.Model;
-using inzynierka.Users.Services;
+using foodmatch.Users.Model;
+using foodmatch.Users.Services;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public class AuthService : IAuthService 
 {

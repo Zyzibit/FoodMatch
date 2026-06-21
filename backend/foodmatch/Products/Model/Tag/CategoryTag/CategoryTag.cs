@@ -1,5 +1,5 @@
 ﻿
-namespace inzynierka.Products.Model.Tag.CategoryTag;
+namespace foodmatch.Products.Model.Tag.CategoryTag;
 
 public class CategoryTag: ITagEntity
 {

@@ -1,16 +1,16 @@
-﻿using inzynierka.Products.Model;
-using inzynierka.Products.Services;
-using inzynierka.Recipes.Builders;
-using inzynierka.Recipes.Extensions;
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Repositories;
-using inzynierka.Recipes.Requests;
-using inzynierka.Recipes.Responses;
-using inzynierka.Units.Services;
-using inzynierka.Users.Services;
-using inzynierka.UserPreferences.Services;
+﻿using foodmatch.Products.Model;
+using foodmatch.Products.Services;
+using foodmatch.Recipes.Builders;
+using foodmatch.Recipes.Extensions;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Repositories;
+using foodmatch.Recipes.Requests;
+using foodmatch.Recipes.Responses;
+using foodmatch.Units.Services;
+using foodmatch.Users.Services;
+using foodmatch.UserPreferences.Services;
 
-namespace inzynierka.Recipes.Services;
+namespace foodmatch.Recipes.Services;
 
 
 public class RecipeService : IRecipeService

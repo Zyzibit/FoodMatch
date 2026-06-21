@@ -1,7 +1,7 @@
-using inzynierka.Recipes.Model;
-using inzynierka.Users.Model;
+using foodmatch.Recipes.Model;
+using foodmatch.Users.Model;
 
-namespace inzynierka.MealPlans.Model;
+namespace foodmatch.MealPlans.Model;
 
 public class MealPlan
 {

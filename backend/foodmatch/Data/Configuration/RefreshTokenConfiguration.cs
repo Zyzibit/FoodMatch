@@ -1,8 +1,8 @@
-using inzynierka.Auth.Model;
+using foodmatch.Auth.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {

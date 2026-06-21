@@ -1,4 +1,4 @@
-namespace inzynierka.Products.Services;
+namespace foodmatch.Products.Services;
 
 public interface IProductImportService
 {

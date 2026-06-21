@@ -1,10 +1,10 @@
-﻿using inzynierka.Products.Model;
-using inzynierka.Products.Repositories;
+﻿using foodmatch.Products.Model;
+using foodmatch.Products.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace inzynierka.IntegrationTests;
+namespace foodmatch.IntegrationTests;
 
 public class ProductsRepositoryIntegrationTests : DatabaseIntegrationTest
 {

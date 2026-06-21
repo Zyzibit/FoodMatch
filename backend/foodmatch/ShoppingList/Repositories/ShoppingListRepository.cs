@@ -1,8 +1,8 @@
-using inzynierka.Data;
-using inzynierka.ShoppingList.Model;
+using foodmatch.Data;
+using foodmatch.ShoppingList.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.ShoppingList.Repositories;
+namespace foodmatch.ShoppingList.Repositories;
 
 public class ShoppingListRepository : IShoppingListRepository
 {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace inzynierka.ETL.Resilience;
+namespace foodmatch.ETL.Resilience;
 
 /// <summary>
 /// JSON-file <see cref="ICheckpointStore"/>. Persists the set of completed source keys to a small

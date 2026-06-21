@@ -1,7 +1,7 @@
-using inzynierka.Recipes.Model.RecipeModel;
-using inzynierka.UserPreferences.Responses;
+using foodmatch.Recipes.Model.RecipeModel;
+using foodmatch.UserPreferences.Responses;
 
-namespace inzynierka.Users.Extensions;
+namespace foodmatch.Users.Extensions;
 
 public static class FoodPreferencesExtensions
 {

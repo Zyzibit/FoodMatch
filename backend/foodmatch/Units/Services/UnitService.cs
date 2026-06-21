@@ -1,11 +1,11 @@
-using inzynierka.Units.Dto;
-using inzynierka.Units.Models;
-using inzynierka.Units.Repositories;
-using inzynierka.Units.Requests;
-using inzynierka.Units.Extensions;
-using inzynierka.Units.Responses;
+using foodmatch.Units.Responses;
+using foodmatch.Units.Model;
+using foodmatch.Units.Repositories;
+using foodmatch.Units.Requests;
+using foodmatch.Units.Extensions;
+using foodmatch.Units.Responses;
 
-namespace inzynierka.Units.Services;
+namespace foodmatch.Units.Services;
 
 public class UnitService : IUnitService
 {

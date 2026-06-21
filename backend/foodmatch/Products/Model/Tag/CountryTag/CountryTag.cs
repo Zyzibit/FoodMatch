@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Products.Model.Tag.CountryTag;
+﻿namespace foodmatch.Products.Model.Tag.CountryTag;
 
 public class CountryTag: ITagEntity
 {

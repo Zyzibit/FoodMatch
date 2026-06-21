@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace inzynierka.MealPlans.Requests;
+namespace foodmatch.MealPlans.Requests;
 
 public class CreateMealPlanRequest
 { 

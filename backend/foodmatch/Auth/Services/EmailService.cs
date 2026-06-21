@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Web;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public class EmailService : IEmailService
 {

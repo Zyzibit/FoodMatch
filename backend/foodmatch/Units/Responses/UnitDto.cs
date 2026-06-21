@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Units.Dto;
+﻿namespace foodmatch.Units.Responses;
 
 public class UnitDto
 {

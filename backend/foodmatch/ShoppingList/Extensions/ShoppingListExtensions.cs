@@ -1,7 +1,7 @@
-using inzynierka.ShoppingList.Model;
-using inzynierka.ShoppingList.Responses;
+using foodmatch.ShoppingList.Model;
+using foodmatch.ShoppingList.Responses;
 
-namespace inzynierka.ShoppingList.Extensions;
+namespace foodmatch.ShoppingList.Extensions;
 
 public static class ShoppingListExtensions
 {

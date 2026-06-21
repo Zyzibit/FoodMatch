@@ -1,4 +1,4 @@
-namespace inzynierka.UserPreferences.Requests;
+namespace foodmatch.UserPreferences.Requests;
 
 public class UpdateMealNutritionDistributionRequest
 {

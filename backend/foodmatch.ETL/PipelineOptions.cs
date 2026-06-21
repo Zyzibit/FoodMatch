@@ -1,8 +1,8 @@
-using inzynierka.ETL.Framing;
-using inzynierka.ETL.Resilience;
-using inzynierka.ETL.Sinks;
+using foodmatch.ETL.Framing;
+using foodmatch.ETL.Resilience;
+using foodmatch.ETL.Sinks;
 
-namespace inzynierka.ETL;
+namespace foodmatch.ETL;
 
 /// <summary>
 /// Engine tuning. Sensible defaults — simple usage needs nothing set.

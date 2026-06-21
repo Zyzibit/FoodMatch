@@ -1,4 +1,4 @@
-namespace inzynierka.Recipes.Model.RecipeModel;
+namespace foodmatch.Recipes.Model.RecipeModel;
 
 public class DietaryPreferences
 {

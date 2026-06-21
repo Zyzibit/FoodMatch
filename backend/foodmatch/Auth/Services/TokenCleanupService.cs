@@ -1,6 +1,6 @@
-using inzynierka.Auth.Repositories;
+using foodmatch.Auth.Repositories;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public class TokenCleanupService : BackgroundService
 {

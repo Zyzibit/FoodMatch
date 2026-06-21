@@ -1,7 +1,7 @@
-namespace inzynierka.ShoppingList.Services;
+namespace foodmatch.ShoppingList.Services;
 
 using Responses;
-using inzynierka.ShoppingList.Requests;
+using foodmatch.ShoppingList.Requests;
 public interface IShoppingListService
 {
     Task<bool> ClearShoppingListAsync(string userId);

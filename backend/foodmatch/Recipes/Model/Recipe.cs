@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using inzynierka.Users.Model;
+using foodmatch.Users.Model;
 
-namespace inzynierka.Recipes.Model;
+namespace foodmatch.Recipes.Model;
 
 public class Recipe {
     public int Id { get; set; }

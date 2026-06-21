@@ -1,6 +1,6 @@
 using System.IO.Pipelines;
 
-namespace inzynierka.ETL.Sources;
+namespace foodmatch.ETL.Sources;
 
 /// <summary>Reads from a ready <see cref="PipeReader"/>; the caller stays the owner.</summary>
 public sealed class PipeReaderDataSource(PipeReader reader) : IDataSource

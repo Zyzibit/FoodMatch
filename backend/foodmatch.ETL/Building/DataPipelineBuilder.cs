@@ -1,11 +1,11 @@
 using System.Runtime.CompilerServices;
-using inzynierka.ETL.Diagnostics;
-using inzynierka.ETL.Engine;
-using inzynierka.ETL.Resilience;
-using inzynierka.ETL.Sinks;
-using inzynierka.ETL.Sources;
+using foodmatch.ETL.Diagnostics;
+using foodmatch.ETL.Engine;
+using foodmatch.ETL.Resilience;
+using foodmatch.ETL.Sinks;
+using foodmatch.ETL.Sources;
 
-namespace inzynierka.ETL.Building;
+namespace foodmatch.ETL.Building;
 
 /// <summary>A pipeline builder for records of type <typeparamref name="T"/> (immutable along the chain).</summary>
 public sealed class DataPipelineBuilder<T>

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-namespace inzynierka.ETL.Parsing;
+namespace foodmatch.ETL.Parsing;
 
 /// <summary>
 /// Parses a single CSV record (one already framed by <c>CsvFraming</c> or <c>LineFraming</c>) into

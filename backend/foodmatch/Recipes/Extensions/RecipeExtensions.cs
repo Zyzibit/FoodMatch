@@ -1,8 +1,8 @@
-using inzynierka.Products.Extensions;
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Responses;
+using foodmatch.Products.Extensions;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Responses;
 
-namespace inzynierka.Recipes.Extensions;
+namespace foodmatch.Recipes.Extensions;
 
 public static class RecipeExtensions
 {

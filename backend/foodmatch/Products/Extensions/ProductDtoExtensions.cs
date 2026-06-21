@@ -1,7 +1,7 @@
-using inzynierka.Products.Dto;
-using inzynierka.Products.Model;
+using foodmatch.Products.Responses;
+using foodmatch.Products.Model;
 
-namespace inzynierka.Products.Extensions;
+namespace foodmatch.Products.Extensions;
 
 public static class ProductDtoExtensions
 {

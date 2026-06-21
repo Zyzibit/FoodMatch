@@ -1,10 +1,10 @@
 using System.Text;
-using inzynierka.ETL.Sinks;
-using inzynierka.Products.Model;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
-using inzynierka.Products.Repositories;
+using foodmatch.ETL.Sinks;
+using foodmatch.Products.Model;
+using foodmatch.Products.OpenFoodFacts.Models;
+using foodmatch.Products.Repositories;
 
-namespace inzynierka.Products.OpenFoodFacts.Import
+namespace foodmatch.Products.OpenFoodFacts.Services
 {
     /// <summary>
     /// Batch sink for the ETL pipeline: maps raw OpenFoodFacts records to <see cref="Product"/>

@@ -1,7 +1,7 @@
-﻿using inzynierka.Recipes.Requests;
-using inzynierka.Recipes.Responses;
+﻿using foodmatch.Recipes.Requests;
+using foodmatch.Recipes.Responses;
 
-namespace inzynierka.Recipes.Services;
+namespace foodmatch.Recipes.Services;
 
 public interface IRecipeService
 {

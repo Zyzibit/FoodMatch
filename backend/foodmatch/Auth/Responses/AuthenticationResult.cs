@@ -1,4 +1,4 @@
-namespace inzynierka.Auth.Responses;
+namespace foodmatch.Auth.Responses;
 
 public class AuthenticationResult
 {

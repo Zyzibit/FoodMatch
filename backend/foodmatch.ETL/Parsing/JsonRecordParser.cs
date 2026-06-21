@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace inzynierka.ETL.Parsing;
+namespace foodmatch.ETL.Parsing;
 
 /// <summary>
 /// JSONL parser based on <see cref="JsonSerializer"/> working directly on a

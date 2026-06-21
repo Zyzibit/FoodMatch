@@ -1,6 +1,6 @@
-using inzynierka.MealPlans.Model;
+using foodmatch.MealPlans.Model;
 
-namespace inzynierka.MealPlans.Repositories;
+namespace foodmatch.MealPlans.Repositories;
 
 public interface IMealPlanRepository
 {

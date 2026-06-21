@@ -1,7 +1,7 @@
-﻿using inzynierka.Products.Model;
-using inzynierka.Units.Models;
+﻿using foodmatch.Products.Model;
+using foodmatch.Units.Model;
 
-namespace inzynierka.Recipes.Model;
+namespace foodmatch.Recipes.Model;
 
 public class RecipeIngredient {
     public int RecipeId { get; set; }

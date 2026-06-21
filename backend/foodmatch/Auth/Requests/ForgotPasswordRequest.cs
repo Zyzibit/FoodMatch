@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-namespace inzynierka.Auth.Requests;
+namespace foodmatch.Auth.Requests;
 public class ForgotPasswordRequest
 {
     [Required(ErrorMessage = "Email is required")]

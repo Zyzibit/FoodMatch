@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace inzynierka.AI.OpenAI.Config;
+namespace foodmatch.AI.OpenAI.Config;
 
 public class PromptConfig
 {

@@ -1,6 +1,6 @@
-using inzynierka.Recipes.Model.RecipeModel;
+using foodmatch.Recipes.Model.RecipeModel;
 
-namespace inzynierka.Recipes.Responses;
+namespace foodmatch.Recipes.Responses;
 
 public class GenerateRecipeResponse
 {

@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Sinks;
+namespace foodmatch.ETL.Sinks;
 
 /// <summary>
 /// Decorator that fans the same batch out to several sinks, written sequentially in order.

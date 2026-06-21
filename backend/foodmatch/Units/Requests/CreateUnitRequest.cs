@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Units.Requests;
+﻿namespace foodmatch.Units.Requests;
 
 public class CreateUnitRequest
 {

@@ -1,8 +1,8 @@
 using System;
-using inzynierka.MealPlans.Model;
-using inzynierka.MealPlans.Responses;
+using foodmatch.MealPlans.Model;
+using foodmatch.MealPlans.Responses;
 
-namespace inzynierka.MealPlans.Extensions;
+namespace foodmatch.MealPlans.Extensions;
 
 public static class MealPlanMappingExtensions
 {

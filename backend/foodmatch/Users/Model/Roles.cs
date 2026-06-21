@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Users.Model;
+﻿namespace foodmatch.Users.Model;
 
 public record Roles
 {

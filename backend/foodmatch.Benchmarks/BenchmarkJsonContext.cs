@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using inzynierka.Products.OpenFoodFacts.OpenFoodFactsDeserializer.Models;
+using foodmatch.Products.OpenFoodFacts.Models;
 
-namespace inzynierka.Benchmarks;
+namespace foodmatch.Benchmarks;
 
 [JsonSourceGenerationOptions(
     PropertyNameCaseInsensitive = false,

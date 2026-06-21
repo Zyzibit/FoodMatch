@@ -1,8 +1,8 @@
-﻿using inzynierka.Products.Model.Tag.CountryTag;
+﻿using foodmatch.Products.Model.Tag.CountryTag;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace inzynierka.Data.Configuration;
+namespace foodmatch.Data.Configuration;
 
 public class ProductCountryTagConfiguration: IEntityTypeConfiguration<ProductCountryTag> {
     public void Configure(EntityTypeBuilder<ProductCountryTag> builder) {

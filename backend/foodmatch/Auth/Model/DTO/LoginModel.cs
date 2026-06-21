@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace inzynierka.Auth.Model.DTO;
+namespace foodmatch.Auth.Model.DTO;
 
 public class LoginModel
 {

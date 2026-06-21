@@ -1,9 +1,9 @@
-using inzynierka.Products.Model;
-using inzynierka.Products.Model.Tag.CategoryTag;
-using inzynierka.Products.Model.Tag.AllergenTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
+using foodmatch.Products.Model;
+using foodmatch.Products.Model.Tag.CategoryTag;
+using foodmatch.Products.Model.Tag.AllergenTag;
+using foodmatch.Products.Model.Tag.IngredientTag;
 
-namespace inzynierka.Products.Repositories;
+namespace foodmatch.Products.Repositories;
 
 public interface IProductRepository
 {

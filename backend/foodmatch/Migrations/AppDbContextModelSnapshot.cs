@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using inzynierka.Data;
+using foodmatch.Data;
 
 #nullable disable
 
-namespace inzynierka.Migrations
+namespace foodmatch.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -155,7 +155,7 @@ namespace inzynierka.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
+            modelBuilder.Entity("foodmatch.Auth.Model.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -205,7 +205,7 @@ namespace inzynierka.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("inzynierka.MealPlans.Model.MealPlan", b =>
+            modelBuilder.Entity("foodmatch.MealPlans.Model.MealPlan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -241,7 +241,7 @@ namespace inzynierka.Migrations
                     b.ToTable("MealPlans");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Product", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -351,7 +351,7 @@ namespace inzynierka.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.AllergenTag.AllergenTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.AllergenTag.AllergenTag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -368,7 +368,7 @@ namespace inzynierka.Migrations
                     b.ToTable("AllergenTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.AllergenTag.ProductAllergenTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.AllergenTag.ProductAllergenTag", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -383,7 +383,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ProductAllergenTag");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CategoryTag.CategoryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CategoryTag.CategoryTag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -400,7 +400,7 @@ namespace inzynierka.Migrations
                     b.ToTable("CategoryTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CategoryTag.ProductCategoryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CategoryTag.ProductCategoryTag", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -415,7 +415,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ProductCategoryTag");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CountryTag.CountryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CountryTag.CountryTag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -432,7 +432,7 @@ namespace inzynierka.Migrations
                     b.ToTable("CountryTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CountryTag.ProductCountryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CountryTag.ProductCountryTag", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -447,7 +447,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ProductCountryTag");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.IngredientTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.IngredientTag.IngredientTag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -464,7 +464,7 @@ namespace inzynierka.Migrations
                     b.ToTable("IngredientTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
                 {
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
@@ -479,7 +479,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ProductIngredientTag");
                 });
 
-            modelBuilder.Entity("inzynierka.Recipes.Model.Recipe", b =>
+            modelBuilder.Entity("foodmatch.Recipes.Model.Recipe", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -539,7 +539,7 @@ namespace inzynierka.Migrations
                     b.ToTable("Recipes");
                 });
 
-            modelBuilder.Entity("inzynierka.Recipes.Model.RecipeIngredient", b =>
+            modelBuilder.Entity("foodmatch.Recipes.Model.RecipeIngredient", b =>
                 {
                     b.Property<int>("RecipeId")
                         .HasColumnType("integer");
@@ -565,7 +565,7 @@ namespace inzynierka.Migrations
                     b.ToTable("RecipeIngredients");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+            modelBuilder.Entity("foodmatch.ShoppingList.Model.ShoppingList", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -584,7 +584,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ShoppingLists");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingListItem", b =>
+            modelBuilder.Entity("foodmatch.ShoppingList.Model.ShoppingListItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -620,7 +620,7 @@ namespace inzynierka.Migrations
                     b.ToTable("ShoppingListItems");
                 });
 
-            modelBuilder.Entity("inzynierka.Units.Models.Unit", b =>
+            modelBuilder.Entity("foodmatch.Units.Model.Unit", b =>
                 {
                     b.Property<int>("UnitId")
                         .ValueGeneratedOnAdd()
@@ -645,7 +645,7 @@ namespace inzynierka.Migrations
                     b.ToTable("Units");
                 });
 
-            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+            modelBuilder.Entity("foodmatch.Users.Model.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -733,7 +733,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", null)
+                    b.HasOne("foodmatch.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -742,7 +742,7 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", null)
+                    b.HasOne("foodmatch.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -757,7 +757,7 @@ namespace inzynierka.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Users.Model.User", null)
+                    b.HasOne("foodmatch.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -766,16 +766,16 @@ namespace inzynierka.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", null)
+                    b.HasOne("foodmatch.Users.Model.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("inzynierka.Auth.Model.RefreshToken", b =>
+            modelBuilder.Entity("foodmatch.Auth.Model.RefreshToken", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", "User")
+                    b.HasOne("foodmatch.Users.Model.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -784,14 +784,14 @@ namespace inzynierka.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("inzynierka.MealPlans.Model.MealPlan", b =>
+            modelBuilder.Entity("foodmatch.MealPlans.Model.MealPlan", b =>
                 {
-                    b.HasOne("inzynierka.Recipes.Model.Recipe", "Recipe")
+                    b.HasOne("foodmatch.Recipes.Model.Recipe", "Recipe")
                         .WithMany()
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("inzynierka.Users.Model.User", "User")
+                    b.HasOne("foodmatch.Users.Model.User", "User")
                         .WithMany("MealPlans")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -802,15 +802,15 @@ namespace inzynierka.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.AllergenTag.ProductAllergenTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.AllergenTag.ProductAllergenTag", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Tag.AllergenTag.AllergenTag", "AllergenTag")
+                    b.HasOne("foodmatch.Products.Model.Tag.AllergenTag.AllergenTag", "AllergenTag")
                         .WithMany("ProductAllergenTags")
                         .HasForeignKey("AllergenTagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany("ProductAllergenTags")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -821,15 +821,15 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CategoryTag.ProductCategoryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CategoryTag.ProductCategoryTag", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Tag.CategoryTag.CategoryTag", "CategoryTag")
+                    b.HasOne("foodmatch.Products.Model.Tag.CategoryTag.CategoryTag", "CategoryTag")
                         .WithMany("ProductCategoryTags")
                         .HasForeignKey("CategoryTagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany("ProductCategoryTags")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -840,15 +840,15 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CountryTag.ProductCountryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CountryTag.ProductCountryTag", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Tag.CountryTag.CountryTag", "CountryTag")
+                    b.HasOne("foodmatch.Products.Model.Tag.CountryTag.CountryTag", "CountryTag")
                         .WithMany("ProductCountryTags")
                         .HasForeignKey("CountryTagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany("ProductCountryTags")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -859,15 +859,15 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.IngredientTag.ProductIngredientTag", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Tag.IngredientTag.IngredientTag", "IngredientTag")
+                    b.HasOne("foodmatch.Products.Model.Tag.IngredientTag.IngredientTag", "IngredientTag")
                         .WithMany("ProductIngredientTags")
                         .HasForeignKey("IngredientTagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany("ProductIngredientTags")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -878,9 +878,9 @@ namespace inzynierka.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("inzynierka.Recipes.Model.Recipe", b =>
+            modelBuilder.Entity("foodmatch.Recipes.Model.Recipe", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", "User")
+                    b.HasOne("foodmatch.Users.Model.User", "User")
                         .WithMany("Recipes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -889,21 +889,21 @@ namespace inzynierka.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("inzynierka.Recipes.Model.RecipeIngredient", b =>
+            modelBuilder.Entity("foodmatch.Recipes.Model.RecipeIngredient", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany("RecipeIngredients")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Recipes.Model.Recipe", "Recipe")
+                    b.HasOne("foodmatch.Recipes.Model.Recipe", "Recipe")
                         .WithMany("Ingredients")
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("inzynierka.Units.Models.Unit", "Unit")
+                    b.HasOne("foodmatch.Units.Model.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -916,9 +916,9 @@ namespace inzynierka.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+            modelBuilder.Entity("foodmatch.ShoppingList.Model.ShoppingList", b =>
                 {
-                    b.HasOne("inzynierka.Users.Model.User", "User")
+                    b.HasOne("foodmatch.Users.Model.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -927,18 +927,18 @@ namespace inzynierka.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingListItem", b =>
+            modelBuilder.Entity("foodmatch.ShoppingList.Model.ShoppingListItem", b =>
                 {
-                    b.HasOne("inzynierka.Products.Model.Product", "Product")
+                    b.HasOne("foodmatch.Products.Model.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("inzynierka.ShoppingList.Model.ShoppingList", null)
+                    b.HasOne("foodmatch.ShoppingList.Model.ShoppingList", null)
                         .WithMany("Items")
                         .HasForeignKey("ShoppingListId");
 
-                    b.HasOne("inzynierka.Units.Models.Unit", "Unit")
+                    b.HasOne("foodmatch.Units.Model.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -949,9 +949,9 @@ namespace inzynierka.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+            modelBuilder.Entity("foodmatch.Users.Model.User", b =>
                 {
-                    b.OwnsOne("inzynierka.Users.Model.FoodPreferences", "FoodPreferences", b1 =>
+                    b.OwnsOne("foodmatch.Users.Model.FoodPreferences", "FoodPreferences", b1 =>
                         {
                             b1.Property<string>("UserId")
                                 .HasColumnType("text");
@@ -1026,7 +1026,7 @@ namespace inzynierka.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("UserId");
 
-                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Breakfast", b2 =>
+                            b1.OwnsOne("foodmatch.MealPlans.Model.MealNutritionDistribution", "Breakfast", b2 =>
                                 {
                                     b2.Property<string>("FoodPreferencesUserId")
                                         .HasColumnType("text");
@@ -1059,7 +1059,7 @@ namespace inzynierka.Migrations
                                         .HasForeignKey("FoodPreferencesUserId");
                                 });
 
-                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Dinner", b2 =>
+                            b1.OwnsOne("foodmatch.MealPlans.Model.MealNutritionDistribution", "Dinner", b2 =>
                                 {
                                     b2.Property<string>("FoodPreferencesUserId")
                                         .HasColumnType("text");
@@ -1078,39 +1078,6 @@ namespace inzynierka.Migrations
                                         .ValueGeneratedOnAdd()
                                         .HasColumnType("integer")
                                         .HasDefaultValue(25);
-
-                                    b2.Property<int>("ProteinPercentage")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer")
-                                        .HasDefaultValue(35);
-
-                                    b2.HasKey("FoodPreferencesUserId");
-
-                                    b2.ToTable("AspNetUsers");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("FoodPreferencesUserId");
-                                });
-
-                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Lunch", b2 =>
-                                {
-                                    b2.Property<string>("FoodPreferencesUserId")
-                                        .HasColumnType("text");
-
-                                    b2.Property<int>("CaloriePercentage")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer")
-                                        .HasDefaultValue(40);
-
-                                    b2.Property<int>("CarbohydratePercentage")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer")
-                                        .HasDefaultValue(40);
-
-                                    b2.Property<int>("FatPercentage")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("integer")
-                                        .HasDefaultValue(40);
 
                                     b2.Property<int>("ProteinPercentage")
                                         .ValueGeneratedOnAdd()
@@ -1125,7 +1092,40 @@ namespace inzynierka.Migrations
                                         .HasForeignKey("FoodPreferencesUserId");
                                 });
 
-                            b1.OwnsOne("inzynierka.MealPlans.Model.MealNutritionDistribution", "Snack", b2 =>
+                            b1.OwnsOne("foodmatch.MealPlans.Model.MealNutritionDistribution", "Lunch", b2 =>
+                                {
+                                    b2.Property<string>("FoodPreferencesUserId")
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("CaloriePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("CarbohydratePercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("FatPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(40);
+
+                                    b2.Property<int>("ProteinPercentage")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer")
+                                        .HasDefaultValue(35);
+
+                                    b2.HasKey("FoodPreferencesUserId");
+
+                                    b2.ToTable("AspNetUsers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FoodPreferencesUserId");
+                                });
+
+                            b1.OwnsOne("foodmatch.MealPlans.Model.MealNutritionDistribution", "Snack", b2 =>
                                 {
                                     b2.Property<string>("FoodPreferencesUserId")
                                         .HasColumnType("text");
@@ -1175,7 +1175,7 @@ namespace inzynierka.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Product", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Product", b =>
                 {
                     b.Navigation("ProductAllergenTags");
 
@@ -1188,37 +1188,37 @@ namespace inzynierka.Migrations
                     b.Navigation("RecipeIngredients");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.AllergenTag.AllergenTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.AllergenTag.AllergenTag", b =>
                 {
                     b.Navigation("ProductAllergenTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CategoryTag.CategoryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CategoryTag.CategoryTag", b =>
                 {
                     b.Navigation("ProductCategoryTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.CountryTag.CountryTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.CountryTag.CountryTag", b =>
                 {
                     b.Navigation("ProductCountryTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Products.Model.Tag.IngredientTag.IngredientTag", b =>
+            modelBuilder.Entity("foodmatch.Products.Model.Tag.IngredientTag.IngredientTag", b =>
                 {
                     b.Navigation("ProductIngredientTags");
                 });
 
-            modelBuilder.Entity("inzynierka.Recipes.Model.Recipe", b =>
+            modelBuilder.Entity("foodmatch.Recipes.Model.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
                 });
 
-            modelBuilder.Entity("inzynierka.ShoppingList.Model.ShoppingList", b =>
+            modelBuilder.Entity("foodmatch.ShoppingList.Model.ShoppingList", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("inzynierka.Users.Model.User", b =>
+            modelBuilder.Entity("foodmatch.Users.Model.User", b =>
                 {
                     b.Navigation("MealPlans");
 

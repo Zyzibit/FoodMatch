@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Sources;
+namespace foodmatch.ETL.Sources;
 
 /// <summary>
 /// A data source paired with an optional stable key. The key (an absolute file path for file

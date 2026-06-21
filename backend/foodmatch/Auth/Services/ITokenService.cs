@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public interface ITokenService
 {

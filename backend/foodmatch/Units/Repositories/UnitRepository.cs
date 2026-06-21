@@ -1,8 +1,8 @@
-using inzynierka.Data;
-using inzynierka.Units.Models;
+using foodmatch.Data;
+using foodmatch.Units.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace inzynierka.Units.Repositories;
+namespace foodmatch.Units.Repositories;
 
 public class UnitRepository : IUnitRepository
 {

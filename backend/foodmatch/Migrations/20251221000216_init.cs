@@ -5,7 +5,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace inzynierka.Migrations
+namespace foodmatch.Migrations
 {
     /// <inheritdoc />
     public partial class init : Migration

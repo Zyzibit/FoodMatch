@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.Users.Services;
-using inzynierka.Users.Requests;
-using inzynierka.UserPreferences.Services;
-using UpdateFoodPreferencesRequest = inzynierka.UserPreferences.Requests.UpdateFoodPreferencesRequest;
+using foodmatch.Users.Services;
+using foodmatch.Users.Requests;
+using foodmatch.UserPreferences.Services;
+using UpdateFoodPreferencesRequest = foodmatch.UserPreferences.Requests.UpdateFoodPreferencesRequest;
 
-namespace inzynierka.Users.API;
+namespace foodmatch.Users.API;
 
 [ApiController]
 [Route("api/v1/users")]

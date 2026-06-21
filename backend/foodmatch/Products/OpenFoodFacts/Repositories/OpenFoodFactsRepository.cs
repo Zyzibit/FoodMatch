@@ -1,13 +1,13 @@
 using System.Data;
-using inzynierka.Data;
-using inzynierka.Products.Model;
-using inzynierka.Products.Repositories;
+using foodmatch.Data;
+using foodmatch.Products.Model;
+using foodmatch.Products.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 
-namespace inzynierka.Products.OpenFoodFacts.Repositories
+namespace foodmatch.Products.OpenFoodFacts.Repositories
 {
     public class OpenFoodFactsRepository : IProductBulkRepository
     {

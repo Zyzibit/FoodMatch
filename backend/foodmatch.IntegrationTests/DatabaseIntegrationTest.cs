@@ -1,10 +1,10 @@
-﻿using inzynierka.Data;
-using inzynierka.Users.Model;
+﻿using foodmatch.Data;
+using foodmatch.Users.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace inzynierka.IntegrationTests;
+namespace foodmatch.IntegrationTests;
 
 public abstract class DatabaseIntegrationTest : IAsyncLifetime
 {

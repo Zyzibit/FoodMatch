@@ -1,6 +1,6 @@
-﻿using inzynierka.Users.Model;
+﻿using foodmatch.Users.Model;
 
-namespace inzynierka.Users.Services;
+namespace foodmatch.Users.Services;
 
 public class RoleInitializationService : IRoleInitializationService
 {

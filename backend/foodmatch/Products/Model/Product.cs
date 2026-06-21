@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using inzynierka.Products.Model.Tag.AllergenTag;
-using inzynierka.Products.Model.Tag.CategoryTag;
-using inzynierka.Products.Model.Tag.CountryTag;
-using inzynierka.Products.Model.Tag.IngredientTag;
-using inzynierka.Recipes.Model;
+using foodmatch.Products.Model.Tag.AllergenTag;
+using foodmatch.Products.Model.Tag.CategoryTag;
+using foodmatch.Products.Model.Tag.CountryTag;
+using foodmatch.Products.Model.Tag.IngredientTag;
+using foodmatch.Recipes.Model;
 
-namespace inzynierka.Products.Model;
+namespace foodmatch.Products.Model;
 
 public class Product 
 {

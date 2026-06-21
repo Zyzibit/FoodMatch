@@ -1,6 +1,6 @@
-﻿using inzynierka.Products.Model;
+﻿using foodmatch.Products.Model;
 
-namespace inzynierka.Products.Dto;
+namespace foodmatch.Products.Responses;
 
 public class ProductDto
 {

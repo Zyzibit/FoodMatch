@@ -1,6 +1,6 @@
-using inzynierka.Recipes.Model;
+using foodmatch.Recipes.Model;
 
-namespace inzynierka.MealPlans.Constants;
+namespace foodmatch.MealPlans.Constants;
 
 public static class MealNames
 {

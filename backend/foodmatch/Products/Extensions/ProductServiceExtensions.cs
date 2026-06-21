@@ -1,8 +1,8 @@
-using inzynierka.Products.Repositories;
-using inzynierka.Products.Services;
-using inzynierka.Products.OpenFoodFacts.Extensions;
+using foodmatch.Products.Repositories;
+using foodmatch.Products.Services;
+using foodmatch.Products.OpenFoodFacts.Extensions;
 
-namespace inzynierka.Products.Extensions;
+namespace foodmatch.Products.Extensions;
 
 public static class ProductServiceExtensions
 {

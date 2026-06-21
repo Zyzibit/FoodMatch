@@ -1,6 +1,6 @@
 ﻿
 
-namespace inzynierka.Products.OpenFoodFacts.Import
+namespace foodmatch.Products.OpenFoodFacts.Services
 {
     public interface IProductImporter
     {

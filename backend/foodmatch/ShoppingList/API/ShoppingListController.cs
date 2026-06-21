@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using inzynierka.ShoppingList.Requests;
-using inzynierka.ShoppingList.Services;
+using foodmatch.ShoppingList.Requests;
+using foodmatch.ShoppingList.Services;
 
-namespace inzynierka.ShoppingList.API;
+namespace foodmatch.ShoppingList.API;
 
 [ApiController]
 [Route("api/v1/shopping-list")]

@@ -1,14 +1,14 @@
-using inzynierka.ETL;
-using inzynierka.ETL.Diagnostics;
-using inzynierka.ETL.Resilience;
-using inzynierka.Products.Repositories;
+using foodmatch.ETL;
+using foodmatch.ETL.Diagnostics;
+using foodmatch.ETL.Resilience;
+using foodmatch.Products.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace inzynierka.Products.OpenFoodFacts.Import
+namespace foodmatch.Products.OpenFoodFacts.Services
 {
     /// <summary>
     /// Imports an OpenFoodFacts JSONL dump. Reading, parsing, parallelism and backpressure are
-    /// handled by the reusable pipeline from the <c>inzynierka.ETL</c> library; what remains here is
+    /// handled by the reusable pipeline from the <c>foodmatch.ETL</c> library; what remains here is
     /// just pipeline composition, the bulk-import lifecycle and logging.
     /// </summary>
     public sealed class ProductImporter : IProductImporter

@@ -1,4 +1,4 @@
-﻿namespace inzynierka.Users.Responses;
+﻿namespace foodmatch.Users.Responses;
 
 public class FoodPreferencesDto {
     public bool? IsVegan { get; set; }

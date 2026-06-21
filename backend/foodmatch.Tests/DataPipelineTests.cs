@@ -2,14 +2,14 @@ using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Text;
 using System.Text.Json;
-using inzynierka.ETL;
-using inzynierka.ETL.Framing;
-using inzynierka.ETL.Parsing;
-using inzynierka.ETL.Resilience;
-using inzynierka.ETL.Sinks;
-using inzynierka.ETL.Sources;
+using foodmatch.ETL;
+using foodmatch.ETL.Framing;
+using foodmatch.ETL.Parsing;
+using foodmatch.ETL.Resilience;
+using foodmatch.ETL.Sinks;
+using foodmatch.ETL.Sources;
 
-namespace inzynierka.Tests.DataPipelineTests
+namespace foodmatch.Tests.DataPipelineTests
 {
     public class DataPipelineTests : IDisposable
     {

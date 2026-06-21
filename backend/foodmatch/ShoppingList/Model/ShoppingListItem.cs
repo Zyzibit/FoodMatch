@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using inzynierka.Products.Model;
-using inzynierka.Units.Models;
+using foodmatch.Products.Model;
+using foodmatch.Units.Model;
 
-namespace inzynierka.ShoppingList.Model;
+namespace foodmatch.ShoppingList.Model;
 
 public class ShoppingListItem
 {

@@ -1,6 +1,6 @@
-using inzynierka.Units.Models;
+using foodmatch.Units.Model;
 
-namespace inzynierka.Units.Repositories;
+namespace foodmatch.Units.Repositories;
 
 public interface IUnitRepository
 {

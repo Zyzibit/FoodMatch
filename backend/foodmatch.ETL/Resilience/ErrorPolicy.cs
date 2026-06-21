@@ -1,4 +1,4 @@
-namespace inzynierka.ETL.Resilience;
+namespace foodmatch.ETL.Resilience;
 
 /// <summary>
 /// What to do when parsing a single record throws.

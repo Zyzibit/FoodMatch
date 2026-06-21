@@ -1,9 +1,9 @@
-using inzynierka.Recipes.Model;
-using inzynierka.Recipes.Model.RecipeModel;
-using inzynierka.Users.Extensions;
-using inzynierka.UserPreferences.Responses;
+using foodmatch.Recipes.Model;
+using foodmatch.Recipes.Model.RecipeModel;
+using foodmatch.Users.Extensions;
+using foodmatch.UserPreferences.Responses;
 
-namespace inzynierka.Recipes.Extensions;
+namespace foodmatch.Recipes.Extensions;
 
 public static class DietaryPreferencesExtensions
 {

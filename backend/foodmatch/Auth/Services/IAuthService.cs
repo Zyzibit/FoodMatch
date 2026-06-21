@@ -1,6 +1,6 @@
-using inzynierka.Auth.Responses;
+using foodmatch.Auth.Responses;
 
-namespace inzynierka.Auth.Services;
+namespace foodmatch.Auth.Services;
 
 public interface IAuthService {
     Task<AuthenticationResult> AuthenticateAsync(string username, string password, string? deviceId = null,

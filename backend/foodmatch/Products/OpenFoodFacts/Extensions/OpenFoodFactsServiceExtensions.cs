@@ -1,10 +1,10 @@
-using inzynierka.Products.OpenFoodFacts.Import;
-using inzynierka.Products.OpenFoodFacts.Repositories;
-using inzynierka.Products.OpenFoodFacts.Adapters;
-using inzynierka.Products.Services;
-using inzynierka.Products.Repositories;
+using foodmatch.Products.OpenFoodFacts.Services;
+using foodmatch.Products.OpenFoodFacts.Repositories;
+using foodmatch.Products.OpenFoodFacts.Adapters;
+using foodmatch.Products.Services;
+using foodmatch.Products.Repositories;
 
-namespace inzynierka.Products.OpenFoodFacts.Extensions;
+namespace foodmatch.Products.OpenFoodFacts.Extensions;
 
 public static class OpenFoodFactsServiceExtensions
 {

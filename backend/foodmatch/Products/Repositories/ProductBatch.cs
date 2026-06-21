@@ -1,6 +1,6 @@
-using inzynierka.Products.Model;
+using foodmatch.Products.Model;
 
-namespace inzynierka.Products.Repositories
+namespace foodmatch.Products.Repositories
 {
     /// <summary>
     /// Ładunek jednej paczki importu: encje produktów oraz pary (kod produktu, nazwa tagu)

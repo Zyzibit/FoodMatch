@@ -1,4 +1,4 @@
-namespace inzynierka.Users.Responses;
+namespace foodmatch.Users.Responses;
 
 public class UserDto
 {
