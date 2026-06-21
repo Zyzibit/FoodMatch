@@ -224,6 +224,11 @@ csx/
 ecf/
 rcf/
 
+inzynierka/openfoodfacts-products.jsonl
+
+# BenchmarkDotNet output
+BenchmarkDotNet.Artifacts/
+
 # Windows Store app package directories and files
 AppPackages/
 BundleArtifacts/

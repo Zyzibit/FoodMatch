@@ -1,0 +1,21 @@
+using foodmatch.Users.Model;
+using foodmatch.Users.Responses;
+
+namespace foodmatch.Users.Extensions;
+
+public static class UserMappingExtensions
+{
+    public static UserDto ToDto(this User user)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            UserName = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
+        };
+    }
+}
